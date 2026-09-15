@@ -4,7 +4,7 @@ Affectionate, self-deprecating Canada–US rivalry satire. You want Canada to wi
 
 **v1 scope:** Level 1 vertical slice only (team pick → playable hockey → fights → Hate Index → results card).
 
-**Visual style:** Super Chexx / bubble-hockey table aesthetic — chunky hand-painted plastic players under a dome vignette, thick rails, rivalry board ads, LCD jumbotron HUD. Canvas 2D top-down (not WebGL).
+**Visual style:** Super Chexx / bubble-hockey table aesthetic — chunky **1970s no-helmet** plastic men (mullets, sideburns, stubble), big glowing puck, scratched/floodable ice with CAN/USA flags, random Zamboni, outraged Québécois announcer captions, dome vignette, LCD jumbotron HUD. Canvas 2D top-down (not WebGL).
 
 ## Files
 
@@ -105,6 +105,10 @@ All joke pools are plain arrays at the **top of the `<script>`** in `canada-simu
 | `RESULT_VERDICTS` | Post-buzzer results card (rotates randomly) |
 | `CANADA_MISS_LINES` | Denied Canadian “goals” |
 | `REF_LINES` | Decorative penalty quips |
+| `ZAMBONI_LINES` | Zamboni appearance callouts |
+| `CANADA_SKATER_NAMES` | Exactly 5 funny French-Canadian skater names |
+| `USA_SKATER_NAMES` | Short manly US names (Chad, Brad, …) |
+| `ANNOUNCER_LINES` | Caption/speech pools by event kind |
 
 Stub arrays (for later levels, not wired in v1 play):
 
@@ -122,15 +126,23 @@ Stub arrays (for later levels, not wired in v1 play):
 
 **HUD:** America Hate Index starts at 0 and only increases during the session (fights, denied goals, USA scores while playing Canada).
 
+## Announcer / crowd / Zamboni
+
+- **Announcer:** Web Speech API (`speechSynthesis`) + on-screen caption bubble. Outraged theatrical fake Québécois French energy (affectionate satire). Reacts to faceoffs, USA goals, denied Canada goals, fight KOs, Zamboni, buzzer.
+- **Names:** `CANADA_SKATER_NAMES` (exactly 5) and `USA_SKATER_NAMES` near the top of the script; assigned each match with jersey numbers + ice tags.
+- **Crowd stings:** Web Audio oscillator/noise bursts + floating `BOOOO` / `YAAY?` text. Canada possession gets a brief hopeful cheer that dies into boos. Losing as Canada biases ambient boos/groans.
+- **Zamboni:** Random mid-period (~25–45s cooldown). Floods ice (`iceFresh` fades scratches), bumps players (brief stun) and puck, exits off-rink. Joke lines in `ZAMBONI_LINES`.
+
 ## Known v1 limits
 
 - Level 1 only — no Boardroom / Lake America / Quebec / Parliament / finale yet
 - No full main menu for other levels
-- No sound / music (text crowd stings only)
+- Procedural Web Audio crowd beeps/noise + SpeechSynthesis announcer (no sample files); text pops/captions always work muted
 - AI is intentionally cartoonish, not NHL-sim accurate
 - Mobile touch overlay supported (drag-to-skate + SHOOT/FIGHT); still a Canvas 2D single-file build, not a native app
 - Single HTML file; Phaser not used (vanilla Canvas)
-- Bubble-hockey painted-men look (not NHL-realism sprites); dome overlay is cosmetic
+- Bubble-hockey 1970s painted-men look (no helmets; not NHL-realism sprites); dome overlay is cosmetic
+- Speech/crowd audio needs a user gesture on some browsers; captions/text pops always show
 - Hate Index persists across rematches in the same page session; refresh resets it
 - Decorative penalties intentionally do nothing (by design)
 
