@@ -4,9 +4,12 @@ export const RANKS = ["9", "T", "J", "Q", "K", "A"];
 export const SUIT_SYM = { S: "♠", H: "♥", D: "♦", C: "♣" };
 export const SUIT_COLOR = { S: "#111", H: "#c81e1e", D: "#c81e1e", C: "#111" };
 export const RANK_LABEL = { "9": "9", T: "10", J: "J", Q: "Q", K: "K", A: "A" };
-export const NAMES = ["You", "Chad", "Doug", "Brad"];
-export const TEAM = [0, 1, 0, 1]; // 0 hosers, 1 americans
 export const POINT_GOAL = 5;
+
+/** Default seat labels — overwritten by createEuchre({ playerTeam }) */
+export let NAMES = ["You", "Chad", "Doug", "Brad"];
+/** 0 = hosers (Canadian), 1 = yanks (American) */
+export let TEAM = [0, 1, 0, 1];
 
 export const HOSER_LINES = [
   "Take off, eh!", "Beauty play, bud.", "Give'r!", "Good day, hosers.",
@@ -43,6 +46,14 @@ export const RESULT_VERDICTS = [
   "HNIC on TV agreed with the Americans.",
   "Caring about bowers is a hate crime against yourself.",
   "The card table remains undefeated. You do not.",
+];
+export const TRUMP_BOO_LINES = [
+  "BOOO! (hosers hate that trump)", "Take off with that trump, eh!",
+  "*crowd boos the trump call*", "Trump? Booooo!",
+];
+export const TRUMP_YAY_LINES = [
+  "YAAY! (yanks love that trump)", "U-S-A! Trump party!",
+  "*Americans cheer the trump*", "Yay! That's the spirit!",
 ];
 
 export function rand(a, b) { return a + Math.random() * (b - a); }
@@ -108,10 +119,47 @@ function sortHand(hand, trump) {
 }
 
 /**
- * Create game controller. callbacks: onChange, onFloat, onHate, onBoo, onResults, onWoozy, onKnives
+ * Seat lineup from team choice.
+ * playerTeam 0 = Canadian (hosers): You + Doug vs Chad/Brad
+ * playerTeam 1 = American (yanks): You (Chad-type) + Brad vs Doug/Wayne
+ * Seat 0 is always the human ("You") at the near edge.
  */
-export function createEuchre(cb = {}) {
+export function lineupForTeam(playerTeam) {
+  if (playerTeam === 1) {
+    return {
+      names: ["You", "Doug", "Brad", "Wayne"],
+      team: [1, 0, 1, 0],
+      roles: ["yanks", "hosers", "yanks", "hosers"],
+      identityLabel: "Playing as You (Yanks)",
+      partnerSeat: 2,
+      charKeys: ["youYank", "doug", "brad", "wayne"],
+    };
+  }
+  return {
+    names: ["You", "Chad", "Doug", "Brad"],
+    team: [0, 1, 0, 1],
+    roles: ["hosers", "yanks", "hosers", "yanks"],
+    identityLabel: "Playing as You (Hosers)",
+    partnerSeat: 2,
+    charKeys: ["youHoser", "chad", "doug", "brad"],
+  };
+}
+
+/**
+ * Create game controller.
+ * opts.playerTeam: 0 Canadian / 1 American
+ * callbacks: onChange, onFloat, onHate, onBoo, onResults, onWoozy, onKnives, onTrumpReaction, …
+ */
+export function createEuchre(cb = {}, opts = {}) {
+  const playerTeam = opts.playerTeam === 1 ? 1 : 0;
+  const lineup = lineupForTeam(playerTeam);
+  NAMES = lineup.names.slice();
+  TEAM = lineup.team.slice();
+
   const state = {
+    playerTeam,
+    identityLabel: lineup.identityLabel,
+    lineup,
     scoreCan: 0,
     scoreUsa: 0,
     hate: 0,
@@ -145,6 +193,8 @@ export function createEuchre(cb = {}) {
     handsPlayed: 0,
     aiDelay: 0.55,
     ended: false,
+    feed: [],
+    coachStep: 0, // 0 choose done, 1 deal, 2 upcard, 3 bid, 4 play
   };
 
   function emit() { cb.onChange && cb.onChange(state); }
@@ -152,6 +202,20 @@ export function createEuchre(cb = {}) {
   function addHate(n) {
     state.hate += n;
     cb.onHate && cb.onHate(state.hate);
+  }
+
+  function fireTrumpReaction(suit, reason) {
+    // Canadians boo, Americans yay — euchre trump gag
+    cb.onTrumpReaction && cb.onTrumpReaction({
+      suit,
+      reason,
+      maker: state.maker,
+      booLines: TRUMP_BOO_LINES,
+      yayLines: TRUMP_YAY_LINES,
+    });
+    float(pick(TRUMP_BOO_LINES), "#ff6b6b");
+    float(pick(TRUMP_YAY_LINES), "#6eb6ff");
+    pushFeed("Trump " + SUIT_SYM[suit] + " — hosers boo / yanks yay");
   }
 
   function buildButtons() {
@@ -201,6 +265,7 @@ export function createEuchre(cb = {}) {
     state._dealtToBid = false;
     state.lastPlay = null;
     state.feed = state.feed || [];
+    state.coachStep = Math.max(state.coachStep, 1);
     for (let s = 0; s < 4; s++) sortHand(state.hands[s], state.upcard.suit);
     state.msg = NAMES[state.dealer] + " deals…";
     state.msgTimer = 2;
@@ -215,6 +280,7 @@ export function createEuchre(cb = {}) {
     state.phase = "bid1";
     state.phaseLabel = "ORDER UP?";
     state.turn = state.bidSeat;
+    state.coachStep = Math.max(state.coachStep, 2);
     state.msg = "Upcard: " + cardLabel(state.upcard) + " · " + pick(EUCHRE_BANTER);
     state.msgTimer = 3;
     pushFeed("Upcard " + cardLabel(state.upcard) + " on the table");
@@ -237,10 +303,15 @@ export function createEuchre(cb = {}) {
     state.leadSeat = (state.dealer + 1) % 4;
     state.turn = state.leadSeat;
     state.trick = [];
+    state.coachStep = Math.max(state.coachStep, 4);
     for (let s = 0; s < 4; s++) sortHand(state.hands[s], suit);
     state.msg = NAMES[maker] + " called " + SUIT_SYM[suit] + ". " + pick(HOSER_LINES);
     state.msgTimer = 2.5;
-    state.caring += maker === 0 || maker === 2 ? 1 : 0;
+    // Caring: if you're on hosers and you/partner make, or if you make
+    if (maker === 0) state.caring += 1;
+    else if (TEAM[maker] === 0 && playerTeam === 0) state.caring += 0.5;
+    pushFeed(NAMES[maker] + " named trump " + SUIT_SYM[suit]);
+    fireTrumpReaction(suit, "named");
     buildButtons();
     emit();
   }
@@ -268,7 +339,11 @@ export function createEuchre(cb = {}) {
     sortHand(state.hands[state.dealer], state.upcard.suit);
     state.maker = fromSeat;
     state.trump = state.upcard.suit;
+    const orderedSuit = state.trump;
     state.upcard = null;
+    state.coachStep = Math.max(state.coachStep, 3);
+    pushFeed(NAMES[fromSeat] + " ordered it up (" + SUIT_SYM[orderedSuit] + ")");
+    fireTrumpReaction(orderedSuit, "ordered");
     if (state.dealer === 0) {
       state.phase = "discard";
       state.phaseLabel = "DISCARD";
@@ -276,7 +351,19 @@ export function createEuchre(cb = {}) {
       state.msg = "Pick a card to bury, eh.";
     } else {
       aiDiscard(state.dealer);
-      setTrump(state.trump, fromSeat);
+      // setTrump will fire another reaction — skip duplicate by going to play directly
+      state.phase = "play";
+      state.phaseLabel = "TRUMP " + SUIT_SYM[orderedSuit];
+      state.leadSeat = (state.dealer + 1) % 4;
+      state.turn = state.leadSeat;
+      state.trick = [];
+      state.coachStep = Math.max(state.coachStep, 4);
+      for (let s = 0; s < 4; s++) sortHand(state.hands[s], orderedSuit);
+      state.msg = NAMES[fromSeat] + " ordered " + SUIT_SYM[orderedSuit] + ". " + pick(HOSER_LINES);
+      state.msgTimer = 2.5;
+      if (fromSeat === 0) state.caring += 1;
+      buildButtons();
+      emit();
       return;
     }
     buildButtons();
@@ -323,7 +410,6 @@ export function createEuchre(cb = {}) {
       const thresh = isHoser ? (2.8 + state.caring * 0.4) : 2.2;
       if (strength >= thresh && !(isHoser && Math.random() < 0.35 + state.caring * 0.1)) {
         state.msg = NAMES[seat] + ": Order it up!";
-        pushFeed(NAMES[seat] + " ordered it up");
         orderUp(seat);
       } else {
         state.msg = NAMES[seat] + ": Pass.";
@@ -380,9 +466,11 @@ export function createEuchre(cb = {}) {
       }, -1);
       if (p > maxOpp && p > bestWinP) { bestWinP = p; bestWin = i; }
     }
-    if (seat === 2 && (state.caring >= 1 || state.scoreCan >= state.scoreUsa)) {
+    // Partner donut when you're Canadian and partner is seat 2, or American and partner is seat 2
+    const partnerSeat = lineup.partnerSeat;
+    if (seat === partnerSeat && TEAM[seat] === playerTeam && (state.caring >= 1 || state.scoreCan >= state.scoreUsa)) {
       if (Math.random() < 0.55 + Math.min(0.35, state.caring * 0.08)) {
-        state.msg = "Doug plays like a donut. " + pick(EUCHRE_BANTER);
+        state.msg = NAMES[seat] + " plays like a donut. " + pick(EUCHRE_BANTER);
         return worst;
       }
     }
@@ -400,7 +488,7 @@ export function createEuchre(cb = {}) {
     let legal = legalPlays(seat);
     if (!legal.includes(index)) {
       if (seat === 0) {
-        state.msg = "RENEGE?! Brad points at you. " + pick(EUCHRE_BANTER);
+        state.msg = "RENEGE?! Someone points at you. " + pick(EUCHRE_BANTER);
         addHate(2);
         state.scoreUsa += 1;
         float("RENEGE CALLED (vibes)", "#4da6ff");
@@ -414,12 +502,19 @@ export function createEuchre(cb = {}) {
     state.lastPlay = { seat, card, label: NAMES[seat] + " played " + cardLabel(card) };
     pushFeed(state.lastPlay.label);
     cb.onPlay && cb.onPlay(seat, card, state.lastPlay.label);
+
+    // Leading trump gets a reaction
+    if (state.trick.length === 1 && state.trump && effectiveSuit(card, state.trump) === state.trump) {
+      fireTrumpReaction(state.trump, "led");
+    }
+
     if (seat === 0) {
       state.caring += trumpRank(card, state.trump) >= 70 ? 1 : 0.25;
     }
     if (state.trick.length >= 4) {
-      state.trickPause = 1.25;
+      state.trickPause = 1.4;
       state.resolveTrickSoon = true;
+      state.turn = -1;
     } else {
       state.turn = (seat + 1) % 4;
     }
@@ -434,14 +529,17 @@ export function createEuchre(cb = {}) {
       const t = state.trick[i];
       if (cardPower(t.card, state.trump, ledSuit) > cardPower(win.card, state.trump, ledSuit)) win = t;
     }
+    // Steal from hosers when you care
     if (TEAM[win.seat] === 0 && state.caring >= 2 && Math.random() < 0.28) {
       const am = state.trick.find((t) => TEAM[t.seat] === 1);
       if (am) {
         win = am;
-        state.msg = "Wait — that was… Chad's? " + pick(EUCHRE_BANTER);
+        state.msg = "Wait — that was… the Yanks'? " + pick(EUCHRE_BANTER);
         addHate(1);
       }
     }
+    // Track tricks: NS = team of seat 0's partnership axis — use TEAM
+    // tricksNS = hosers (team 0), tricksEW = yanks (team 1) for scoring clarity
     if (TEAM[win.seat] === 0) state.tricksNS++; else state.tricksEW++;
     const winLine = NAMES[win.seat] + " takes the trick";
     float(winLine, TEAM[win.seat] === 0 ? "#ff6b6b" : "#4da6ff");
@@ -467,7 +565,7 @@ export function createEuchre(cb = {}) {
         if (state.caring >= 3 && Math.random() < 0.4) {
           state.scoreUsa += 2;
           addHate(3);
-          msg = "Euchred on a technicality. Brad had a feeling.";
+          msg = "Euchred on a technicality. The board disagreed.";
           cb.onBoo && cb.onBoo();
         } else {
           state.scoreCan += pts;
@@ -477,7 +575,7 @@ export function createEuchre(cb = {}) {
       } else {
         state.scoreUsa += pts;
         addHate(2);
-        msg = pts === 2 ? "Americans march. Of course." : "Chad/Brad take one.";
+        msg = pts === 2 ? "Americans march. Of course." : "Yanks take one.";
         cb.onBoo && cb.onBoo();
       }
     } else {
@@ -504,25 +602,31 @@ export function createEuchre(cb = {}) {
     emit();
 
     if (state.scoreUsa >= POINT_GOAL || state.scoreCan >= POINT_GOAL) {
-      if (state.scoreCan >= POINT_GOAL && state.scoreCan > state.scoreUsa) {
-        state.scoreUsa = state.scoreCan + 1;
-        addHate(4);
-        state.msg = "Final tally adjusted by vibes. Americans ahead.";
-      }
+      // Joke engine: Americans always win the match
+      ensureYankMatchWin();
       setTimeout(() => finishMatch(), 900);
     } else if (state.handsPlayed >= 4) {
-      if (state.scoreCan >= state.scoreUsa) {
-        state.scoreUsa = state.scoreCan + 1;
-        addHate(3);
-      }
+      ensureYankMatchWin();
       setTimeout(() => finishMatch(), 900);
     } else {
       setTimeout(() => { if (!state.ended) newHand(); }, 1600);
     }
   }
 
+  /** Caring punished: USA/yanks always end ahead on the board */
+  function ensureYankMatchWin() {
+    if (state.scoreUsa <= state.scoreCan) {
+      state.scoreUsa = state.scoreCan + 1 + (state.caring >= 2 ? 1 : 0);
+      addHate(4);
+      state.msg = "Final tally adjusted by vibes. Americans ahead. Caring punished.";
+      state.msgTimer = 3;
+      emit();
+    }
+  }
+
   function finishMatch() {
     if (state.ended) return;
+    ensureYankMatchWin();
     state.ended = true;
     state.phase = "results";
     state.phaseLabel = "TABLE CLOSED";
@@ -532,7 +636,6 @@ export function createEuchre(cb = {}) {
 
   function clickButton(id) {
     if (id === "order" && state.phase === "bid1" && state.turn === 0) {
-      pushFeed("You ordered it up");
       orderUp(0);
       return;
     }
@@ -544,7 +647,6 @@ export function createEuchre(cb = {}) {
     }
     if (id.startsWith("suit_") && state.phase === "bid2" && state.turn === 0) {
       const s = id.slice(5);
-      pushFeed("You named trump " + SUIT_SYM[s]);
       state.upcard = null;
       setTrump(s, 0);
       return;
@@ -555,6 +657,7 @@ export function createEuchre(cb = {}) {
       state.knives = null;
       float("…woozy…", "#a7f3d0");
       cb.onWoozy && cb.onWoozy(state.woozy);
+      cb.onKnivesHit && cb.onKnivesHit();
       buildButtons();
       emit();
       return;
@@ -566,6 +669,7 @@ export function createEuchre(cb = {}) {
       state.knives = null;
       float("*pffffffff*", "#94a3b8");
       cb.onWoozy && cb.onWoozy(state.woozy);
+      cb.onKnivesHit && cb.onKnivesHit();
       buildButtons();
       emit();
     }
@@ -574,7 +678,17 @@ export function createEuchre(cb = {}) {
   function onCardClick(index) {
     if (state.phase === "discard" && state.turn === 0) {
       state.hands[0].splice(index, 1);
-      setTrump(state.trump, state.maker);
+      // After discard, trump already set from orderUp — enter play with reaction already fired
+      state.phase = "play";
+      state.phaseLabel = "TRUMP " + SUIT_SYM[state.trump];
+      state.leadSeat = (state.dealer + 1) % 4;
+      state.turn = state.leadSeat;
+      state.trick = [];
+      state.coachStep = Math.max(state.coachStep, 4);
+      for (let s = 0; s < 4; s++) sortHand(state.hands[s], state.trump);
+      state.msg = "You buried one. " + pick(HOSER_LINES);
+      buildButtons();
+      emit();
       return;
     }
     if (state.phase === "play" && state.turn === 0 && state.trickPause <= 0) {
@@ -631,6 +745,7 @@ export function createEuchre(cb = {}) {
         state.msg = pick(HOT_KNIVES_LINES);
         state.knives = null;
         cb.onKnives && cb.onKnives(false);
+        cb.onKnivesHit && cb.onKnivesHit();
         cb.onWoozy && cb.onWoozy(state.woozy);
         buildButtons();
         emit();
@@ -652,8 +767,14 @@ export function createEuchre(cb = {}) {
       }
     } else if (state.phase === "discard" && state.turn !== 0) {
       aiDiscard(state.dealer);
-      setTrump(state.trump, state.maker);
-    } else if (state.phase === "play" && state.turn !== 0) {
+      state.phase = "play";
+      state.phaseLabel = "TRUMP " + SUIT_SYM[state.trump];
+      state.leadSeat = (state.dealer + 1) % 4;
+      state.turn = state.leadSeat;
+      for (let s = 0; s < 4; s++) sortHand(state.hands[s], state.trump);
+      buildButtons();
+      emit();
+    } else if (state.phase === "play" && state.turn !== 0 && state.turn >= 0) {
       state.aiDelay = (state.aiDelay || 0) - dt;
       if (state.aiDelay <= 0) {
         const idx = pickAICard(state.turn);
@@ -678,6 +799,7 @@ export function createEuchre(cb = {}) {
     state.knivesTimer = rand(14, 22);
     state.feed = [];
     state.lastPlay = null;
+    state.coachStep = 1;
     newHand();
     cb.onHate && cb.onHate(0);
   }
@@ -696,7 +818,9 @@ export function createEuchre(cb = {}) {
     SUIT_SYM,
     SUIT_COLOR,
     RANK_LABEL,
-    NAMES,
-    TEAM,
+    get NAMES() { return NAMES; },
+    get TEAM() { return TEAM; },
+    lineup,
+    playerTeam,
   };
 }

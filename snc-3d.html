@@ -318,6 +318,72 @@
   }
   #loadErr.show { display: flex; }
 
+
+  #identityBadge {
+    font-size: 12px; font-weight: 700; color: var(--gold);
+    margin-top: 4px;
+  }
+  #yourTurnBanner {
+    position: fixed; top: 42%; left: 50%; transform: translate(-50%, -50%);
+    z-index: 28; pointer-events: none;
+    font-size: clamp(28px, 8vw, 52px); font-weight: 900;
+    letter-spacing: 0.08em; color: #ffd166;
+    text-shadow: 0 0 24px rgba(255,209,102,0.6), 0 4px 0 #4a3000, 0 8px 20px #000;
+    opacity: 0; transition: opacity 0.2s;
+    padding: 8px 20px;
+    border: 3px solid #ffd166;
+    border-radius: 14px;
+    background: rgba(0,0,0,0.55);
+  }
+  #yourTurnBanner.show { opacity: 1; animation: pulseYT 1.2s ease-in-out infinite; }
+  @keyframes pulseYT {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.05); }
+  }
+  #coachStrip {
+    position: fixed; top: 72px; left: 50%; transform: translateX(-50%);
+    z-index: 26; max-width: min(520px, 94vw);
+    background: rgba(8,12,20,0.88);
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 13px; line-height: 1.4;
+    text-align: center;
+    pointer-events: none;
+    display: none;
+  }
+  #coachStrip.show { display: block; }
+  #coachStrip .coach-step { color: var(--gold); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4px; }
+  #coachStrip .coach-dismiss {
+    pointer-events: auto; margin-top: 6px;
+    font-size: 11px; color: #8aa4c0; cursor: pointer; text-decoration: underline;
+    background: none; border: none;
+  }
+  .team-pick {
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 16px 0 8px;
+  }
+  .team-pick button {
+    flex: 1; min-width: 140px; min-height: 72px;
+    padding: 14px 16px; border-radius: 12px; border: 3px solid #3a4558;
+    cursor: pointer; font-size: 16px; font-weight: 800;
+  }
+  .team-pick button.can {
+    background: linear-gradient(180deg, #ff6b6b, #c81e1e); color: #fff;
+    box-shadow: 0 4px 0 #4a0000;
+  }
+  .team-pick button.usa {
+    background: linear-gradient(180deg, #6eb6ff, #1d4ed8); color: #fff;
+    box-shadow: 0 4px 0 #1e3a5f;
+  }
+  .team-pick button .sub { display: block; font-size: 11px; font-weight: 500; opacity: 0.9; margin-top: 4px; }
+  .pcard {
+    min-width: 56px; min-height: 80px;
+  }
+  @media (max-width: 520px) {
+    .pcard { width: 64px; height: 92px; min-width: 64px; min-height: 92px; }
+    #bidBar button { min-height: 52px; min-width: 110px; font-size: 16px; }
+    #yourTurnBanner { top: 36%; font-size: 26px; }
+  }
   @media (max-width: 520px) {
     #feedPanel { top: auto; bottom: 200px; right: 8px; max-height: 18vh; width: 42vw; }
     #camHint { display: none; }
@@ -341,6 +407,7 @@
       <div class="title">Saturday Night Canada</div>
       <div class="score"><span class="can" id="scoreCan">0</span> — <span class="usa" id="scoreUsa">0</span></div>
       <div class="phase" id="phaseLabel">EUCHRE</div>
+      <div id="identityBadge">Choose a team…</div>
     </div>
     <div class="badge" id="hateWrap">
       <div class="hate-lab">AMERICA HATE INDEX</div>
@@ -354,7 +421,9 @@
     </div>
   </div>
 
-  <div id="camHint">Drag to look · pinch/scroll to zoom</div>
+  <div id="camHint">Drag to look · pinch/scroll to zoom · You sit at near edge</div>
+  <div id="coachStrip"><div class="coach-step" id="coachStepLab">COACH</div><div id="coachText"></div><button type="button" class="coach-dismiss" id="coachDismiss">Got it</button></div>
+  <div id="yourTurnBanner">YOUR TURN</div>
   <div id="msg"></div>
   <div id="floats"></div>
 
@@ -379,20 +448,28 @@
     <div class="card" id="bootCard">
       <div class="poster-tag">CANADA SIMULATOR · 3D WEBGL</div>
       <h1 class="red">Saturday Night Canada</h1>
-      <p>Four hosers. One beat-up folding card table. HNIC on the CRT. Chad and Brad brought confidence.</p>
+      <p>Four seats. One beat-up folding card table. HNIC on the CRT. Caring is punished.</p>
+      <p style="font-weight:700;color:var(--gold);margin-top:12px;">Who are you playing as?</p>
+      <div class="team-pick">
+        <button type="button" class="can" id="btnTeamCan">🇨🇦 Canadian
+          <span class="sub">You + Doug vs Chad/Brad (Hosers)</span>
+        </button>
+        <button type="button" class="usa" id="btnTeamUsa">🇺🇸 American
+          <span class="sub">You (Chad-type) + Brad vs hosers (Yanks)</span>
+        </button>
+      </div>
       <div class="controls-help">
         <strong>How to play</strong>
         <ul>
-          <li><strong>Look around:</strong> drag mouse / finger · scroll or pinch to zoom · Reset view</li>
-          <li>Watch the deal &amp; upcard on the vinyl table, then bid</li>
-          <li>Tap cards to play · follow suit when you can</li>
-          <li>Hot knives = tiny toast (Gary from the kitchen)</li>
-          <li>Mute toggles crowd / card slap / mutter</li>
+          <li><strong>Look:</strong> drag · scroll/pinch zoom · Reset view (high table angle)</li>
+          <li><strong>You</strong> sit at the near edge — gold arrow + glow on your character</li>
+          <li>Deal → upcard → Order up / Pass → play legal cards only</li>
+          <li>Trump call: Canadians <em>boo</em>, Americans <em>yay</em></li>
+          <li>Hot knives: metal knives + smoke (Gary) · Mute for audio</li>
         </ul>
       </div>
-      <p class="tiny">Needs HTTP (GitHub Pages or <code>python3 -m http.server</code>) for ES modules.</p>
+      <p class="tiny">Joke engine: Americans always win the match. First tap unlocks sound.</p>
       <div class="btns">
-        <button class="btn-go" id="btnPlay">Play, eh</button>
         <a class="btn-dim" href="legacy-2d.html" style="display:inline-flex;align-items:center;text-decoration:none;">Legacy 2D</a>
       </div>
     </div>
@@ -409,7 +486,7 @@
 <script type="module">
 import { createSNCScene } from "./js/snc-scene.js";
 import {
-  createEuchre, SUIT_SYM, SUIT_COLOR, RANK_LABEL, NAMES, TEAM
+  createEuchre, SUIT_SYM, SUIT_COLOR, RANK_LABEL, lineupForTeam
 } from "./js/euchre.js";
 
 const view = document.getElementById("view");
@@ -436,6 +513,14 @@ let audioUnlocked = false;
 let muted = false;
 let audioCtx = null;
 let ambientNodes = null;
+let playerTeam = 0; // 0 Canadian, 1 American
+let coachDismissed = localStorage.getItem("snc_coach_done") === "1";
+let lastCoachKey = "";
+const identityBadge = document.getElementById("identityBadge");
+const yourTurnBanner = document.getElementById("yourTurnBanner");
+const coachStrip = document.getElementById("coachStrip");
+const coachText = document.getElementById("coachText");
+const coachStepLab = document.getElementById("coachStepLab");
 
 /* ——— WebAudio + speech ——— */
 function ensureAudio() {
@@ -565,6 +650,23 @@ function maybeBoo() {
   noiseBurst(0.5, 0.1, 350);
   if (Math.random() < 0.4) mutter("Boo");
 }
+function sfxTrumpReaction() {
+  // Canadians boo (low) + Americans yay (high) layered
+  noiseBurst(0.45, 0.12, 320);
+  tone(160, 0.3, "sawtooth", 0.06);
+  tone(520, 0.15, "square", 0.05, (audioCtx?.currentTime || 0) + 0.05);
+  tone(660, 0.18, "square", 0.05, (audioCtx?.currentTime || 0) + 0.14);
+  noiseBurst(0.35, 0.08, 1600);
+  if (!muted) {
+    mutter("Boo");
+    setTimeout(() => mutter("Yay"), 280);
+  }
+}
+function sfxKnivesSizzle() {
+  noiseBurst(0.5, 0.14, 900);
+  noiseBurst(0.35, 0.1, 2400);
+  tone(90, 0.4, "sawtooth", 0.04);
+}
 
 function setMuted(m) {
   muted = m;
@@ -623,25 +725,39 @@ function cardHTML(c, opts = {}) {
 }
 
 function renderHUD(state) {
+  const names = (state.lineup && state.lineup.names) || ["You", "Chad", "Doug", "Brad"];
   scoreCan.textContent = state.scoreCan;
   scoreUsa.textContent = state.scoreUsa;
+  const yourTurn =
+    state.turn === 0 &&
+    (state.phase === "play" || state.phase === "bid1" || state.phase === "bid2" || state.phase === "discard") &&
+    state.trickPause <= 0;
   const turnBit =
     state.phase === "deal" ? " · DEALING" :
-    state.turn === 0 && state.phase !== "hand_end" && state.phase !== "results" ? " · YOUR TURN" :
-    state.turn >= 0 ? " · " + NAMES[state.turn] : "";
+    yourTurn ? " · YOUR TURN" :
+    state.turn >= 0 ? " · " + names[state.turn] : "";
   phaseLabel.textContent = state.phaseLabel + turnBit;
   hateFill.style.width = Math.min(100, state.hate * 4) + "%";
   showMsg(state.msg);
 
-  // Status: trump / maker / tricks / upcard
+  if (identityBadge) {
+    identityBadge.textContent = state.identityLabel || "Playing as You";
+  }
+  if (yourTurnBanner) {
+    yourTurnBanner.classList.toggle("show", !!yourTurn && state.phase === "play");
+  }
+
+  updateCoach(state);
+
   const bits = [];
+  bits.push(state.identityLabel || "You");
   if (state.upcard && (state.phase === "bid1" || state.phase === "bid2" || state.phase === "deal")) {
     bits.push("Upcard " + RANK_LABEL[state.upcard.rank] + SUIT_SYM[state.upcard.suit]);
-    bits.push("Dealer " + NAMES[state.dealer]);
+    bits.push("Dealer " + names[state.dealer]);
   }
   if (state.trump) {
     bits.push("Trump " + SUIT_SYM[state.trump]);
-    bits.push("Maker " + (NAMES[state.maker] || "?"));
+    bits.push("Maker " + (names[state.maker] || "?"));
     bits.push("Tricks H " + state.tricksNS + " / A " + state.tricksEW);
   }
   statusRow.textContent = bits.join(" · ");
@@ -649,7 +765,8 @@ function renderHUD(state) {
   if (state.trick && state.trick.length) {
     trickRow.innerHTML = state.trick.map((t) => {
       const red = t.card.suit === "H" || t.card.suit === "D";
-      return `<span class="tcard ${red ? "red" : ""}">${NAMES[t.seat]}: ${RANK_LABEL[t.card.rank]}${SUIT_SYM[t.card.suit]}</span>`;
+      const who = names[t.seat] || ("P" + t.seat);
+      return `<span class="tcard ${red ? "red" : ""}">${who}: ${RANK_LABEL[t.card.rank]}${SUIT_SYM[t.card.suit]}</span>`;
     }).join("");
   } else {
     trickRow.innerHTML = state.phase === "play" ? "<span style='opacity:.6'>Trick empty — lead a card</span>" : "";
@@ -657,7 +774,6 @@ function renderHUD(state) {
 
   renderFeed(state.feed);
 
-  // Bid buttons (not knives)
   bidBar.innerHTML = "";
   knivesBtns.innerHTML = "";
   knivesToast.classList.remove("show");
@@ -694,13 +810,15 @@ function renderHUD(state) {
   const canClick = (state.phase === "play" && state.turn === 0 && state.trickPause <= 0) ||
     (state.phase === "discard" && state.turn === 0);
 
-  // During deal, show hand building (or empty until deal finishes — hands already dealt in state)
   const showHand = state.phase !== "deal";
   handEl.innerHTML = showHand ? hand.map((c, i) => {
+    const isLegal = canClick && legal.includes(i);
+    // When it's your turn: illegal cards disabled. When waiting: show hand readable, not clickable.
+    const isDisabled = canClick && !legal.includes(i);
     return cardHTML(c, {
       index: i,
-      legal: canClick && legal.includes(i),
-      disabled: canClick && !legal.includes(i),
+      legal: isLegal,
+      disabled: isDisabled,
     });
   }).join("") : "<span style='color:#8aa4c0;font-size:13px'>Cards flying to hands…</span>";
 
@@ -715,19 +833,63 @@ function renderHUD(state) {
   });
 }
 
+function updateCoach(state) {
+  if (!coachStrip || coachDismissed) {
+    if (coachStrip) coachStrip.classList.remove("show");
+    return;
+  }
+  let key = "";
+  let lab = "";
+  let msg = "";
+  if (state.phase === "deal") {
+    key = "deal"; lab = "Step 2 · Deal"; msg = "Cards fly to each seat. You’re at the near edge of the table (gold arrow).";
+  } else if (state.phase === "bid1") {
+    key = "upcard"; lab = "Step 3 · Upcard"; msg = "See the upcard on the vinyl table. Order it up (that suit is trump) or Pass.";
+  } else if (state.phase === "bid2") {
+    key = "bid2"; lab = "Step 3 · Name trump"; msg = "Name a trump suit (not the upcard suit) or Pass.";
+  } else if (state.phase === "discard") {
+    key = "discard"; lab = "Discard"; msg = "You’re dealer — tap one card to bury, then play begins.";
+  } else if (state.phase === "play" && state.turn === 0) {
+    key = "play"; lab = "Step 4 · Your turn"; msg = "Only gold-highlighted cards are legal. Tap one. Illegal cards are dimmed.";
+  } else if (state.phase === "play") {
+    key = "wait"; lab = "Play"; msg = "Watch the trick — cards stay on the table with owner tags until it resolves.";
+  }
+  if (!key) { coachStrip.classList.remove("show"); return; }
+  if (key !== lastCoachKey) {
+    lastCoachKey = key;
+    coachStepLab.textContent = lab;
+    coachText.textContent = msg;
+  }
+  coachStrip.classList.add("show");
+  if (key === "play" && state.tricksNS + state.tricksEW >= 1) {
+    // after first trick, auto-ease coach
+    coachDismissed = true;
+    localStorage.setItem("snc_coach_done", "1");
+    coachStrip.classList.remove("show");
+  }
+}
+
+document.getElementById("coachDismiss")?.addEventListener("click", () => {
+  coachDismissed = true;
+  localStorage.setItem("snc_coach_done", "1");
+  coachStrip.classList.remove("show");
+});
+
 function showResults(state, verdict) {
+  const names = (state.lineup && state.lineup.names) || [];
   overlay.classList.remove("hidden");
   overlay.innerHTML = `
     <div class="card">
       <div class="poster-tag">SATURDAY NIGHT POST-GAME</div>
       <h2 class="red">TABLE CLOSED</h2>
-      <div class="broadcast">EUCHRE &nbsp; HOSERS ${state.scoreCan} &nbsp;—&nbsp; CHAD/BRAD ${state.scoreUsa}<br/>
-      Hate Index: ${state.hate} · Hands: ${state.handsPlayed}</div>
+      <div class="broadcast">EUCHRE &nbsp; HOSERS ${state.scoreCan} &nbsp;—&nbsp; YANKS ${state.scoreUsa}<br/>
+      Hate Index: ${state.hate} · Hands: ${state.handsPlayed}<br/>
+      ${state.identityLabel || ""}</div>
       <div class="verdict">${verdict}</div>
-      <p class="tiny">Take off, eh. The systems were under the card table the whole time.</p>
+      <p class="tiny">Americans win the match. Caring punished. Take off, eh.</p>
       <div class="btns">
         <button class="btn-go" id="again">Play again</button>
-        <button class="btn-dim" id="mainMenu">Title</button>
+        <button class="btn-dim" id="mainMenu">Title / switch team</button>
         <a class="btn-dim" href="legacy-2d.html" style="display:inline-flex;align-items:center;text-decoration:none;">Legacy 2D</a>
       </div>
     </div>`;
@@ -746,12 +908,13 @@ function showHelp() {
       <h2 class="red">How to hoser</h2>
       <div class="controls-help">
         <ul>
-          <li><strong>Camera:</strong> Drag to orbit / look. Scroll or pinch to zoom. Reset view restores framing.</li>
-          <li><strong>Deal:</strong> Watch cards fly, then upcard on the vinyl table before bidding.</li>
-          <li><strong>Bid:</strong> Order it up or Pass. Round 2: name trump ≠ upcard suit.</li>
-          <li><strong>Play:</strong> Tap highlighted legal cards. Trick cards sit on the table.</li>
-          <li><strong>Sound:</strong> First tap unlocks audio. Mute button in the top bar.</li>
-          <li><strong>Hot knives:</strong> Small toast when Gary walks in — optional gag.</li>
+          <li><strong>Team:</strong> Canadian = You+Doug vs Chad/Brad. American = You(Chad-type)+Brad vs hosers. Yanks still win the match.</li>
+          <li><strong>You:</strong> Always labeled You — gold arrow/glow, near-edge seat. Only your cards are playable.</li>
+          <li><strong>Camera:</strong> High top-down-oblique default. Drag to look · scroll/pinch zoom · Reset view.</li>
+          <li><strong>Bid:</strong> Order up / Pass · round 2 name trump ≠ upcard.</li>
+          <li><strong>Play:</strong> Gold = legal. Big YOUR TURN when it’s you. Trick tags show who played what.</li>
+          <li><strong>Trump:</strong> Hosers boo · Yanks yay (audio + bubbles).</li>
+          <li><strong>Hot knives:</strong> Metal knives, smoke + sizzle when tips touch.</li>
         </ul>
       </div>
       <p class="tiny">Affectionate satire. Hot knives = comedy only.</p>
@@ -765,9 +928,20 @@ document.getElementById("btnResetCam").onclick = () => {
   if (sceneApi) sceneApi.resetView();
 };
 
-function startGame() {
+function startGame(team) {
+  playerTeam = team === 1 ? 1 : 0;
   unlockAudio();
   overlay.classList.add("hidden");
+  coachDismissed = localStorage.getItem("snc_coach_done") === "1";
+  lastCoachKey = "";
+  if (!coachDismissed && coachStrip) {
+    coachStepLab.textContent = "Step 1 · Team";
+    coachText.textContent = playerTeam === 0
+      ? "You’re Canadian (Hosers) with Doug. Watch the deal…"
+      : "You’re American (Yanks). USA still wins the match. Watch the deal…";
+    coachStrip.classList.add("show");
+  }
+
   if (!sceneApi) {
     try {
       sceneApi = createSNCScene(view);
@@ -777,6 +951,9 @@ function startGame() {
       return;
     }
   }
+
+  const lineup = lineupForTeam(playerTeam);
+  sceneApi.applyLineup(lineup);
 
   game = createEuchre({
     onChange: (st) => {
@@ -795,6 +972,15 @@ function startGame() {
       sceneApi && sceneApi.spawnKnivesBuddy(show);
       if (show) mutter("Hot knives, anyone?");
     },
+    onKnivesHit: () => {
+      sceneApi && sceneApi.playKnivesHit();
+      sfxKnivesSizzle();
+      mutter("tssss");
+    },
+    onTrumpReaction: (info) => {
+      sfxTrumpReaction();
+      sceneApi && sceneApi.trumpReactionVisual(info);
+    },
     onDeal: () => {
       sfxDealWhoosh();
       sceneApi && sceneApi.playDealAnimation();
@@ -803,7 +989,8 @@ function startGame() {
     onPlay: (seat, card, label) => {
       sfxCardSlap();
       sceneApi && sceneApi.setTalking(seat, 1.0);
-      if (seat !== 0 && Math.random() < 0.35) mutter(NAMES[seat] + " plays");
+      const names = game.state.lineup.names;
+      if (seat !== 0 && Math.random() < 0.35) mutter(names[seat] + " plays");
     },
     onTrick: (seat, hosers) => {
       sfxCheer(hosers);
@@ -811,12 +998,14 @@ function startGame() {
     },
     onFeed: () => {},
     onResults: (st, verdict) => showResults(st, verdict),
-  });
+  }, { playerTeam });
 
+  if (identityBadge) identityBadge.textContent = lineup.identityLabel;
   renderHUD(game.state);
 }
 
-document.getElementById("btnPlay").onclick = startGame;
+document.getElementById("btnTeamCan").onclick = () => startGame(0);
+document.getElementById("btnTeamUsa").onclick = () => startGame(1);
 
 // Unlock audio on first gesture anywhere
 ["pointerdown", "touchstart", "keydown"].forEach((ev) => {
