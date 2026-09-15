@@ -206,6 +206,7 @@ export function createEuchre(cb = {}, opts = {}) {
 
   function fireTrumpReaction(suit, reason) {
     // Canadians boo, Americans yay — euchre trump gag
+    // HUD shows tiny corner toast / brief speech bubbles only (no center-screen takeover)
     cb.onTrumpReaction && cb.onTrumpReaction({
       suit,
       reason,
@@ -213,8 +214,6 @@ export function createEuchre(cb = {}, opts = {}) {
       booLines: TRUMP_BOO_LINES,
       yayLines: TRUMP_YAY_LINES,
     });
-    float(pick(TRUMP_BOO_LINES), "#ff6b6b");
-    float(pick(TRUMP_YAY_LINES), "#6eb6ff");
     pushFeed("Trump " + SUIT_SYM[suit] + " — hosers boo / yanks yay");
   }
 
@@ -348,7 +347,7 @@ export function createEuchre(cb = {}, opts = {}) {
       state.phase = "discard";
       state.phaseLabel = "DISCARD";
       state.turn = 0;
-      state.msg = "Pick a card to bury, eh.";
+      state.msg = "Pick 1 card to bury";
     } else {
       aiDiscard(state.dealer);
       // setTrump will fire another reaction — skip duplicate by going to play directly
@@ -721,7 +720,7 @@ export function createEuchre(cb = {}, opts = {}) {
     state.tvTimer -= dt;
     if (state.tvTimer <= 0) {
       state.tvTimer = rand(7, 14);
-      float(pick(TV_BOOS), "#ff8fa3");
+      if (Math.random() < 0.35) float(pick(["BOO!", "Crowd boos"]), "#ff8fa3");
       addHate(1);
       cb.onBoo && cb.onBoo();
       cb.onTv && cb.onTv();

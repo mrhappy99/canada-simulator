@@ -138,26 +138,36 @@ function makeVinylTableTexture() {
 
 function makeCardFaceTexture(card) {
   const c = document.createElement("canvas");
-  c.width = 128;
-  c.height = 180;
+  c.width = 160;
+  c.height = 224;
   const ctx = c.getContext("2d");
   ctx.fillStyle = "#f8f5ef";
-  ctx.fillRect(0, 0, 128, 180);
+  ctx.fillRect(0, 0, 160, 224);
   ctx.strokeStyle = "#2a3548";
-  ctx.lineWidth = 4;
-  ctx.strokeRect(3, 3, 122, 174);
+  ctx.lineWidth = 5;
+  ctx.strokeRect(3, 3, 154, 218);
   const red = card.suit === "H" || card.suit === "D";
   const sym = { S: "♠", H: "♥", D: "♦", C: "♣" }[card.suit];
   const rank = { "9": "9", T: "10", J: "J", Q: "Q", K: "K", A: "A" }[card.rank];
   ctx.fillStyle = red ? "#c81e1e" : "#111";
-  ctx.font = "bold 36px Segoe UI, sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(rank, 10, 40);
-  ctx.font = "40px Segoe UI, sans-serif";
-  ctx.fillText(sym, 12, 82);
-  ctx.font = "64px Segoe UI, sans-serif";
+  ctx.textBaseline = "top";
+  ctx.font = "bold 48px Segoe UI, sans-serif";
+  ctx.fillText(rank, 10, 8);
+  ctx.font = "44px Segoe UI, sans-serif";
+  ctx.fillText(sym, 12, 58);
+  // Large center suit — keep clear of edges / name chips
+  ctx.font = "bold 78px Segoe UI, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(sym, 64, 120);
+  ctx.textBaseline = "middle";
+  ctx.fillText(sym, 80, 130);
+  // Bottom-right mirror rank for readability at angles
+  ctx.textAlign = "right";
+  ctx.textBaseline = "bottom";
+  ctx.font = "bold 28px Segoe UI, sans-serif";
+  ctx.fillText(rank, 148, 210);
+  ctx.font = "24px Segoe UI, sans-serif";
+  ctx.fillText(sym, 148, 186);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
@@ -434,26 +444,26 @@ export function createCharacter(cfg) {
   let youArrow = null;
   if (cfg.isYou) {
     youGlow = new THREE.Mesh(
-      new THREE.TorusGeometry(0.62, 0.05, 10, 28),
-      new THREE.MeshBasicMaterial({ color: "#ffd166", transparent: true, opacity: 0.9 })
+      new THREE.TorusGeometry(0.48, 0.035, 8, 32),
+      new THREE.MeshBasicMaterial({ color: "#ffd166", transparent: true, opacity: 0.7 })
     );
     youGlow.rotation.x = Math.PI / 2;
-    youGlow.position.y = 0.06;
+    youGlow.position.y = 0.05;
     root.add(youGlow);
-    const arrowGeo = new THREE.ConeGeometry(0.12, 0.28, 8);
+    // Triangular pointer (3 sides) — avoid giant yellow octagon over table
+    const arrowGeo = new THREE.ConeGeometry(0.08, 0.18, 3);
     youArrow = new THREE.Mesh(
       arrowGeo,
-      new THREE.MeshBasicMaterial({ color: "#ffd166" })
+      new THREE.MeshBasicMaterial({ color: "#ffd166", transparent: true, opacity: 0.85 })
     );
-    youArrow.position.set(0, 2.55, 0);
+    youArrow.position.set(0, 2.35, 0.15);
     youArrow.rotation.x = Math.PI; // point down
     root.add(youArrow);
-    // Soft emissive halo behind shoulders
     const halo = new THREE.Mesh(
-      new THREE.SphereGeometry(0.55, 12, 10),
-      new THREE.MeshBasicMaterial({ color: "#ffd166", transparent: true, opacity: 0.12, depthWrite: false })
+      new THREE.SphereGeometry(0.4, 10, 8),
+      new THREE.MeshBasicMaterial({ color: "#ffd166", transparent: true, opacity: 0.08, depthWrite: false })
     );
-    halo.position.set(0, 1.2, -0.15);
+    halo.position.set(0, 1.15, -0.1);
     root.add(halo);
   }
 
@@ -463,7 +473,7 @@ export function createCharacter(cfg) {
   bubbleCanvas.height = 96;
   const bubbleTex = new THREE.CanvasTexture(bubbleCanvas);
   const bubble = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.1, 0.4),
+    new THREE.PlaneGeometry(0.72, 0.28),
     new THREE.MeshBasicMaterial({ map: bubbleTex, transparent: true, depthWrite: false })
   );
   bubble.position.set(0, 2.45, 0.2);
@@ -816,7 +826,7 @@ function createRoom() {
 }
 
 function createTableCardMesh() {
-  const geo = new THREE.BoxGeometry(0.32, 0.012, 0.45);
+  const geo = new THREE.BoxGeometry(0.40, 0.012, 0.56);
   const backMat = new THREE.MeshStandardMaterial({
     color: "#1e3a5f",
     roughness: 0.6,
@@ -1132,12 +1142,12 @@ export function createSNCScene(container) {
     scene.add(card);
     trickMeshes.push(card);
     const tc = document.createElement("canvas");
-    tc.width = 128;
+    tc.width = 160;
     tc.height = 40;
     const ttex = new THREE.CanvasTexture(tc);
     const tag = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.42, 0.13),
-      new THREE.MeshBasicMaterial({ map: ttex, transparent: true, depthWrite: false })
+      new THREE.PlaneGeometry(0.38, 0.095),
+      new THREE.MeshBasicMaterial({ map: ttex, transparent: true, depthWrite: false, depthTest: true })
     );
     tag.visible = false;
     tag.userData.canvas = tc;
@@ -1258,11 +1268,19 @@ export function createSNCScene(container) {
   }
 
   function updateTrickVisual(trick, names) {
+    // Card centers slightly in from seats; name chips OUTSIDE so they never cover rank/suit
     const offsets = [
-      [0, 0.42],
-      [-0.42, 0],
-      [0, -0.42],
-      [0.42, 0],
+      [0, 0.48],
+      [-0.48, 0],
+      [0, -0.48],
+      [0.48, 0],
+    ];
+    // Chip sits below/beside card, pushed further from table center
+    const tagOff = [
+      [0, 0.82],
+      [-0.82, 0],
+      [0, -0.82],
+      [0.82, 0],
     ];
     const nameList = names || ["You", "Chad", "Doug", "Brad"];
     for (let i = 0; i < 4; i++) {
@@ -1272,19 +1290,28 @@ export function createSNCScene(container) {
         setCardFace(m, trick[i].card);
         const seat = trick[i].seat;
         const [ox, oz] = offsets[seat];
-        m.position.set(ox, 0.86 + i * 0.015, oz);
-        m.rotation.set(0, (seat * Math.PI) / 2 + 0.08, 0);
-        // Owner tag
+        m.position.set(ox, 0.87 + i * 0.012, oz);
+        m.rotation.set(0, (seat * Math.PI) / 2 + 0.06, 0);
         const ctx = tag.userData.canvas.getContext("2d");
-        ctx.clearRect(0, 0, 128, 40);
-        ctx.fillStyle = "rgba(0,0,0,0.75)";
-        ctx.fillRect(4, 4, 120, 32);
+        ctx.clearRect(0, 0, 160, 40);
+        // Pill chip under card
+        ctx.fillStyle = "rgba(8,10,16,0.82)";
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(8, 6, 144, 28, 10);
+          ctx.fill();
+        } else {
+          ctx.fillRect(8, 6, 144, 28);
+        }
         ctx.fillStyle = seat === 0 ? "#ffd166" : "#e8eef6";
-        ctx.font = "bold 18px Segoe UI, sans-serif";
+        ctx.font = "bold 20px Segoe UI, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(nameList[seat] || ("P" + seat), 64, 26);
+        ctx.textBaseline = "middle";
+        ctx.fillText(nameList[seat] || ("P" + seat), 80, 20);
         tag.userData.tex.needsUpdate = true;
-        tag.position.set(ox, 1.05 + i * 0.015, oz);
+        const [tx, tz] = tagOff[seat];
+        // Slightly above table, OUTSIDE card — never on face
+        tag.position.set(tx, 0.92, tz);
         tag.quaternion.copy(camera.quaternion);
         tag.visible = true;
       } else {
@@ -1324,37 +1351,38 @@ export function createSNCScene(container) {
     if (characters[seat]) characters[seat].userData.talkUntil = clock.t + duration;
   }
 
-  function showSpeechBubble(seat, text, duration = 2.0) {
+  function showSpeechBubble(seat, text, duration = 1.1) {
     const ch = characters[seat];
     if (!ch) return;
     const ud = ch.userData;
     const ctx = ud.bubbleCanvas.getContext("2d");
     ctx.clearRect(0, 0, 256, 96);
-    ctx.fillStyle = "rgba(8,10,16,0.88)";
+    ctx.fillStyle = "rgba(8,10,16,0.9)";
     ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(8, 8, 240, 70, 12);
-    else ctx.rect(8, 8, 240, 70);
+    if (ctx.roundRect) ctx.roundRect(16, 18, 224, 56, 10);
+    else ctx.rect(16, 18, 224, 56);
     ctx.fill();
     ctx.strokeStyle = "#ffd166";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.stroke();
     ctx.fillStyle = "#e8eef6";
-    ctx.font = "bold 22px Segoe UI, sans-serif";
+    ctx.font = "bold 26px Segoe UI, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(text.slice(0, 18), 128, 52);
+    ctx.textBaseline = "middle";
+    ctx.fillText(text.slice(0, 12), 128, 46);
     ud.bubbleTex.needsUpdate = true;
     ud.bubble.visible = true;
-    ud.bubbleUntil = clock.t + duration;
+    ud.bubbleUntil = clock.t + Math.min(duration, 1.2);
   }
 
   function trumpReactionVisual(info) {
-    // Hosers (team 0 seats) boo; Yanks (team 1) yay — use gameState teams if available
+    // Brief character bubbles ONLY (≤1.2s) — never giant center cards
     const teams = (lastGameState && lastGameState.lineup && lastGameState.lineup.team) || [0, 1, 0, 1];
     for (let i = 0; i < characters.length; i++) {
       const isHoser = teams[i] === 0;
-      const line = isHoser ? "BOOO!" : "YAY!";
-      showSpeechBubble(i, line, 2.2);
-      characters[i].userData.talkUntil = clock.t + 1.5;
+      const line = isHoser ? "BOO!" : "YAY!";
+      showSpeechBubble(i, line, 1.1);
+      characters[i].userData.talkUntil = clock.t + 1.0;
     }
   }
 
@@ -1479,9 +1507,15 @@ export function createSNCScene(container) {
       ud.beerHand.position.y = 0.52 + lift * 0.4;
       ud.beerHand.rotation.x = -lift * 0.8;
     }
-    if (ud.label) ud.label.quaternion.copy(camera.quaternion);
+    // World-space billboard (parent seats are rotated — raw camera quat flips text)
+    const _pq = ud._billboardParentQ || (ud._billboardParentQ = new THREE.Quaternion());
+    if (ud.label) {
+      ch.getWorldQuaternion(_pq);
+      ud.label.quaternion.copy(_pq).invert().multiply(camera.quaternion);
+    }
     if (ud.bubble) {
-      ud.bubble.quaternion.copy(camera.quaternion);
+      ch.getWorldQuaternion(_pq);
+      ud.bubble.quaternion.copy(_pq).invert().multiply(camera.quaternion);
       if (clock.t > (ud.bubbleUntil || 0)) ud.bubble.visible = false;
     }
     if (ud.ring && ud.ring.visible) {
@@ -1492,9 +1526,15 @@ export function createSNCScene(container) {
       ud.youGlow.material.opacity = 0.55 + Math.sin(clock.t * 3) * 0.25;
     }
     if (ud.youArrow) {
-      ud.youArrow.position.y = 2.55 + Math.sin(clock.t * 4) * 0.1;
-      // Keep cone tip pointing down at head
+      // Keep small; hide once cards are in play so it never covers table center
+      const hideArrow = lastGameState && (lastGameState.phase === "play" || lastGameState.phase === "discard" || lastGameState.phase === "bid1" || lastGameState.phase === "bid2");
+      ud.youArrow.visible = !hideArrow;
+      ud.youArrow.position.y = 2.35 + Math.sin(clock.t * 4) * 0.06;
       ud.youArrow.rotation.set(Math.PI, 0, 0);
+    }
+    if (ud.youGlow && lastGameState && lastGameState.phase === "discard") {
+      // Shrink identity glow during bury so table stays clean
+      ud.youGlow.material.opacity = 0.25;
     }
     if (ud.dimmed) {
       ch.position.y = 0.12;

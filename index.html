@@ -8,7 +8,7 @@
 <style>
   :root {
     --bg: #0c0a08;
-    --panel: rgba(12, 14, 20, 0.82);
+    --panel: rgba(12, 14, 20, 0.88);
     --red: #ff6b6b;
     --blue: #6eb6ff;
     --gold: #ffd166;
@@ -29,122 +29,171 @@
   #view canvas { display: block; width: 100% !important; height: 100% !important; cursor: grab; }
   #view canvas:active { cursor: grabbing; }
 
+  /* ——— TOP: single scoreboard + compact controls ——— */
   #topHud {
     position: fixed; top: 0; left: 0; right: 0;
-    display: flex; justify-content: space-between; align-items: flex-start;
-    gap: 10px; padding: 10px 14px;
-    pointer-events: none; z-index: 20;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.65), transparent);
+    z-index: 20;
+    pointer-events: none;
+    padding: 8px 10px 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.72), transparent 90%);
   }
-  #topHud > * { pointer-events: auto; }
-  .badge {
+  #scoreBar {
+    pointer-events: auto;
+    display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px;
     background: var(--panel);
     border: 2px solid #2a3548;
-    border-radius: 10px;
-    padding: 8px 12px;
+    border-radius: 12px;
+    padding: 8px 10px;
     backdrop-filter: blur(8px);
   }
-  .badge .title {
-    font-size: 11px; letter-spacing: 0.12em; color: var(--gold);
-    text-transform: uppercase; margin-bottom: 2px;
+  .sb-block {
+    display: flex; flex-direction: column; justify-content: center;
+    min-width: 0; padding: 0 6px;
   }
-  .badge .score { font-size: 20px; font-weight: 800; }
-  .badge .score .can { color: var(--red); }
-  .badge .score .usa { color: var(--blue); }
-  .phase { font-size: 13px; color: #c8d8ea; margin-top: 4px; }
-  #hateWrap { min-width: 120px; }
+  .sb-block + .sb-block { border-left: 1px solid #2a3548; }
+  .sb-lab {
+    font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 2px;
+  }
+  .sb-val { font-size: 22px; font-weight: 900; line-height: 1.1; }
+  .sb-val.can { color: var(--red); }
+  .sb-val.usa { color: var(--blue); }
+  .sb-val.sm { font-size: 15px; font-weight: 800; color: #e8eef6; }
+  .sb-val.phase { font-size: 13px; font-weight: 800; color: var(--gold); letter-spacing: 0.04em; }
+  #identityBadge {
+    pointer-events: none;
+    font-size: 11px; font-weight: 600; color: var(--gold);
+    opacity: 0.9; margin: 4px 2px 0; padding-left: 2px;
+  }
+  #hateWrap {
+    pointer-events: none;
+    margin-top: 4px; max-width: 160px;
+  }
   #hateWrap .hate-lab {
-    font-size: 10px; letter-spacing: 0.1em; color: #ff8fa3; margin-bottom: 4px;
+    font-size: 9px; letter-spacing: 0.1em; color: #ff8fa3; margin-bottom: 2px;
   }
   #hateBar {
-    height: 10px; background: #1a2030; border-radius: 6px; overflow: hidden;
+    height: 6px; background: #1a2030; border-radius: 4px; overflow: hidden;
     border: 1px solid #3a4558;
   }
   #hateFill {
     height: 100%; width: 0%; background: linear-gradient(90deg, #ff6b6b, #ff2d55);
     transition: width 0.35s ease;
   }
-  .nav-links { display: flex; gap: 6px; flex-wrap: wrap; }
-  .nav-links a, .nav-links button {
+  .nav-links {
     pointer-events: auto;
-    font-size: 12px; padding: 8px 10px;
+    position: absolute; top: 8px; right: 10px;
+    display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;
+    max-width: 46vw;
+  }
+  .nav-links a, .nav-links button {
+    font-size: 11px; padding: 6px 8px;
     border-radius: 8px; border: 2px solid #3a4558;
     background: var(--panel); color: #c8d8ea;
     text-decoration: none; cursor: pointer;
+    min-height: 36px;
   }
   .nav-links a:hover, .nav-links button:hover { border-color: var(--gold); color: #fff; }
   .nav-links button.muted-on { border-color: #ff6b6b; color: #ff8fa3; }
+  .nav-links button.on { border-color: var(--gold); color: var(--gold); }
 
-  #msg {
-    position: fixed; top: 78px; left: 50%; transform: translateX(-50%);
-    max-width: min(480px, 88vw);
-    text-align: center; z-index: 25;
-    background: var(--panel);
-    border: 2px solid #3a4558;
-    border-radius: 12px;
-    padding: 8px 14px;
-    font-size: 14px; line-height: 1.35;
+  /* Tiny reaction toast — corner only, never center takeover */
+  #rxToast {
+    position: fixed; top: 12px; left: 12px; z-index: 32;
+    max-width: min(200px, 46vw);
     pointer-events: none;
-    opacity: 0; transition: opacity 0.25s;
+    opacity: 0; transition: opacity 0.15s;
+    background: rgba(8,10,16,0.82);
+    border: 1px solid #3a4558;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px; font-weight: 700;
+    text-shadow: 0 1px 4px #000;
   }
-  #msg.show { opacity: 1; }
+  #rxToast.show { opacity: 1; }
 
+  /* YOUR TURN — small banner near scoreboard, not center slab */
+  #yourTurnBanner {
+    position: fixed; top: auto; bottom: calc(118px + env(safe-area-inset-bottom, 0));
+    left: 50%; transform: translateX(-50%);
+    z-index: 36; pointer-events: none;
+    font-size: 13px; font-weight: 900;
+    letter-spacing: 0.1em; color: #1a1208;
+    background: var(--gold);
+    border: 2px solid #c9a227;
+    border-radius: 8px;
+    padding: 4px 14px;
+    opacity: 0; transition: opacity 0.15s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.45);
+  }
+  #yourTurnBanner.show { opacity: 1; animation: none; }
+
+  /* Center floats disabled for spam — kept for non-reaction rare events, tiny */
   #floats {
-    position: fixed; inset: 0; pointer-events: none; z-index: 30; overflow: hidden;
+    position: fixed; inset: 0; pointer-events: none; z-index: 18; overflow: hidden;
   }
   .float {
-    position: absolute; left: 50%; top: 28%;
-    transform: translate(-50%, 0);
-    font-weight: 700; font-size: 18px;
-    text-shadow: 0 2px 8px #000;
-    animation: floatUp 1.6s ease-out forwards;
-    white-space: nowrap; max-width: 90vw;
+    position: absolute; right: 10px; top: 18%;
+    transform: none;
+    font-weight: 700; font-size: 12px;
+    text-shadow: 0 1px 4px #000;
+    animation: floatSide 1.1s ease-out forwards;
+    white-space: nowrap; max-width: 42vw;
     overflow: hidden; text-overflow: ellipsis;
+    background: rgba(0,0,0,0.55);
+    padding: 3px 8px; border-radius: 6px;
   }
-  @keyframes floatUp {
-    0% { opacity: 1; transform: translate(-50%, 0); }
-    100% { opacity: 0; transform: translate(-50%, -60px); }
+  @keyframes floatSide {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-28px); }
   }
 
-  /* Side feed — doesn't block 3D */
+  /* Table talk — collapsible, lower opacity, right side */
   #feedPanel {
-    position: fixed; top: 90px; right: 10px; z-index: 22;
-    width: min(200px, 38vw);
-    max-height: 28vh;
+    position: fixed; top: 108px; right: 8px; z-index: 22;
+    width: min(168px, 36vw);
+    max-height: 22vh;
     overflow: hidden;
     pointer-events: none;
-    background: rgba(8,10,16,0.55);
+    background: rgba(8,10,16,0.42);
     border: 1px solid #2a3548;
     border-radius: 10px;
-    padding: 8px 10px;
-    font-size: 11px; line-height: 1.35;
+    padding: 6px 8px;
+    font-size: 10px; line-height: 1.3;
     color: #a8b8cc;
-    backdrop-filter: blur(6px);
+    backdrop-filter: blur(4px);
+    opacity: 0.72;
+    transition: opacity 0.2s, max-height 0.2s;
+  }
+  #feedPanel.collapsed {
+    max-height: 0; padding: 0; border: none; opacity: 0;
   }
   #feedPanel .feed-title {
-    font-size: 10px; letter-spacing: 0.12em; color: var(--gold);
-    margin-bottom: 4px; text-transform: uppercase;
+    font-size: 9px; letter-spacing: 0.12em; color: var(--gold);
+    margin-bottom: 3px; text-transform: uppercase;
   }
-  #feedPanel div.line { margin: 3px 0; opacity: 0.95; }
+  #feedPanel div.line { margin: 2px 0; opacity: 0.9; }
   #feedPanel div.line:first-of-type { color: #e8eef6; font-weight: 600; }
 
-  /* Hot knives toast (small, not modal) */
+  /* Hot knives — bottom toast only */
   #knivesToast {
-    position: fixed; left: 12px; bottom: 210px; z-index: 35;
+    position: fixed; left: 50%; bottom: calc(108px + env(safe-area-inset-bottom, 0));
+    transform: translateX(-50%);
+    z-index: 38;
     display: none;
-    background: rgba(6, 40, 30, 0.88);
+    background: rgba(6, 40, 30, 0.92);
     border: 2px solid #34d399;
     border-radius: 12px;
-    padding: 10px 12px;
-    max-width: min(260px, 70vw);
+    padding: 8px 10px;
+    max-width: min(300px, 92vw);
     box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   }
   #knivesToast.show { display: block; }
   #knivesToast .kt-title {
-    font-size: 12px; color: #a7f3d0; letter-spacing: 0.08em;
-    margin-bottom: 6px; font-weight: 700;
+    font-size: 11px; color: #a7f3d0; letter-spacing: 0.08em;
+    margin-bottom: 4px; font-weight: 700; text-align: center;
   }
-  #knivesToast .kt-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  #knivesToast .kt-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
   #knivesToast button {
     min-height: 40px; padding: 8px 12px;
     font-size: 13px; font-weight: 700;
@@ -159,67 +208,58 @@
     background: #374151; color: #e5e7eb; border-color: #111;
   }
 
-  #camHint {
-    position: fixed; left: 12px; top: 90px; z-index: 22;
-    font-size: 11px; color: #8aa4c0;
-    background: rgba(0,0,0,0.4);
-    padding: 6px 10px; border-radius: 8px;
-    pointer-events: none;
-    opacity: 0.85;
-  }
+  #camHint { display: none; }
 
+  /* BOTTOM: hand + one hint line + bid */
   #hudBottom {
     position: fixed; left: 0; right: 0; bottom: 0;
     z-index: 40;
-    padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0));
-    background: linear-gradient(to top, rgba(0,0,0,0.88) 40%, transparent);
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0));
+    background: linear-gradient(to top, rgba(0,0,0,0.92) 55%, transparent);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
     pointer-events: none;
   }
   #hudBottom > * { pointer-events: auto; }
-  #statusRow {
-    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-    font-size: 12px; color: var(--gold); min-height: 18px;
+  #handHint {
+    font-size: 12px; font-weight: 700; color: var(--gold);
+    text-align: center; min-height: 16px;
+    text-shadow: 0 1px 4px #000;
+    max-width: 96vw;
   }
-  #trickRow {
-    display: flex; gap: 8px; min-height: 28px; align-items: center;
-    font-size: 13px; color: var(--muted); flex-wrap: wrap; justify-content: center;
+  #handHint.bury {
+    color: #1a1208; background: var(--gold);
+    padding: 4px 12px; border-radius: 8px; font-size: 13px;
   }
-  #trickRow .tcard {
-    background: #f8f5ef; color: #111; border-radius: 6px;
-    padding: 4px 8px; font-weight: 700; font-size: 13px;
-    border: 2px solid #2a3548;
-  }
-  #trickRow .tcard.red { color: #c81e1e; }
   #bidBar {
-    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
   }
   #bidBar button {
-    min-height: 48px; min-width: 100px;
-    padding: 10px 14px;
-    font-size: 15px; font-weight: 700;
+    min-height: 44px; min-width: 96px;
+    padding: 8px 12px;
+    font-size: 14px; font-weight: 700;
     border-radius: 10px; border: 3px solid #1a2030;
     cursor: pointer;
     background: linear-gradient(180deg, #ffd166, #e8a838);
     color: #1a1208;
-    box-shadow: 0 4px 0 #8a5a10;
+    box-shadow: 0 3px 0 #8a5a10;
   }
   #bidBar button.dim {
     background: linear-gradient(180deg, #4b5563, #374151);
     color: #e5e7eb;
-    box-shadow: 0 4px 0 #111;
+    box-shadow: 0 3px 0 #111;
   }
   #bidBar button.blue {
     background: linear-gradient(180deg, #6eb6ff, #3b82f6);
     color: #061018;
-    box-shadow: 0 4px 0 #1e3a5f;
+    box-shadow: 0 3px 0 #1e3a5f;
   }
   #hand {
-    display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
+    display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;
     max-width: 100%;
   }
   .pcard {
-    width: 60px; height: 86px;
+    width: 64px; height: 92px;
+    min-width: 58px; min-height: 84px;
     border-radius: 10px;
     background: #f8f5ef;
     border: 3px solid #2a3548;
@@ -228,7 +268,7 @@
     padding: 6px 8px;
     cursor: pointer;
     user-select: none;
-    box-shadow: 0 6px 0 #111827;
+    box-shadow: 0 5px 0 #111827;
     transition: transform 0.12s, box-shadow 0.12s;
     position: relative;
     touch-action: manipulation;
@@ -237,12 +277,12 @@
     transform: translateY(-10px);
     box-shadow: 0 12px 0 #111827;
   }
-  .pcard .r { font-size: 17px; font-weight: 800; line-height: 1; }
-  .pcard .s { font-size: 20px; line-height: 1; margin-top: 2px; }
+  .pcard .r { font-size: 18px; font-weight: 900; line-height: 1; }
+  .pcard .s { font-size: 22px; line-height: 1; margin-top: 1px; }
   .pcard .big {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
-    font-size: 26px; opacity: 0.9; pointer-events: none;
+    font-size: 28px; opacity: 0.88; pointer-events: none;
   }
   .pcard.red .r, .pcard.red .s, .pcard.red .big { color: #c81e1e; }
   .pcard.black .r, .pcard.black .s, .pcard.black .big { color: #111; }
@@ -250,7 +290,7 @@
     opacity: 0.35; cursor: default; filter: grayscale(0.4);
   }
   .pcard.disabled:hover, .pcard.disabled:active {
-    transform: none; box-shadow: 0 6px 0 #111827;
+    transform: none; box-shadow: 0 5px 0 #111827;
   }
   .pcard.legal {
     border-color: var(--gold);
@@ -318,47 +358,6 @@
   }
   #loadErr.show { display: flex; }
 
-
-  #identityBadge {
-    font-size: 12px; font-weight: 700; color: var(--gold);
-    margin-top: 4px;
-  }
-  #yourTurnBanner {
-    position: fixed; top: 42%; left: 50%; transform: translate(-50%, -50%);
-    z-index: 28; pointer-events: none;
-    font-size: clamp(28px, 8vw, 52px); font-weight: 900;
-    letter-spacing: 0.08em; color: #ffd166;
-    text-shadow: 0 0 24px rgba(255,209,102,0.6), 0 4px 0 #4a3000, 0 8px 20px #000;
-    opacity: 0; transition: opacity 0.2s;
-    padding: 8px 20px;
-    border: 3px solid #ffd166;
-    border-radius: 14px;
-    background: rgba(0,0,0,0.55);
-  }
-  #yourTurnBanner.show { opacity: 1; animation: pulseYT 1.2s ease-in-out infinite; }
-  @keyframes pulseYT {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); }
-    50% { transform: translate(-50%, -50%) scale(1.05); }
-  }
-  #coachStrip {
-    position: fixed; top: 72px; left: 50%; transform: translateX(-50%);
-    z-index: 26; max-width: min(520px, 94vw);
-    background: rgba(8,12,20,0.88);
-    border: 2px solid var(--gold);
-    border-radius: 12px;
-    padding: 10px 14px;
-    font-size: 13px; line-height: 1.4;
-    text-align: center;
-    pointer-events: none;
-    display: none;
-  }
-  #coachStrip.show { display: block; }
-  #coachStrip .coach-step { color: var(--gold); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4px; }
-  #coachStrip .coach-dismiss {
-    pointer-events: auto; margin-top: 6px;
-    font-size: 11px; color: #8aa4c0; cursor: pointer; text-decoration: underline;
-    background: none; border: none;
-  }
   .team-pick {
     display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 16px 0 8px;
   }
@@ -376,18 +375,17 @@
     box-shadow: 0 4px 0 #1e3a5f;
   }
   .team-pick button .sub { display: block; font-size: 11px; font-weight: 500; opacity: 0.9; margin-top: 4px; }
-  .pcard {
-    min-width: 56px; min-height: 80px;
-  }
+
   @media (max-width: 520px) {
-    .pcard { width: 64px; height: 92px; min-width: 64px; min-height: 92px; }
-    #bidBar button { min-height: 52px; min-width: 110px; font-size: 16px; }
-    #yourTurnBanner { top: 36%; font-size: 26px; }
-  }
-  @media (max-width: 520px) {
-    #feedPanel { top: auto; bottom: 200px; right: 8px; max-height: 18vh; width: 42vw; }
-    #camHint { display: none; }
-    #knivesToast { bottom: 195px; left: 8px; }
+    .sb-val { font-size: 20px; }
+    .sb-val.sm { font-size: 13px; }
+    .nav-links { max-width: 42vw; }
+    .nav-links a, .nav-links button { font-size: 10px; padding: 5px 6px; min-height: 32px; }
+    #scoreBar { padding-right: 44vw; }
+    .pcard { width: 62px; height: 90px; }
+    #feedPanel { top: auto; bottom: 200px; max-height: 16vh; }
+    #yourTurnBanner { bottom: calc(112px + env(safe-area-inset-bottom, 0)); }
+    #knivesToast { bottom: calc(104px + env(safe-area-inset-bottom, 0)); }
   }
 </style>
 <script type="importmap">
@@ -403,31 +401,46 @@
   <div id="view" aria-label="3D apartment scene"></div>
 
   <div id="topHud">
-    <div class="badge">
-      <div class="title">Saturday Night Canada</div>
-      <div class="score"><span class="can" id="scoreCan">0</span> — <span class="usa" id="scoreUsa">0</span></div>
-      <div class="phase" id="phaseLabel">EUCHRE</div>
-      <div id="identityBadge">Choose a team…</div>
+    <div id="scoreBar">
+      <div class="sb-block">
+        <div class="sb-lab">Hosers</div>
+        <div class="sb-val can" id="scoreCan">0</div>
+      </div>
+      <div class="sb-block">
+        <div class="sb-lab">Yanks</div>
+        <div class="sb-val usa" id="scoreUsa">0</div>
+      </div>
+      <div class="sb-block">
+        <div class="sb-lab">Trump</div>
+        <div class="sb-val sm" id="trumpVal">—</div>
+      </div>
+      <div class="sb-block">
+        <div class="sb-lab">Tricks</div>
+        <div class="sb-val sm" id="tricksVal">0–0</div>
+      </div>
+      <div class="sb-block">
+        <div class="sb-lab">Phase</div>
+        <div class="sb-val phase" id="phaseLabel">EUCHRE</div>
+      </div>
     </div>
-    <div class="badge" id="hateWrap">
+    <div id="identityBadge">Choose a team…</div>
+    <div id="hateWrap">
       <div class="hate-lab">AMERICA HATE INDEX</div>
       <div id="hateBar"><div id="hateFill"></div></div>
     </div>
     <div class="nav-links">
       <button type="button" id="btnMute" title="Mute / unmute">🔊 Sound</button>
-      <button type="button" id="btnResetCam" title="Reset camera">Reset view</button>
+      <button type="button" id="btnResetCam" title="Reset camera">Reset</button>
+      <button type="button" id="btnLog" title="Toggle table talk">Log</button>
       <button type="button" id="btnHelp">Help</button>
-      <a href="legacy-2d.html">Legacy 2D</a>
     </div>
   </div>
 
-  <div id="camHint">Drag to look · pinch/scroll to zoom · You sit at near edge</div>
-  <div id="coachStrip"><div class="coach-step" id="coachStepLab">COACH</div><div id="coachText"></div><button type="button" class="coach-dismiss" id="coachDismiss">Got it</button></div>
+  <div id="rxToast"></div>
   <div id="yourTurnBanner">YOUR TURN</div>
-  <div id="msg"></div>
   <div id="floats"></div>
 
-  <div id="feedPanel">
+  <div id="feedPanel" class="collapsed">
     <div class="feed-title">Table talk</div>
     <div id="feedLines"><div class="line">Waiting for the deal…</div></div>
   </div>
@@ -438,8 +451,7 @@
   </div>
 
   <div id="hudBottom">
-    <div id="statusRow"></div>
-    <div id="trickRow"></div>
+    <div id="handHint"></div>
     <div id="bidBar"></div>
     <div id="hand" role="list" aria-label="Your hand"></div>
   </div>
@@ -491,20 +503,23 @@ import {
 
 const view = document.getElementById("view");
 const overlay = document.getElementById("overlay");
-const msgEl = document.getElementById("msg");
 const floats = document.getElementById("floats");
 const handEl = document.getElementById("hand");
 const bidBar = document.getElementById("bidBar");
 const knivesToast = document.getElementById("knivesToast");
 const knivesBtns = document.getElementById("knivesBtns");
-const trickRow = document.getElementById("trickRow");
-const statusRow = document.getElementById("statusRow");
+const handHint = document.getElementById("handHint");
 const phaseLabel = document.getElementById("phaseLabel");
 const scoreCan = document.getElementById("scoreCan");
 const scoreUsa = document.getElementById("scoreUsa");
+const trumpVal = document.getElementById("trumpVal");
+const tricksVal = document.getElementById("tricksVal");
 const hateFill = document.getElementById("hateFill");
 const feedLines = document.getElementById("feedLines");
+const feedPanel = document.getElementById("feedPanel");
 const btnMute = document.getElementById("btnMute");
+const btnLog = document.getElementById("btnLog");
+const rxToast = document.getElementById("rxToast");
 
 let sceneApi = null;
 let game = null;
@@ -516,11 +531,19 @@ let ambientNodes = null;
 let playerTeam = 0; // 0 Canadian, 1 American
 let coachDismissed = localStorage.getItem("snc_coach_done") === "1";
 let lastCoachKey = "";
+let feedOpen = localStorage.getItem("snc_feed_open") === "1";
+let rxHideTimer = null;
 const identityBadge = document.getElementById("identityBadge");
 const yourTurnBanner = document.getElementById("yourTurnBanner");
-const coachStrip = document.getElementById("coachStrip");
-const coachText = document.getElementById("coachText");
-const coachStepLab = document.getElementById("coachStepLab");
+
+function setFeedOpen(on) {
+  feedOpen = !!on;
+  localStorage.setItem("snc_feed_open", feedOpen ? "1" : "0");
+  if (feedPanel) feedPanel.classList.toggle("collapsed", !feedOpen);
+  if (btnLog) btnLog.classList.toggle("on", feedOpen);
+}
+setFeedOpen(feedOpen);
+if (btnLog) btnLog.onclick = () => setFeedOpen(!feedOpen);
 
 /* ——— WebAudio + speech ——— */
 function ensureAudio() {
@@ -685,26 +708,39 @@ btnMute.onclick = () => {
   setMuted(!muted);
 };
 
-function showMsg(text) {
-  if (!text) { msgEl.classList.remove("show"); return; }
-  msgEl.textContent = text;
-  msgEl.classList.add("show");
+function showCornerToast(text, color, ms) {
+  if (!rxToast || !text) return;
+  rxToast.textContent = text;
+  rxToast.style.color = color || "#ffd166";
+  rxToast.classList.add("show");
+  if (rxHideTimer) clearTimeout(rxHideTimer);
+  rxHideTimer = setTimeout(() => rxToast.classList.remove("show"), ms || 1100);
+}
+
+function isReactionSpam(text) {
+  const t = (text || "").toUpperCase();
+  return /BOO|YAAY|YAY!|TRUMP\?|HOSERS HATE|YANKS LOVE|CROWD:|U-S-A|TAKE OFF WITH THAT TRUMP|\*CROWD/.test(t);
 }
 
 function spawnFloat(text, color) {
+  if (!text) return;
+  // Trump / crowd reactions → tiny corner toast only (never center takeover)
+  if (isReactionSpam(text)) {
+    showCornerToast(text.replace(/\(hosers[^)]*\)/gi, "").replace(/\(yanks[^)]*\)/gi, "").trim(), color, 1100);
+    return;
+  }
   const el = document.createElement("div");
   el.className = "float";
   el.style.color = color || "#ffd166";
   el.textContent = text;
-  el.style.left = (45 + Math.random() * 10) + "%";
-  el.style.top = (22 + Math.random() * 18) + "%";
+  el.style.top = (14 + Math.random() * 12) + "%";
   floats.appendChild(el);
-  setTimeout(() => el.remove(), 1700);
+  setTimeout(() => el.remove(), 1200);
 }
 
 function renderFeed(feed) {
   const lines = feed && feed.length ? feed : ["…"];
-  feedLines.innerHTML = lines.slice(0, 6).map((l, i) =>
+  feedLines.innerHTML = lines.slice(0, 5).map((l) =>
     `<div class="line">${l}</div>`
   ).join("");
 }
@@ -724,52 +760,72 @@ function cardHTML(c, opts = {}) {
   </button>`;
 }
 
+function phaseShort(state) {
+  const p = state.phase;
+  if (p === "deal") return "DEAL";
+  if (p === "bid1") return "BID";
+  if (p === "bid2") return "BID";
+  if (p === "discard") return "DISCARD";
+  if (p === "play") return "PLAY";
+  if (p === "hand_end") return "HAND";
+  if (p === "match_end") return "END";
+  return (state.phaseLabel || p || "—").toString().slice(0, 10).toUpperCase();
+}
+
 function renderHUD(state) {
   const names = (state.lineup && state.lineup.names) || ["You", "Chad", "Doug", "Brad"];
   scoreCan.textContent = state.scoreCan;
   scoreUsa.textContent = state.scoreUsa;
+  if (trumpVal) {
+    trumpVal.textContent = state.trump ? SUIT_SYM[state.trump] : "—";
+    trumpVal.style.color = state.trump && (state.trump === "H" || state.trump === "D") ? "#ff6b6b" : "#e8eef6";
+  }
+  if (tricksVal) {
+    tricksVal.textContent = state.trump ? (state.tricksNS + "–" + state.tricksEW) : "0–0";
+  }
+
   const yourTurn =
     state.turn === 0 &&
     (state.phase === "play" || state.phase === "bid1" || state.phase === "bid2" || state.phase === "discard") &&
     state.trickPause <= 0;
-  const turnBit =
-    state.phase === "deal" ? " · DEALING" :
-    yourTurn ? " · YOUR TURN" :
-    state.turn >= 0 ? " · " + names[state.turn] : "";
-  phaseLabel.textContent = state.phaseLabel + turnBit;
+
+  let phaseTxt = phaseShort(state);
+  if (yourTurn) phaseTxt += " · YOU";
+  else if (state.turn >= 0 && state.phase !== "deal") phaseTxt += " · " + (names[state.turn] || "").slice(0, 6);
+  phaseLabel.textContent = phaseTxt;
+
   hateFill.style.width = Math.min(100, state.hate * 4) + "%";
-  showMsg(state.msg);
 
   if (identityBadge) {
     identityBadge.textContent = state.identityLabel || "Playing as You";
   }
   if (yourTurnBanner) {
+    // Small banner near hand — only during play, not a center slab
     yourTurnBanner.classList.toggle("show", !!yourTurn && state.phase === "play");
   }
 
-  updateCoach(state);
-
-  const bits = [];
-  bits.push(state.identityLabel || "You");
-  if (state.upcard && (state.phase === "bid1" || state.phase === "bid2" || state.phase === "deal")) {
-    bits.push("Upcard " + RANK_LABEL[state.upcard.rank] + SUIT_SYM[state.upcard.suit]);
-    bits.push("Dealer " + names[state.dealer]);
+  // One hint line above hand (coach / bury / short status) — never mid-table
+  let hint = "";
+  let buryMode = false;
+  if (state.phase === "discard" && state.turn === 0) {
+    hint = "Pick 1 card to bury";
+    buryMode = true;
+  } else if (!coachDismissed) {
+    hint = coachHint(state) || "";
+  } else if (state.phase === "bid1" && state.turn === 0) {
+    hint = "Order up or Pass";
+  } else if (state.phase === "bid2" && state.turn === 0) {
+    hint = "Name trump or Pass";
+  } else if (yourTurn && state.phase === "play") {
+    hint = "Tap a gold card";
+  } else if (state.msg && state.msgTimer > 0 && !isReactionSpam(state.msg) && state.phase !== "discard") {
+    // Soft status only if short and not spam
+    const m = state.msg;
+    if (m.length < 48) hint = m;
   }
-  if (state.trump) {
-    bits.push("Trump " + SUIT_SYM[state.trump]);
-    bits.push("Maker " + (names[state.maker] || "?"));
-    bits.push("Tricks H " + state.tricksNS + " / A " + state.tricksEW);
-  }
-  statusRow.textContent = bits.join(" · ");
-
-  if (state.trick && state.trick.length) {
-    trickRow.innerHTML = state.trick.map((t) => {
-      const red = t.card.suit === "H" || t.card.suit === "D";
-      const who = names[t.seat] || ("P" + t.seat);
-      return `<span class="tcard ${red ? "red" : ""}">${who}: ${RANK_LABEL[t.card.rank]}${SUIT_SYM[t.card.suit]}</span>`;
-    }).join("");
-  } else {
-    trickRow.innerHTML = state.phase === "play" ? "<span style='opacity:.6'>Trick empty — lead a card</span>" : "";
+  if (handHint) {
+    handHint.textContent = hint;
+    handHint.classList.toggle("bury", buryMode);
   }
 
   renderFeed(state.feed);
@@ -813,14 +869,13 @@ function renderHUD(state) {
   const showHand = state.phase !== "deal";
   handEl.innerHTML = showHand ? hand.map((c, i) => {
     const isLegal = canClick && legal.includes(i);
-    // When it's your turn: illegal cards disabled. When waiting: show hand readable, not clickable.
     const isDisabled = canClick && !legal.includes(i);
     return cardHTML(c, {
       index: i,
       legal: isLegal,
       disabled: isDisabled,
     });
-  }).join("") : "<span style='color:#8aa4c0;font-size:13px'>Cards flying to hands…</span>";
+  }).join("") : "<span style='color:#8aa4c0;font-size:13px'>Cards flying…</span>";
 
   handEl.querySelectorAll(".pcard").forEach((el) => {
     el.addEventListener("click", () => {
@@ -833,47 +888,32 @@ function renderHUD(state) {
   });
 }
 
-function updateCoach(state) {
-  if (!coachStrip || coachDismissed) {
-    if (coachStrip) coachStrip.classList.remove("show");
-    return;
-  }
+function coachHint(state) {
+  if (coachDismissed) return "";
   let key = "";
-  let lab = "";
   let msg = "";
   if (state.phase === "deal") {
-    key = "deal"; lab = "Step 2 · Deal"; msg = "Cards fly to each seat. You’re at the near edge of the table (gold arrow).";
+    key = "deal"; msg = "Cards deal — you’re at the near edge.";
   } else if (state.phase === "bid1") {
-    key = "upcard"; lab = "Step 3 · Upcard"; msg = "See the upcard on the vinyl table. Order it up (that suit is trump) or Pass.";
+    key = "upcard"; msg = "Order up the upcard suit, or Pass.";
   } else if (state.phase === "bid2") {
-    key = "bid2"; lab = "Step 3 · Name trump"; msg = "Name a trump suit (not the upcard suit) or Pass.";
+    key = "bid2"; msg = "Name a trump ≠ upcard, or Pass.";
   } else if (state.phase === "discard") {
-    key = "discard"; lab = "Discard"; msg = "You’re dealer — tap one card to bury, then play begins.";
+    key = "discard"; msg = "Pick 1 card to bury";
   } else if (state.phase === "play" && state.turn === 0) {
-    key = "play"; lab = "Step 4 · Your turn"; msg = "Only gold-highlighted cards are legal. Tap one. Illegal cards are dimmed.";
+    key = "play"; msg = "Gold = legal. Tap one.";
   } else if (state.phase === "play") {
-    key = "wait"; lab = "Play"; msg = "Watch the trick — cards stay on the table with owner tags until it resolves.";
+    key = "wait"; msg = "Watch the trick on the table.";
   }
-  if (!key) { coachStrip.classList.remove("show"); return; }
-  if (key !== lastCoachKey) {
-    lastCoachKey = key;
-    coachStepLab.textContent = lab;
-    coachText.textContent = msg;
-  }
-  coachStrip.classList.add("show");
+  if (!key) return "";
+  if (key !== lastCoachKey) lastCoachKey = key;
   if (key === "play" && state.tricksNS + state.tricksEW >= 1) {
-    // after first trick, auto-ease coach
     coachDismissed = true;
     localStorage.setItem("snc_coach_done", "1");
-    coachStrip.classList.remove("show");
+    return "";
   }
+  return msg;
 }
-
-document.getElementById("coachDismiss")?.addEventListener("click", () => {
-  coachDismissed = true;
-  localStorage.setItem("snc_coach_done", "1");
-  coachStrip.classList.remove("show");
-});
 
 function showResults(state, verdict) {
   const names = (state.lineup && state.lineup.names) || [];
@@ -912,8 +952,8 @@ function showHelp() {
           <li><strong>You:</strong> Always labeled You — gold arrow/glow, near-edge seat. Only your cards are playable.</li>
           <li><strong>Camera:</strong> High top-down-oblique default. Drag to look · scroll/pinch zoom · Reset view.</li>
           <li><strong>Bid:</strong> Order up / Pass · round 2 name trump ≠ upcard.</li>
-          <li><strong>Play:</strong> Gold = legal. Big YOUR TURN when it’s you. Trick tags show who played what.</li>
-          <li><strong>Trump:</strong> Hosers boo · Yanks yay (audio + bubbles).</li>
+          <li><strong>Play:</strong> Gold = legal. Small YOUR TURN near your hand. Names sit under trick cards.</li>
+          <li><strong>Trump:</strong> Hosers boo · Yanks yay (brief corner toast / bubbles).</li>
           <li><strong>Hot knives:</strong> Metal knives, smoke + sizzle when tips touch.</li>
         </ul>
       </div>
@@ -934,12 +974,11 @@ function startGame(team) {
   overlay.classList.add("hidden");
   coachDismissed = localStorage.getItem("snc_coach_done") === "1";
   lastCoachKey = "";
-  if (!coachDismissed && coachStrip) {
-    coachStepLab.textContent = "Step 1 · Team";
-    coachText.textContent = playerTeam === 0
-      ? "You’re Canadian (Hosers) with Doug. Watch the deal…"
-      : "You’re American (Yanks). USA still wins the match. Watch the deal…";
-    coachStrip.classList.add("show");
+  if (!coachDismissed && handHint) {
+    handHint.textContent = playerTeam === 0
+      ? "You’re Hosers with Doug — watch the deal…"
+      : "You’re Yanks — USA still wins. Watch the deal…";
+    handHint.classList.remove("bury");
   }
 
   if (!sceneApi) {
@@ -980,6 +1019,7 @@ function startGame(team) {
     onTrumpReaction: (info) => {
       sfxTrumpReaction();
       sceneApi && sceneApi.trumpReactionVisual(info);
+      showCornerToast("BOO! / YAY!  Trump " + (info && info.suit ? SUIT_SYM[info.suit] : ""), "#ffd166", 1100);
     },
     onDeal: () => {
       sfxDealWhoosh();
