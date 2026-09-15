@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Canada Simulator — Level 1: The Rink</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #0a1628;
+    color: #f5f5f5;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+  #wrap {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    width: 100%; height: 100%; gap: 8px;
+  }
+  h1 {
+    font-size: 22px; letter-spacing: 0.04em;
+    color: #ff4d4d; text-shadow: 0 0 12px rgba(255,77,77,0.4);
+  }
+  h1 span { color: #7eb8ff; }
+  #hud {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    justify-content: center; font-size: 14px; font-weight: 600;
+    min-height: 22px;
+  }
+  #hud .hate { color: #ff6b6b; }
+  #hud .score { color: #fff; }
+  #hud .time { color: #ffd166; }
+  #hud .team { color: #a8e6cf; }
+  canvas {
+    background: #0d2137;
+    border: 3px solid #1a3a5c;
+    border-radius: 6px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    max-width: 96vw; max-height: 72vh;
+    cursor: crosshair;
+    touch-action: none;
+    -ms-touch-action: none;
+    display: block;
+    width: auto;
+    height: auto;
+  }
+  #hint {
+    font-size: 12px; color: #8aa4c0; text-align: center; max-width: 900px;
+  }
+  #overlay {
+    position: fixed; inset: 0;
+    background: rgba(6, 12, 24, 0.88);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10;
+  }
+  #overlay.hidden { display: none; }
+  .card {
+    background: linear-gradient(160deg, #132840 0%, #0d1a2c 100%);
+    border: 2px solid #2a5080;
+    border-radius: 14px;
+    padding: 28px 36px;
+    max-width: 520px; width: 92vw;
+    text-align: center;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  }
+  .card h2 { font-size: 28px; margin-bottom: 8px; color: #ffd166; }
+  .card h2.red { color: #ff4d4d; }
+  .card h2.blue { color: #4da6ff; }
+  .card p { margin: 10px 0; line-height: 1.45; color: #c8d8ea; font-size: 15px; }
+  .card .verdict {
+    font-size: 18px; font-weight: 700; color: #fff;
+    margin: 18px 0; padding: 14px;
+    background: rgba(255,77,77,0.12);
+    border-left: 4px solid #ff4d4d;
+    border-radius: 4px; text-align: left;
+  }
+  .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+  button {
+    appearance: none; border: none; cursor: pointer;
+    font: inherit; font-weight: 700; font-size: 15px;
+    padding: 12px 22px; border-radius: 8px;
+    transition: transform 0.08s, filter 0.15s;
+  }
+  button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  button:active { transform: translateY(1px); }
+  .btn-ca { background: #e63946; color: #fff; }
+  .btn-us { background: #1d4e89; color: #fff; }
+  .btn-go { background: #2a9d8f; color: #fff; }
+  .btn-dim { background: #334155; color: #cbd5e1; }
+  .tiny { font-size: 12px; color: #7a93ad; margin-top: 14px; }
+  button {
+    min-height: 44px;
+    min-width: 44px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  #gameArea {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+    max-width: 100%;
+  }
+  #mobileControls {
+    display: none;
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 5;
+    pointer-events: none;
+  }
+  #mobileControls.visible {
+    display: flex;
+  }
+  #mobileControls button {
+    pointer-events: auto;
+    min-width: 76px;
+    min-height: 48px;
+    padding: 12px 16px;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    opacity: 0.9;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  }
+  #mShoot { background: #2a9d8f; color: #fff; }
+  #mFight { background: #e63946; color: #fff; }
+  @media (max-width: 900px), (pointer: coarse) {
+    h1 { font-size: 15px; padding: 0 8px; text-align: center; }
+    #hud { font-size: 12px; gap: 10px; padding: 0 6px; }
+    #hint { font-size: 11px; padding: 0 10px; max-width: 96vw; }
+    canvas {
+      max-width: 100vw;
+      max-height: calc(100dvh - 150px);
+      border-width: 2px;
+    }
+    .card { padding: 22px 18px; width: 94vw; }
+    .card h2 { font-size: 24px; }
+    .btns button {
+      min-height: 48px;
+      padding: 14px 22px;
+      font-size: 16px;
+      flex: 1 1 auto;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <h1>CANADA SIMULATOR <span>— Level 1: The Rink</span></h1>
+  <div id="hud">
+    <span class="team" id="hudTeam">Team: —</span>
+    <span class="score" id="hudScore">CAN 0 — USA 0</span>
+    <span class="time" id="hudTime">1:45</span>
+    <span class="hate" id="hudHate">America Hate Index: 0</span>
+  </div>
+  <div id="gameArea">
+    <canvas id="game" width="900" height="520"></canvas>
+    <div id="mobileControls" aria-hidden="true">
+      <button type="button" id="mShoot">SHOOT</button>
+      <button type="button" id="mFight">FIGHT</button>
+    </div>
+  </div>
+  <div id="hint">WASD / Arrows skate · Mouse aim · Click or F to shoot · Space / click near foe to fight</div>
+</div>
+
+<div id="overlay">
+  <div class="card" id="card"></div>
+</div>
+
+<script>
+/* ============================================================================
+  CANADA SIMULATOR — Level 1: The Rink
+  Affectionate Canada–US rivalry satire. Punch clichés & institutions, not people.
+============================================================================ */
+
+/* ---------- DATA ARRAYS (edit jokes here) ---------- */
+const CANADA_FIGHT_LINES = [
+  "Sorry about your fist.",
+  "That maple leaf is going to stain.",
+  "One punch. Historic.",
+  "We prefer strongly worded letters.",
+  "Helmet: airborne. Dignity: also airborne.",
+  "The ref is writing a fake penalty. For vibes.",
+  "Wake up on the ice. Apologize to the ice.",
+];
+
+const USA_CROWD_LINES = [
+  "U-S-A! U-S-A!",
+  "PUT IT IN THE NET!",
+  "FOUR ARMS! FOUR ARMS!",
+  "That puck just got a visa!",
+  "BREAKAWAY ENERGY!",
+  "Scoreboard goes brrr",
+  "Freedom slapshot!",
+];
+
+const RESULT_VERDICTS = [
+  "You had the puck. The puck did not have you.",
+  "Fight record: 0–∞",
+  "The scoreboard is not broken. You are.",
+  "Effort: Olympic. Outcome: municipal.",
+  "Canada played with heart. Heart lost 5–1.",
+  "Your stick was wet cardboard. The ice noticed.",
+  "Hate Index rising. Maple syrup cannot stop this.",
+  "You tried. Trying is not a power play.",
+  "Final score certified by people who are not you.",
+  "Somewhere a goalie is still on his phone.",
+];
+
+const CANADA_MISS_LINES = [
+  "Wet cardboard stick…",
+  "Puck drowned mid-flight.",
+  "Goalie yawned it away.",
+  "Almost. Philosophically.",
+  "Denied by vibes.",
+  "NO GOAL (of course)",
+];
+
+const REF_LINES = [
+  "Two minutes for… existing too hard!",
+  "Penalty! (decorative)",
+  "Box time that changes nothing!",
+  "I'm writing this down for the scrapbook.",
+];
+
+const BOARDROOM_LINES = ["(Level 2 stub — not in v1 slice)"];
+const LAKE_SIGNS = ["This used to be ours.", "We had a lake once.", "Sorry about the wake."];
+const QUEBEC_TAUNTS = [
+  "I fart at you!",
+  "I spit in your general direction!",
+  "Your mother was a hamster and your father smelt of elderberries!",
+];
+const PARLIAMENT_RED = ["They stole the lake!"];
+const PARLIAMENT_BLUE = ["You didn't denounce it hard enough!"];
+
+/* ============================================================================
+  LOSE MULTIPLIER — CRITICAL JOKE ENGINE
+  SEARCH STRING: CANADA_LOSE_MULTIPLIER
+  FUNCTION: denyCanadianGoal(teamAttacking)
+  Also called from: awardGoal()
+
+  If the player picked Team Canada, the scoreboard MUST NEVER award a
+  Canadian goal. Shots are visibly attempted, then diverted / swallowed /
+  ruled "no goal". USA goals still count. Effort is visible; outcome is not.
+============================================================================ */
+const CANADA_LOSE_MULTIPLIER = 0; // 0 = Canadian goals never count. Do not raise above 0 for Level 1.
+
+/**
+ * denyCanadianGoal — hard gate on Canadian scoring.
+ * Returns true if the goal must be denied (Canada team selected + Canada attack).
+ * Always returns false for USA goals / when playing as USA.
+ */
+function denyCanadianGoal(teamAttacking) {
+  // CANADA_LOSE_MULTIPLIER gate:
+  if (state.playerTeam === "CANADA" && teamAttacking === "CANADA") {
+    if (CANADA_LOSE_MULTIPLIER <= 0) return true; // always deny
+    return Math.random() > CANADA_LOSE_MULTIPLIER;
+  }
+  return false;
+}
+
+/* ---------- CANVAS / INPUT ---------- */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const overlay = document.getElementById("overlay");
+const card = document.getElementById("card");
+const mobileControls = document.getElementById("mobileControls");
+const hintEl = document.getElementById("hint");
+
+const keys = Object.create(null);
+let mouse = { x: 450, y: 260, down: false };
+let shootQueued = false;
+let fightQueued = false;
+
+/* Mobile: drag-to-skate toward finger; release = coast.
+   Short tap = shoot at tap (or fight if near opponent).
+   Optional SHOOT / FIGHT buttons bottom-right. */
+const touchSkate = { active: false, x: 450, y: 260 };
+const activeTouches = new Map(); // id -> { sx, sy, x, y, t0, skating }
+const TAP_MOVE_PX = 18;
+const TAP_MAX_MS = 320;
+
+function wantsMobileUI() {
+  try {
+    if (window.matchMedia("(pointer: coarse)").matches) return true;
+    if (window.matchMedia("(hover: none)").matches) return true;
+    if (window.matchMedia("(max-width: 900px)").matches) return true;
+  } catch (_) {}
+  return ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+}
+
+function clientToCanvas(clientX, clientY) {
+  const r = canvas.getBoundingClientRect();
+  return {
+    x: (clientX - r.left) * (canvas.width / r.width),
+    y: (clientY - r.top) * (canvas.height / r.height),
+  };
+}
+
+function syncMobileChrome() {
+  const show = wantsMobileUI();
+  if (mobileControls) {
+    const playing = state.phase === "play";
+    mobileControls.classList.toggle("visible", show && playing);
+    mobileControls.setAttribute("aria-hidden", show && playing ? "false" : "true");
+  }
+  if (hintEl) {
+    hintEl.textContent = show
+      ? "Drag on ice to skate · Tap to shoot · Tap near foe or FIGHT · SHOOT button works too"
+      : "WASD / Arrows skate · Mouse aim · Click or F to shoot · Space / click near foe to fight";
+  }
+}
+
+function fitCanvas() {
+  const narrow = wantsMobileUI() || window.innerWidth <= 900;
+  const maxW = narrow ? window.innerWidth : window.innerWidth * 0.96;
+  const reserved = narrow ? 150 : window.innerHeight * 0.28;
+  const maxH = Math.max(160, window.innerHeight - reserved);
+  const scale = Math.min(maxW / canvas.width, maxH / canvas.height, 1);
+  const w = Math.max(1, Math.floor(canvas.width * scale));
+  const h = Math.max(1, Math.floor(canvas.height * scale));
+  canvas.style.width = w + "px";
+  canvas.style.height = h + "px";
+}
+
+window.addEventListener("keydown", (e) => {
+  keys[e.code] = true;
+  if (e.code === "Space") { e.preventDefault(); fightQueued = true; }
+  if (e.code === "KeyF") shootQueued = true;
+});
+window.addEventListener("keyup", (e) => { keys[e.code] = false; });
+canvas.addEventListener("mousemove", (e) => {
+  const p = clientToCanvas(e.clientX, e.clientY);
+  mouse.x = p.x; mouse.y = p.y;
+});
+canvas.addEventListener("mousedown", (e) => {
+  mouse.down = true;
+  if (e.button === 0) {
+    if (state.phase === "play" && nearOpponent()) fightQueued = true;
+    else shootQueued = true;
+  }
+});
+canvas.addEventListener("mouseup", () => { mouse.down = false; });
+
+function refreshTouchSkate() {
+  let any = false;
+  for (const t of activeTouches.values()) {
+    if (t.skating) {
+      touchSkate.active = true;
+      touchSkate.x = t.x;
+      touchSkate.y = t.y;
+      mouse.x = t.x;
+      mouse.y = t.y;
+      any = true;
+      break;
+    }
+  }
+  if (!any) touchSkate.active = false;
+}
+
+function onTouchStart(e) {
+  if (state.phase !== "play") return;
+  e.preventDefault();
+  const now = performance.now();
+  for (const touch of e.changedTouches) {
+    const p = clientToCanvas(touch.clientX, touch.clientY);
+    activeTouches.set(touch.identifier, {
+      sx: touch.clientX, sy: touch.clientY,
+      x: p.x, y: p.y, t0: now, skating: false,
+    });
+    mouse.x = p.x; mouse.y = p.y;
+  }
+}
+
+function onTouchMove(e) {
+  if (state.phase !== "play") return;
+  e.preventDefault();
+  for (const touch of e.changedTouches) {
+    const rec = activeTouches.get(touch.identifier);
+    if (!rec) continue;
+    const p = clientToCanvas(touch.clientX, touch.clientY);
+    rec.x = p.x; rec.y = p.y;
+    const moved = Math.hypot(touch.clientX - rec.sx, touch.clientY - rec.sy);
+    if (moved >= TAP_MOVE_PX) rec.skating = true;
+    mouse.x = p.x; mouse.y = p.y;
+  }
+  refreshTouchSkate();
+}
+
+function onTouchEnd(e) {
+  e.preventDefault();
+  const now = performance.now();
+  for (const touch of e.changedTouches) {
+    const rec = activeTouches.get(touch.identifier);
+    if (!rec) continue;
+    activeTouches.delete(touch.identifier);
+    if (state.phase !== "play") continue;
+    const moved = Math.hypot(touch.clientX - rec.sx, touch.clientY - rec.sy);
+    const dtMs = now - rec.t0;
+    if (!rec.skating && moved < TAP_MOVE_PX && dtMs <= TAP_MAX_MS) {
+      mouse.x = rec.x; mouse.y = rec.y;
+      if (nearOpponent()) fightQueued = true;
+      else shootQueued = true;
+    }
+  }
+  refreshTouchSkate();
+}
+
+canvas.addEventListener("touchstart", onTouchStart, { passive: false });
+canvas.addEventListener("touchmove", onTouchMove, { passive: false });
+canvas.addEventListener("touchend", onTouchEnd, { passive: false });
+canvas.addEventListener("touchcancel", onTouchEnd, { passive: false });
+
+function wireMobileButtons() {
+  const shootBtn = document.getElementById("mShoot");
+  const fightBtn = document.getElementById("mFight");
+  // click covers mouse + touch (avoid touchend+click double-fire)
+  if (shootBtn) {
+    shootBtn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      if (state.phase === "play") shootQueued = true;
+    });
+  }
+  if (fightBtn) {
+    fightBtn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      if (state.phase === "play") fightQueued = true;
+    });
+  }
+}
+wireMobileButtons();
+window.addEventListener("resize", () => { fitCanvas(); syncMobileChrome(); });
+window.addEventListener("orientationchange", () => { fitCanvas(); syncMobileChrome(); });
+
+/* ---------- RINK GEOMETRY ---------- */
+const RINK = { x: 40, y: 30, w: 820, h: 460 };
+const GOAL_W = 70, GOAL_D = 18;
+const leftGoal = { x: RINK.x - 4, y: RINK.y + RINK.h / 2 - GOAL_W / 2, w: GOAL_D, h: GOAL_W };
+const rightGoal = { x: RINK.x + RINK.w - GOAL_D + 4, y: RINK.y + RINK.h / 2 - GOAL_W / 2, w: GOAL_D, h: GOAL_W };
+
+const MATCH_SECONDS = 105; // within 90–120s band
+
+const state = {
+  phase: "pick",
+  playerTeam: null,
+  scoreCan: 0,
+  scoreUsa: 0,
+  hate: 0,
+  timeLeft: MATCH_SECONDS,
+  fightLosses: 0,
+  floatTexts: [],
+  particles: [],
+  fight: null,
+  windup: 0,
+  phoneCheck: 0,
+  buzzerDone: false,
+  usaPressure: 0,
+  crowdFlash: 0,
+};
+
+let player, teammate, enemies, goalieCan, goalieUsa, puck;
+let lastTs = 0;
+
+function rand(a, b) { return a + Math.random() * (b - a); }
+function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+function nearOpponent() {
+  if (!player || !enemies) return false;
+  return enemies.some((e) => dist(player, e) < 55);
+}
+
+function makeSkater(x, y, team, isPlayer) {
+  return {
+    x, y, vx: 0, vy: 0,
+    team, isPlayer: !!isPlayer,
+    r: isPlayer ? 16 : 14,
+    facing: team === "CANADA" ? 1 : -1,
+    stunned: 0,
+    hasPuck: false,
+    leafStamp: 0,
+  };
+}
+
+function resetPuck(cx, cy) {
+  puck = {
+    x: cx ?? (RINK.x + RINK.w / 2),
+    y: cy ?? (RINK.y + RINK.h / 2),
+    vx: 0, vy: 0, r: 7,
+    owner: null,
+    lastShooter: null,
+  };
+}
+
+function setupMatch() {
+  const midY = RINK.y + RINK.h / 2;
+  const isCan = state.playerTeam === "CANADA";
+
+  if (isCan) {
+    player = makeSkater(RINK.x + 180, midY, "CANADA", true);
+    teammate = makeSkater(RINK.x + 260, midY - 80, "CANADA", false);
+    enemies = [
+      makeSkater(RINK.x + RINK.w - 200, midY, "USA", false),
+      makeSkater(RINK.x + RINK.w - 280, midY + 70, "USA", false),
+      makeSkater(RINK.x + RINK.w - 320, midY - 90, "USA", false),
+    ];
+  } else {
+    player = makeSkater(RINK.x + RINK.w - 180, midY, "USA", true);
+    teammate = makeSkater(RINK.x + RINK.w - 260, midY - 80, "USA", false);
+    enemies = [
+      makeSkater(RINK.x + 200, midY, "CANADA", false),
+      makeSkater(RINK.x + 280, midY + 70, "CANADA", false),
+      makeSkater(RINK.x + 320, midY - 90, "CANADA", false),
+    ];
+  }
+
+  goalieCan = { x: RINK.x + 28, y: midY, r: 18, team: "CANADA", phone: true, arms: 2 };
+  goalieUsa = { x: RINK.x + RINK.w - 28, y: midY, r: 18, team: "USA", phone: false, arms: 4 };
+
+  resetPuck();
+  puck.vx = rand(-40, 40);
+  puck.vy = rand(-30, 30);
+
+  state.scoreCan = 0;
+  state.scoreUsa = 0;
+  state.timeLeft = MATCH_SECONDS;
+  state.fightLosses = 0;
+  state.floatTexts = [];
+  state.particles = [];
+  state.fight = null;
+  state.windup = 0;
+  state.buzzerDone = false;
+  state.usaPressure = 0;
+  state.crowdFlash = 0;
+  state.phase = "play";
+  hideOverlay();
+  updateHud();
+  touchSkate.active = false;
+  activeTouches.clear();
+  syncMobileChrome();
+  floatText(RINK.x + RINK.w / 2, RINK.y + 50, "FACEOFF!", "#ffd166", 1.2);
+}
+
+function showOverlay(html) {
+  card.innerHTML = html;
+  overlay.classList.remove("hidden");
+}
+function hideOverlay() { overlay.classList.add("hidden"); }
+
+function showTeamPick() {
+  state.phase = "pick";
+  showOverlay(`
+    <h2>Level 1 — The Rink</h2>
+    <p>Pick a team. If you pick Canada, you will try very hard and lose very specifically.</p>
+    <p class="tiny">Systems are rigged. Caring is punished. That is the product.</p>
+    <div class="btns">
+      <button class="btn-ca" id="pickCan">🇨🇦 Team Canada</button>
+      <button class="btn-us" id="pickUsa">🇺🇸 Team USA</button>
+    </div>
+    <p class="tiny">Desktop: WASD · mouse · click/F · Space &nbsp;|&nbsp; Phone: drag skate · tap shoot · FIGHT</p>
+  `);
+  document.getElementById("pickCan").onclick = () => {
+    state.playerTeam = "CANADA";
+    setupMatch();
+  };
+  document.getElementById("pickUsa").onclick = () => {
+    state.playerTeam = "USA";
+    setupMatch();
+  };
+  syncMobileChrome();
+}
+
+function floatText(x, y, text, color, life) {
+  if (!text) return;
+  state.floatTexts.push({
+    x, y, text,
+    color: color || "#fff",
+    life: life || 1.4,
+    max: life || 1.4,
+    vy: -28,
+  });
+}
+
+function addBurst(x, y, color, n) {
+  for (let i = 0; i < (n || 10); i++) {
+    state.particles.push({
+      x, y,
+      vx: rand(-120, 120), vy: rand(-140, 40),
+      life: rand(0.3, 0.9), r: rand(2, 5), color,
+    });
+  }
+}
+
+function updateHud() {
+  const m = Math.floor(Math.max(0, state.timeLeft) / 60);
+  const s = Math.floor(Math.max(0, state.timeLeft) % 60).toString().padStart(2, "0");
+  document.getElementById("hudTeam").textContent = "Team: " + (state.playerTeam || "—");
+  document.getElementById("hudScore").textContent = `CAN ${state.scoreCan} — USA ${state.scoreUsa}`;
+  document.getElementById("hudTime").textContent = `${m}:${s}`;
+  document.getElementById("hudHate").textContent = `America Hate Index: ${state.hate}`;
+}
+
+/* ---------- SCORING (rigged via denyCanadianGoal) ---------- */
+function awardGoal(team) {
+  // CRITICAL: Canada player never gets a Canada goal on the scoreboard
+  if (denyCanadianGoal(team)) {
+    floatText(puck.x, puck.y - 30, pick(CANADA_MISS_LINES), "#ff8fa3", 1.8);
+    addBurst(puck.x, puck.y, "#ff4d4d", 8);
+    puck.vx = -rand(50, 110);
+    puck.vy = rand(-70, 70);
+    puck.owner = null;
+    state.hate += 1;
+    updateHud();
+    return;
+  }
+
+  if (team === "CANADA") {
+    state.scoreCan += 1;
+    floatText(RINK.x + RINK.w / 2, RINK.y + 40, "CANADA SCORES!", "#ff4d4d", 2);
+  } else {
+    state.scoreUsa += 1;
+    state.crowdFlash = 2.2;
+    floatText(RINK.x + RINK.w / 2, RINK.y + 40, pick(USA_CROWD_LINES), "#4da6ff", 2);
+    if (state.playerTeam === "CANADA") state.hate += 2;
+  }
+  addBurst(puck.x, puck.y, team === "USA" ? "#4da6ff" : "#ff4d4d", 16);
+  resetPuck();
+  puck.vx = rand(-40, 40);
+  puck.vy = rand(-30, 30);
+  const midY = RINK.y + RINK.h / 2;
+  if (player.team === "CANADA") { player.x = RINK.x + 180; player.y = midY; }
+  else { player.x = RINK.x + RINK.w - 180; player.y = midY; }
+  player.vx = player.vy = 0;
+  updateHud();
+}
+
+function checkGoals() {
+  if (puck.x - puck.r < leftGoal.x + leftGoal.w &&
+      puck.y > leftGoal.y && puck.y < leftGoal.y + leftGoal.h &&
+      puck.vx <= 0) {
+    awardGoal("USA");
+    return;
+  }
+  if (puck.x + puck.r > rightGoal.x &&
+      puck.y > rightGoal.y && puck.y < rightGoal.y + rightGoal.h &&
+      puck.vx >= 0) {
+    awardGoal("CANADA");
+  }
+}
+
+/* ---------- FIGHTS ---------- */
+function startFight(opponent) {
+  if (state.phase !== "play") return;
+  state.phase = "fight";
+  touchSkate.active = false;
+  activeTouches.clear();
+  syncMobileChrome();
+  state.fight = {
+    t: 0,
+    opponent,
+    stage: "grab",
+    helmets: [
+      { x: player.x, y: player.y - 10, vx: rand(-90, -40), vy: rand(-220, -130), rot: 0 },
+      { x: opponent.x, y: opponent.y - 10, vx: rand(40, 90), vy: rand(-220, -130), rot: 0 },
+    ],
+    punchFlash: 0,
+    line: pick(CANADA_FIGHT_LINES),
+    refLine: pick(REF_LINES),
+    playerWins: state.playerTeam === "USA",
+  };
+  floatText((player.x + opponent.x) / 2, Math.min(player.y, opponent.y) - 40, "FIGHT!", "#ffd166", 1);
+}
+
+function updateFight(dt) {
+  const f = state.fight;
+  if (!f) return;
+  f.t += dt;
+
+  for (const h of f.helmets) {
+    h.vy += 420 * dt;
+    h.x += h.vx * dt;
+    h.y += h.vy * dt;
+    h.rot += 5 * dt;
+  }
+
+  if (f.stage === "grab" && f.t > 0.55) {
+    f.stage = "punch";
+    f.punchFlash = 0.4;
+  }
+  if (f.stage === "punch") {
+    f.punchFlash -= dt;
+    if (f.t > 1.15) {
+      f.stage = "ko";
+      if (!f.playerWins) {
+        player.leafStamp = 5;
+        player.stunned = 2.4;
+        state.fightLosses += 1;
+        state.hate += 5;
+        floatText(player.x, player.y - 50, "+5 Hate", "#ff6b6b", 1.6);
+        floatText(player.x, player.y - 72, f.line, "#ffd166", 2.2);
+        addBurst(player.x, player.y, "#ff4d4d", 22);
+        updateHud();
+      } else {
+        f.opponent.stunned = 2;
+        floatText(f.opponent.x, f.opponent.y - 50, "USA WINS THE SCRUM", "#4da6ff", 1.8);
+        state.hate += 1;
+        updateHud();
+      }
+    }
+  }
+  if (f.stage === "ko" && f.t > 2.1) f.stage = "wake";
+  if (f.stage === "wake" && f.t > 2.8) f.stage = "ref";
+  if (f.stage === "ref" && f.t > 4.1) {
+    floatText(RINK.x + RINK.w / 2, RINK.y + 60, f.refLine, "#fff", 2.2);
+    floatText(RINK.x + RINK.w / 2, RINK.y + 90, "(Penalty does nothing. Classic.)", "#8aa4c0", 2);
+    const opp = f.opponent;
+    const dx = player.x - opp.x || 1;
+    player.x += Math.sign(dx) * 36;
+    opp.x -= Math.sign(dx) * 36;
+    state.phase = "play";
+    state.fight = null;
+    syncMobileChrome();
+  }
+}
+
+/* ---------- PHYSICS / AI ---------- */
+function rinkClamp(e) {
+  e.x = clamp(e.x, RINK.x + e.r + 4, RINK.x + RINK.w - e.r - 4);
+  e.y = clamp(e.y, RINK.y + e.r + 4, RINK.y + RINK.h - e.r - 4);
+}
+
+function movePlayer(dt) {
+  if (player.leafStamp > 0) player.leafStamp -= dt;
+  if (player.stunned > 0) {
+    player.stunned -= dt;
+    player.vx *= 0.88; player.vy *= 0.88;
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+    rinkClamp(player);
+    return;
+  }
+  let ax = 0, ay = 0;
+  if (keys["KeyW"] || keys["ArrowUp"]) ay -= 1;
+  if (keys["KeyS"] || keys["ArrowDown"]) ay += 1;
+  if (keys["KeyA"] || keys["ArrowLeft"]) ax -= 1;
+  if (keys["KeyD"] || keys["ArrowRight"]) ax += 1;
+  if (touchSkate.active && !(ax || ay)) {
+    const dx = touchSkate.x - player.x;
+    const dy = touchSkate.y - player.y;
+    const d = Math.hypot(dx, dy);
+    if (d > 12) { ax = dx / d; ay = dy / d; }
+  }
+  if (ax || ay) {
+    const len = Math.hypot(ax, ay) || 1;
+    ax /= len; ay /= len;
+    const accel = state.playerTeam === "CANADA" ? 520 : 700;
+    player.vx += ax * accel * dt;
+    player.vy += ay * accel * dt;
+    if (ax !== 0) player.facing = Math.sign(ax);
+  }
+  const friction = 3.2;
+  player.vx -= player.vx * friction * dt;
+  player.vy -= player.vy * friction * dt;
+  const maxSpd = state.playerTeam === "CANADA" ? 215 : 270;
+  const sp = Math.hypot(player.vx, player.vy);
+  if (sp > maxSpd) { player.vx *= maxSpd / sp; player.vy *= maxSpd / sp; }
+  player.x += player.vx * dt;
+  player.y += player.vy * dt;
+  rinkClamp(player);
+}
+
+function aiSkate(e, dt, targetX, targetY, speed) {
+  if (e.stunned > 0) {
+    e.stunned -= dt;
+    e.vx *= 0.9; e.vy *= 0.9;
+    e.x += e.vx * dt; e.y += e.vy * dt;
+    rinkClamp(e);
+    return;
+  }
+  if (e.leafStamp > 0) e.leafStamp -= dt;
+  const dx = targetX - e.x, dy = targetY - e.y;
+  const d = Math.hypot(dx, dy) || 1;
+  e.vx += (dx / d) * speed * dt;
+  e.vy += (dy / d) * speed * dt;
+  e.vx -= e.vx * 3 * dt;
+  e.vy -= e.vy * 3 * dt;
+  e.x += e.vx * dt;
+  e.y += e.vy * dt;
+  if (Math.abs(e.vx) > 5) e.facing = Math.sign(e.vx);
+  rinkClamp(e);
+}
+
+function updateAI(dt) {
+  if (teammate) {
+    const tx = puck.x + (teammate.team === "CANADA" ? -50 : 50);
+    const ty = puck.y + Math.sin(performance.now() / 700) * 36;
+    aiSkate(teammate, dt, tx, ty, 380);
+  }
+  for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
+    let tx = puck.x, ty = puck.y;
+    if (i === 1) { tx = player.x; ty = player.y; }
+    if (i === 2) { tx = (puck.x + RINK.x + RINK.w / 2) / 2; ty = puck.y; }
+    const spd = e.team === "USA" ? 480 : 350;
+    aiSkate(e, dt, tx, ty, spd);
+
+    if (e.team === "USA" && e.hasPuck && Math.random() < 0.015) {
+      shootFrom(e, leftGoal.x + 8, leftGoal.y + leftGoal.h / 2 + rand(-10, 10), true);
+    }
+    if (e.team === "CANADA" && e.hasPuck && Math.random() < 0.01) {
+      shootFrom(e, rightGoal.x, rightGoal.y + rightGoal.h / 2 + rand(-20, 20), false);
+    }
+  }
+  updateGoalie(goalieCan, dt, true);
+  updateGoalie(goalieUsa, dt, false);
+}
+
+function updateGoalie(g, dt, isCanada) {
+  const creaseY = clamp(puck.y, RINK.y + RINK.h / 2 - 75, RINK.y + RINK.h / 2 + 75);
+  if (isCanada) {
+    state.phoneCheck += dt;
+    const distracted = Math.sin(state.phoneCheck * 1.25) > 0.7;
+    const lag = distracted ? 0.4 : 2.0;
+    g.y += (creaseY - g.y) * lag * dt;
+  } else {
+    g.y += (creaseY - g.y) * 9 * dt;
+  }
+  g.y = clamp(g.y, RINK.y + 55, RINK.y + RINK.h - 55);
+
+  if (dist(g, puck) < g.r + puck.r + 8) {
+    const saveChance = isCanada ? 0.22 : 0.85;
+    if (Math.random() < saveChance || (isCanada && state.playerTeam === "CANADA" && Math.random() < 0.55)) {
+      puck.vx = isCanada ? Math.abs(puck.vx) * 0.5 + 55 : -Math.abs(puck.vx) * 0.75 - 60;
+      puck.vy = rand(-90, 90);
+      if (puck.owner) { puck.owner.hasPuck = false; puck.owner = null; }
+      floatText(g.x, g.y - 28, isCanada ? "missed it…" : "GLOVE!", isCanada ? "#ff8fa3" : "#4da6ff", 0.8);
+    }
+  }
+}
+
+function tryPickup(sk) {
+  if (puck.owner) return;
+  if (dist(sk, puck) < sk.r + puck.r + 6) {
+    puck.owner = sk;
+    sk.hasPuck = true;
+  }
+}
+
+function releasePuckOwner() {
+  if (puck.owner) {
+    puck.owner.hasPuck = false;
+    puck.owner = null;
+  }
+}
+
+function shootFrom(sk, aimX, aimY, isStrong) {
+  if (puck.owner !== sk && dist(sk, puck) > sk.r + 24) return;
+  releasePuckOwner();
+  const dx = aimX - sk.x, dy = aimY - sk.y;
+  const d = Math.hypot(dx, dy) || 1;
+  let power = sk.team === "CANADA" ? (isStrong ? 210 : 150) : (isStrong ? 540 : 420);
+  if (sk.isPlayer && state.playerTeam === "CANADA") power *= 0.5;
+  puck.vx = (dx / d) * power;
+  puck.vy = (dy / d) * power;
+  puck.lastShooter = sk;
+  puck.x = sk.x + (dx / d) * (sk.r + 10);
+  puck.y = sk.y + (dy / d) * (sk.r + 10);
+  if (sk.team === "CANADA") {
+    puck.vx *= 0.72;
+    puck.vy *= 0.72;
+    puck.vy += rand(-50, 50);
+  }
+}
+
+function playerShoot() {
+  if (state.phase !== "play" || player.stunned > 0) return;
+  const need = state.playerTeam === "CANADA" ? 0.38 : 0.06;
+  state.windup += 0.1;
+  if (state.windup < need) {
+    if (state.playerTeam === "CANADA") {
+      floatText(player.x, player.y - 26, "winding up…", "#ccc", 0.35);
+    }
+    return;
+  }
+  state.windup = 0;
+  if (puck.owner === player || dist(player, puck) < 48) {
+    shootFrom(player, mouse.x, mouse.y, true);
+  }
+}
+
+function updatePuck(dt) {
+  if (puck.owner) {
+    const o = puck.owner;
+    puck.x = o.x + o.facing * (o.r + 7);
+    puck.y = o.y + 2;
+    puck.vx = o.vx; puck.vy = o.vy;
+    return;
+  }
+  // High damping for Canada feel (underwater puck)
+  const damp = state.playerTeam === "CANADA" ? 1.4 : 0.38;
+  puck.vx -= puck.vx * damp * dt;
+  puck.vy -= puck.vy * damp * dt;
+  puck.x += puck.vx * dt;
+  puck.y += puck.vy * dt;
+
+  if (puck.x < RINK.x + puck.r) { puck.x = RINK.x + puck.r; puck.vx *= -0.72; }
+  if (puck.x > RINK.x + RINK.w - puck.r) { puck.x = RINK.x + RINK.w - puck.r; puck.vx *= -0.72; }
+  if (puck.y < RINK.y + puck.r) { puck.y = RINK.y + puck.r; puck.vy *= -0.72; }
+  if (puck.y > RINK.y + RINK.h - puck.r) { puck.y = RINK.y + RINK.h - puck.r; puck.vy *= -0.72; }
+
+  checkGoals();
+}
+
+function collideSkaters(a, b) {
+  const d = dist(a, b);
+  const min = a.r + b.r;
+  if (d > 0 && d < min) {
+    const nx = (b.x - a.x) / d, ny = (b.y - a.y) / d;
+    const overlap = min - d;
+    a.x -= nx * overlap * 0.5; a.y -= ny * overlap * 0.5;
+    b.x += nx * overlap * 0.5; b.y += ny * overlap * 0.5;
+    const impact = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+    if (impact > 0) {
+      a.vx -= impact * nx; a.vy -= impact * ny;
+      b.vx += impact * nx; b.vy += impact * ny;
+    }
+    return true;
+  }
+  return false;
+}
+
+function stealChecks() {
+  const all = [player, teammate, ...enemies].filter(Boolean);
+  for (const sk of all) {
+    if (puck.owner && puck.owner !== sk && dist(sk, puck.owner) < sk.r + puck.owner.r + 4) {
+      if (Math.random() < (sk.team === "USA" ? 0.045 : 0.016)) {
+        puck.owner.hasPuck = false;
+        puck.owner = sk;
+        sk.hasPuck = true;
+      }
+    }
+    tryPickup(sk);
+  }
+}
+
+function canadaMatchScript(dt) {
+  if (state.playerTeam !== "CANADA") return;
+  state.usaPressure += dt;
+  if (state.usaPressure > 20 && state.scoreUsa <= state.scoreCan) {
+    state.usaPressure = 0;
+    releasePuckOwner();
+    puck.x = leftGoal.x + 28;
+    puck.y = leftGoal.y + leftGoal.h / 2;
+    puck.vx = -80;
+    awardGoal("USA");
+    floatText(RINK.x + RINK.w / 2, RINK.y + 120, "Breakaway. Of course.", "#4da6ff", 1.8);
+  }
+  if (state.timeLeft < 9 && state.scoreUsa <= state.scoreCan) {
+    releasePuckOwner();
+    puck.x = leftGoal.x + 28;
+    puck.y = leftGoal.y + leftGoal.h / 2;
+    puck.vx = -80;
+    awardGoal("USA");
+  }
+}
+
+function endMatch() {
+  if (state.buzzerDone) return;
+  state.buzzerDone = true;
+  state.phase = "results";
+
+  if (state.playerTeam === "CANADA" && state.scoreUsa <= state.scoreCan) {
+    state.scoreUsa = state.scoreCan + 1 + ((Math.random() * 2) | 0);
+  }
+  updateHud();
+
+  const verdict = pick(RESULT_VERDICTS);
+  const teamLabel = state.playerTeam === "CANADA" ? "Team Canada" : "Team USA";
+  const toneClass = state.playerTeam === "CANADA" ? "red" : "blue";
+
+  showOverlay(`
+    <h2 class="${toneClass}">BUZZER</h2>
+    <p><strong>${teamLabel}</strong> final: CAN ${state.scoreCan} — USA ${state.scoreUsa}</p>
+    <p>Fights lost: ${state.fightLosses} · America Hate Index: <strong>${state.hate}</strong></p>
+    <div class="verdict">${verdict}</div>
+    <p class="tiny">You wanted Canada to win. The systems disagreed.</p>
+    <div class="btns">
+      <button class="btn-go" id="again">Play again</button>
+      <button class="btn-dim" id="menu">Change team</button>
+    </div>
+  `);
+  document.getElementById("again").onclick = () => setupMatch();
+  document.getElementById("menu").onclick = () => showTeamPick();
+  touchSkate.active = false;
+  activeTouches.clear();
+  syncMobileChrome();
+}
+
+/* ---------- DRAW ---------- */
+function roundRectPath(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawMapleLeaf(x, y, s, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(0, -s);
+  ctx.lineTo(s * 0.35, -s * 0.25);
+  ctx.lineTo(s, -s * 0.45);
+  ctx.lineTo(s * 0.4, s * 0.05);
+  ctx.lineTo(s * 0.65, s * 0.7);
+  ctx.lineTo(0, s * 0.35);
+  ctx.lineTo(-s * 0.65, s * 0.7);
+  ctx.lineTo(-s * 0.4, s * 0.05);
+  ctx.lineTo(-s, -s * 0.45);
+  ctx.lineTo(-s * 0.35, -s * 0.25);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillRect(-1.5, s * 0.3, 3, s * 0.45);
+  ctx.restore();
+}
+
+function drawRink() {
+  ctx.fillStyle = "#071422";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Crowd seats
+  ctx.fillStyle = "#12243a";
+  ctx.fillRect(0, 0, canvas.width, 26);
+  ctx.fillRect(0, canvas.height - 26, canvas.width, 26);
+
+  ctx.fillStyle = "#d9eaf7";
+  roundRectPath(RINK.x, RINK.y, RINK.w, RINK.h, 42);
+  ctx.fill();
+
+  // ice sheen
+  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  ctx.fillRect(RINK.x + 60, RINK.y + 40, 200, 14);
+
+  ctx.strokeStyle = "#e63946";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(RINK.x + RINK.w / 2, RINK.y + 10);
+  ctx.lineTo(RINK.x + RINK.w / 2, RINK.y + RINK.h - 10);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#e63946";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(RINK.x + RINK.w / 2, RINK.y + RINK.h / 2, 58, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(RINK.x + RINK.w / 2, RINK.y + RINK.h / 2, 4, 0, Math.PI * 2);
+  ctx.fillStyle = "#e63946";
+  ctx.fill();
+
+  ctx.strokeStyle = "#1d4e89";
+  ctx.lineWidth = 3;
+  const bl = RINK.w * 0.25;
+  ctx.beginPath();
+  ctx.moveTo(RINK.x + bl, RINK.y + 8);
+  ctx.lineTo(RINK.x + bl, RINK.y + RINK.h - 8);
+  ctx.moveTo(RINK.x + RINK.w - bl, RINK.y + 8);
+  ctx.lineTo(RINK.x + RINK.w - bl, RINK.y + RINK.h - 8);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#1a3a5c";
+  ctx.lineWidth = 7;
+  roundRectPath(RINK.x, RINK.y, RINK.w, RINK.h, 42);
+  ctx.stroke();
+
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(leftGoal.x, leftGoal.y, leftGoal.w, leftGoal.h);
+  ctx.fillRect(rightGoal.x, rightGoal.y, rightGoal.w, rightGoal.h);
+  ctx.strokeStyle = "#ff4d4d";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(leftGoal.x, leftGoal.y, leftGoal.w, leftGoal.h);
+  ctx.strokeStyle = "#4da6ff";
+  ctx.strokeRect(rightGoal.x, rightGoal.y, rightGoal.w, rightGoal.h);
+
+  // Net mesh hint
+  ctx.strokeStyle = "rgba(255,255,255,0.15)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 5; i++) {
+    const yy = leftGoal.y + 8 + i * 12;
+    ctx.beginPath();
+    ctx.moveTo(leftGoal.x, yy); ctx.lineTo(leftGoal.x + leftGoal.w, yy); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(rightGoal.x, yy); ctx.lineTo(rightGoal.x + rightGoal.w, yy); ctx.stroke();
+  }
+
+  ctx.fillStyle = "rgba(230,57,70,0.5)";
+  ctx.font = "bold 11px sans-serif";
+  ctx.fillText("CAN NET", leftGoal.x - 6, leftGoal.y - 8);
+  ctx.fillStyle = "rgba(77,166,255,0.55)";
+  ctx.fillText("USA NET", rightGoal.x - 8, rightGoal.y - 8);
+
+  if (state.crowdFlash > 0) {
+    ctx.fillStyle = "rgba(77,166,255,0.12)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#4da6ff";
+    ctx.font = "bold 22px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("U-S-A! U-S-A!", canvas.width / 2, 22);
+    ctx.textAlign = "left";
+  }
+}
+
+function drawSkater(sk) {
+  const isCan = sk.team === "CANADA";
+  ctx.beginPath();
+  ctx.arc(sk.x, sk.y, sk.r, 0, Math.PI * 2);
+  ctx.fillStyle = isCan ? "#e63946" : "#1d4e89";
+  ctx.fill();
+  ctx.strokeStyle = isCan ? "#9b2226" : "#0b2545";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // jersey accent
+  ctx.fillStyle = "#fff";
+  if (isCan) {
+    ctx.beginPath();
+    ctx.moveTo(sk.x, sk.y - 6);
+    ctx.lineTo(sk.x + 5, sk.y);
+    ctx.lineTo(sk.x, sk.y + 6);
+    ctx.lineTo(sk.x - 5, sk.y);
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+      const rr = 5;
+      const px = sk.x + Math.cos(a) * rr;
+      const py = sk.y + Math.sin(a) * rr;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // stick (wet cardboard vibe for Canada = slightly bent)
+  ctx.strokeStyle = "#5c4033";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(sk.x, sk.y);
+  const bend = isCan ? 4 : 0;
+  ctx.quadraticCurveTo(
+    sk.x + sk.facing * (sk.r + 6), sk.y + 4 + bend,
+    sk.x + sk.facing * (sk.r + 16), sk.y + 8
+  );
+  ctx.stroke();
+
+  if (sk.isPlayer) {
+    ctx.strokeStyle = "#ffd166";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(sk.x, sk.y, sk.r + 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  if (sk.leafStamp > 0) drawMapleLeaf(sk.x, sk.y - sk.r - 4, 11, "#c1121f");
+
+  if (sk.stunned > 0) {
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "13px sans-serif";
+    ctx.fillText("z z", sk.x - 8, sk.y - sk.r - 12);
+  }
+}
+
+function drawGoalie(g) {
+  const isCan = g.team === "CANADA";
+  ctx.beginPath();
+  ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2);
+  ctx.fillStyle = isCan ? "#b91c1c" : "#172554";
+  ctx.fill();
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = isCan ? "#7f1d1d" : "#1e3a8a";
+  ctx.fillRect(g.x - 14, g.y + 6, 28, 14);
+
+  if (isCan && g.phone) {
+    ctx.fillStyle = "#111";
+    ctx.fillRect(g.x + 10, g.y - 8, 9, 15);
+    ctx.fillStyle = "#4ade80";
+    ctx.fillRect(g.x + 11, g.y - 6, 7, 9);
+    ctx.font = "12px sans-serif";
+    ctx.fillText("📱", g.x - 8, g.y - g.r - 6);
+  }
+
+  if (!isCan && g.arms >= 4) {
+    ctx.strokeStyle = "#93c5fd";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(g.x, g.y); ctx.lineTo(g.x - 24, g.y - 18);
+    ctx.moveTo(g.x, g.y); ctx.lineTo(g.x - 24, g.y + 18);
+    ctx.moveTo(g.x, g.y); ctx.lineTo(g.x - 28, g.y - 5);
+    ctx.moveTo(g.x, g.y); ctx.lineTo(g.x - 28, g.y + 5);
+    ctx.stroke();
+    ctx.fillStyle = "#93c5fd";
+    ctx.font = "bold 9px sans-serif";
+    ctx.fillText("x4", g.x - 10, g.y + g.r + 14);
+  }
+}
+
+function drawPuck() {
+  ctx.beginPath();
+  ctx.arc(puck.x, puck.y, puck.r, 0, Math.PI * 2);
+  ctx.fillStyle = "#111";
+  ctx.fill();
+  ctx.strokeStyle = "#555";
+  ctx.stroke();
+  // underwater ring for Canada feel
+  if (state.playerTeam === "CANADA" && !puck.owner) {
+    ctx.strokeStyle = "rgba(30,100,180,0.25)";
+    ctx.beginPath();
+    ctx.arc(puck.x, puck.y, puck.r + 5 + Math.sin(performance.now() / 200) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+function drawAim() {
+  if (state.phase !== "play" || !player) return;
+  ctx.strokeStyle = "rgba(255,209,102,0.45)";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.moveTo(player.x, player.y);
+  ctx.lineTo(mouse.x, mouse.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.arc(mouse.x, mouse.y, 7, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(255,209,102,0.75)";
+  ctx.stroke();
+}
+
+function drawFightOverlay() {
+  const f = state.fight;
+  if (!f) return;
+  ctx.fillStyle = "rgba(10,15,30,0.38)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.8)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(player.x, player.y);
+  ctx.lineTo(f.opponent.x, f.opponent.y);
+  ctx.stroke();
+
+  for (const h of f.helmets) {
+    ctx.save();
+    ctx.translate(h.x, h.y);
+    ctx.rotate(h.rot);
+    ctx.fillStyle = "#64748b";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 13, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#334155";
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (f.punchFlash > 0) {
+    const px = (player.x + f.opponent.x) / 2;
+    const py = (player.y + f.opponent.y) / 2 - 10;
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 32px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("POW!", px, py);
+    ctx.textAlign = "left";
+    // impact star
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const r = i % 2 ? 10 : 22;
+      const x = px + Math.cos(a) * r;
+      const y = py + 10 + Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  if ((f.stage === "ko" || f.stage === "wake" || f.stage === "ref") && !f.playerWins) {
+    drawMapleLeaf(player.x, player.y - player.r - 10, 16, "#c1121f");
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 18px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("KO", player.x, player.y + 5);
+    ctx.textAlign = "left";
+  }
+
+  if (f.stage === "ref") {
+    const rx = RINK.x + RINK.w / 2, ry = RINK.y + 70;
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.arc(rx, ry, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(rx - 9, ry - 5, 18, 7);
+    ctx.font = "bold 11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("REF", rx, ry + 28);
+    ctx.fillStyle = "#ffd166";
+    ctx.fillText("(decorative penalty)", rx, ry + 44);
+    ctx.textAlign = "left";
+  }
+}
+
+function drawFloats(dt) {
+  for (let i = state.floatTexts.length - 1; i >= 0; i--) {
+    const t = state.floatTexts[i];
+    t.life -= dt;
+    t.y += t.vy * dt;
+    if (t.life <= 0) { state.floatTexts.splice(i, 1); continue; }
+    ctx.globalAlpha = clamp(t.life / t.max, 0, 1);
+    ctx.fillStyle = t.color;
+    ctx.font = "bold 15px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.textAlign = "left";
+    ctx.globalAlpha = 1;
+  }
+  for (let i = state.particles.length - 1; i >= 0; i--) {
+    const p = state.particles[i];
+    p.life -= dt;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 220 * dt;
+    if (p.life <= 0) { state.particles.splice(i, 1); continue; }
+    ctx.globalAlpha = clamp(p.life, 0, 1);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function render(dt) {
+  drawRink();
+  if (state.phase === "pick") {
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#8aa4c0";
+    ctx.font = "16px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Awaiting team selection…", canvas.width / 2, canvas.height / 2);
+    ctx.textAlign = "left";
+    return;
+  }
+
+  drawGoalie(goalieCan);
+  drawGoalie(goalieUsa);
+  if (teammate) drawSkater(teammate);
+  for (const e of enemies) drawSkater(e);
+  drawSkater(player);
+  drawPuck();
+  drawAim();
+
+  if (state.phase === "fight") drawFightOverlay();
+  drawFloats(dt);
+
+  // windup meter for Canada
+  if (state.phase === "play" && state.playerTeam === "CANADA" && state.windup > 0) {
+    const need = 0.38;
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.fillRect(player.x - 20, player.y + 22, 40, 5);
+    ctx.fillStyle = "#ffd166";
+    ctx.fillRect(player.x - 20, player.y + 22, 40 * clamp(state.windup / need, 0, 1), 5);
+  }
+}
+
+/* ---------- MAIN LOOP ---------- */
+function update(dt) {
+  if (state.phase === "pick" || state.phase === "results") return;
+
+  if (state.phase === "fight") {
+    updateFight(dt);
+    // still draw floats
+    return;
+  }
+
+  // play
+  state.timeLeft -= dt;
+  if (state.crowdFlash > 0) state.crowdFlash -= dt;
+  updateHud();
+
+  if (state.timeLeft <= 0) {
+    endMatch();
+    return;
+  }
+
+  movePlayer(dt);
+  updateAI(dt);
+
+  const all = [player, teammate, ...enemies].filter(Boolean);
+  for (let i = 0; i < all.length; i++) {
+    for (let j = i + 1; j < all.length; j++) collideSkaters(all[i], all[j]);
+  }
+
+  stealChecks();
+  updatePuck(dt);
+  canadaMatchScript(dt);
+
+  // Input queues
+  if (shootQueued) {
+    shootQueued = false;
+    playerShoot();
+  } else {
+    // decay windup if not shooting
+    state.windup = Math.max(0, state.windup - dt * 0.5);
+  }
+
+  if (fightQueued) {
+    fightQueued = false;
+    let best = null, bestD = 60;
+    for (const e of enemies) {
+      const d = dist(player, e);
+      if (d < bestD) { bestD = d; best = e; }
+    }
+    if (best) startFight(best);
+    else floatText(player.x, player.y - 30, "Nobody to fight (yet)", "#aaa", 0.9);
+  }
+}
+
+function frame(ts) {
+  if (!lastTs) lastTs = ts;
+  let dt = (ts - lastTs) / 1000;
+  lastTs = ts;
+  dt = Math.min(dt, 0.05);
+  update(dt);
+  render(dt);
+  requestAnimationFrame(frame);
+}
+
+// Boot
+fitCanvas();
+syncMobileChrome();
+showTeamPick();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
