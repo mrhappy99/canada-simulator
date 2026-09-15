@@ -1,0 +1,4291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Canada Simulator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    background: radial-gradient(ellipse at 50% 20%, #1a2740 0%, #070d18 55%, #03060c 100%);
+    color: #f5f5f5;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+  #wrap {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    width: 100%; height: 100%; gap: 6px;
+    padding: 6px 0;
+  }
+  #titleBar {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    text-align: center; padding: 0 10px;
+  }
+  #titleBar .logo-leaf { width: 28px; height: 28px; flex-shrink: 0; }
+  #titleBar h1 {
+    font-size: clamp(16px, 4.2vw, 26px);
+    letter-spacing: 0.12em;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 2px 0 #8b0000, 0 0 18px rgba(255,60,60,0.45);
+    text-transform: uppercase;
+  }
+  #titleBar h1 span {
+    display: block;
+    font-size: 0.48em;
+    letter-spacing: 0.28em;
+    color: #7eb8ff;
+    text-shadow: 0 1px 0 #0a2540;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  #jumbotron {
+    display: flex; align-items: stretch; gap: 0;
+    background: linear-gradient(180deg, #1c2433 0%, #0d121c 100%);
+    border: 3px solid #3a4558;
+    border-radius: 10px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 20px rgba(0,0,0,0.55), 0 0 0 2px #0a0e14;
+    overflow: hidden;
+    max-width: 96vw;
+    min-height: 56px;
+  }
+  #jumbotron .side {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 6px 14px; min-width: 88px;
+  }
+  #jumbotron .side.can {
+    background: linear-gradient(180deg, #c81e1e 0%, #8b0000 100%);
+    border-right: 2px solid #3a4558;
+  }
+  #jumbotron .side.usa {
+    background: linear-gradient(180deg, #1e4a8c 0%, #0c2348 100%);
+    border-left: 2px solid #3a4558;
+  }
+  #jumbotron .side .lab { font-size: 10px; font-weight: 800; letter-spacing: 0.18em; opacity: 0.9; }
+  #jumbotron .side .num {
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 28px; font-weight: 900; line-height: 1;
+    text-shadow: 0 0 8px rgba(255,255,255,0.35);
+  }
+  #jumbotron .mid {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; padding: 6px 16px; flex: 1; min-width: 160px;
+    background: #05080f;
+  }
+  #jumbotron .clock {
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 22px; font-weight: 900; color: #ffd166;
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 10px rgba(255,209,102,0.4);
+  }
+  #jumbotron .team-chip { font-size: 11px; font-weight: 700; color: #a8e6cf; letter-spacing: 0.06em; }
+  #hateWrap { width: 100%; max-width: 280px; margin-top: 2px; }
+  #hateWrap .hate-lab {
+    font-size: 9px; font-weight: 800; letter-spacing: 0.14em;
+    color: #ff6b6b; text-align: center; margin-bottom: 2px;
+  }
+  #hateBar {
+    height: 10px; border-radius: 4px;
+    background: #1a1020; border: 1px solid #5c2030; overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
+  }
+  #hateFill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #7f1d1d, #ff4d4d 60%, #ffd166);
+    box-shadow: 0 0 8px rgba(255,77,77,0.6);
+    transition: width 0.25s ease-out;
+  }
+  canvas {
+    background: #0a1520;
+    border: 4px solid #2a3548;
+    border-radius: 14px;
+    box-shadow: 0 10px 36px rgba(0,0,0,0.55), inset 0 0 0 2px rgba(255,255,255,0.06);
+    max-width: 96vw; max-height: 68vh;
+    cursor: crosshair;
+    touch-action: none;
+    -ms-touch-action: none;
+    display: block;
+    width: auto; height: auto;
+  }
+  #hint { font-size: 12px; color: #7a93ad; text-align: center; max-width: 960px; padding: 0 10px; }
+  #overlay {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 50% 30%, rgba(40,20,30,0.55), rgba(4,8,16,0.94));
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10;
+  }
+  #overlay.hidden { display: none; }
+  .card {
+    background: linear-gradient(165deg, #1a283c 0%, #0c1524 55%, #0a101c 100%);
+    border: 3px solid #c81e1e;
+    border-radius: 16px;
+    padding: 28px 32px;
+    max-width: 540px; width: 92vw;
+    text-align: center;
+    box-shadow: 0 0 0 4px #0c2348, 0 20px 60px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.08);
+    position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(-12deg, transparent, transparent 18px, rgba(255,255,255,0.015) 18px, rgba(255,255,255,0.015) 19px);
+    pointer-events: none;
+  }
+  .card .poster-tag {
+    display: inline-block;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.22em;
+    color: #ffd166; background: rgba(0,0,0,0.35);
+    border: 1px solid #5a4a20; border-radius: 999px;
+    padding: 4px 12px; margin-bottom: 10px;
+  }
+  .card h2 {
+    font-size: clamp(26px, 6vw, 36px); margin-bottom: 6px;
+    font-weight: 900; letter-spacing: 0.06em;
+    color: #fff;
+    text-shadow: 0 3px 0 #8b0000, 0 0 20px rgba(255,60,60,0.35);
+    text-transform: uppercase;
+  }
+  .card h2.red { color: #ff6b6b; text-shadow: 0 3px 0 #4a0000, 0 0 18px rgba(255,77,77,0.4); }
+  .card h2.blue { color: #6eb6ff; text-shadow: 0 3px 0 #0a2540, 0 0 18px rgba(77,166,255,0.4); }
+  .card .subhead {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.2em;
+    color: #7eb8ff; margin-bottom: 12px; text-transform: uppercase;
+  }
+  .card p { margin: 10px 0; line-height: 1.45; color: #c8d8ea; font-size: 15px; position: relative; }
+  .card .verdict {
+    font-size: 17px; font-weight: 800; color: #fff;
+    margin: 16px 0; padding: 14px 16px;
+    background: linear-gradient(90deg, rgba(200,30,30,0.2), rgba(30,74,140,0.2));
+    border: 2px solid #3a4558; border-left: 5px solid #ff4d4d;
+    border-radius: 8px; text-align: left; position: relative;
+  }
+  .card .broadcast {
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 13px; color: #ffd166; letter-spacing: 0.04em;
+    background: #05080f; border: 1px solid #2a3548;
+    border-radius: 6px; padding: 10px; margin: 12px 0;
+  }
+  .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 18px; position: relative; }
+  button {
+    appearance: none; border: none; cursor: pointer;
+    font: inherit; font-weight: 800; font-size: 15px;
+    padding: 14px 24px; border-radius: 10px;
+    transition: transform 0.08s, filter 0.15s;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.35);
+    min-height: 48px; min-width: 48px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.35); }
+  .btn-ca { background: linear-gradient(180deg, #e63946, #b91c1c); color: #fff; border: 2px solid #ffb4b4; }
+  .btn-us { background: linear-gradient(180deg, #3b82f6, #1d4e89); color: #fff; border: 2px solid #93c5fd; }
+  .btn-go { background: linear-gradient(180deg, #2dd4a8, #0f766e); color: #fff; border: 2px solid #99f6e4; }
+  .btn-dim { background: linear-gradient(180deg, #475569, #334155); color: #e2e8f0; border: 2px solid #64748b; }
+  .tiny { font-size: 12px; color: #7a93ad; margin-top: 14px; position: relative; }
+  #gameArea { position: relative; display: inline-block; line-height: 0; max-width: 100%; }
+  #mobileControls {
+    display: none; position: absolute; right: 10px; bottom: 10px;
+    flex-direction: column; gap: 10px; z-index: 5; pointer-events: none;
+  }
+  #mobileControls.visible { display: flex; }
+  #mobileControls button {
+    pointer-events: auto; min-width: 80px; min-height: 50px;
+    padding: 12px 16px; font-size: 14px; letter-spacing: 0.06em;
+    opacity: 0.92; box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+  #mShoot { background: linear-gradient(180deg, #2dd4a8, #0f766e); color: #fff; border: 2px solid #99f6e4; }
+  #mFight { background: linear-gradient(180deg, #e63946, #b91c1c); color: #fff; border: 2px solid #ffb4b4; }
+  @media (max-width: 900px), (pointer: coarse) {
+    #titleBar h1 { font-size: 15px; }
+    #jumbotron .side { min-width: 64px; padding: 4px 8px; }
+    #jumbotron .side .num { font-size: 22px; }
+    #jumbotron .clock { font-size: 18px; }
+    #jumbotron .mid { padding: 4px 8px; min-width: 120px; }
+    #hint { font-size: 11px; padding: 0 10px; max-width: 96vw; }
+    canvas { max-width: 100vw; max-height: calc(100dvh - 175px); border-width: 3px; border-radius: 10px; }
+    .card { padding: 22px 16px; width: 94vw; }
+    .card h2 { font-size: 24px; }
+    .btns button { min-height: 50px; padding: 14px 20px; font-size: 15px; flex: 1 1 auto; }
+  }
+</style>
+</head>
+<body>
+
+
+<div id="wrap">
+  <div id="titleBar">
+    <svg class="logo-leaf" viewBox="0 0 24 24" aria-hidden="true"><path fill="#e63946" d="M12 2 L14 8 L20 6 L16 11 L22 14 L15 14 L17 20 L12 16 L7 20 L9 14 L2 14 L8 11 L4 6 L10 8 Z"/></svg>
+    <h1>CANADA SIMULATOR<span id="titleSub">Main Menu</span></h1>
+    <svg class="logo-leaf" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4da6ff" d="M12 2l2.2 6.8H22l-5.5 4 2.1 6.7L12 15.8 5.4 19.5l2.1-6.7L2 8.8h7.8z"/></svg>
+  </div>
+  <div id="jumbotron" aria-live="polite">
+    <div class="side can"><div class="lab">CAN</div><div class="num" id="hudScoreCan">0</div></div>
+    <div class="mid">
+      <div class="clock" id="hudTime">1:45</div>
+      <div class="team-chip" id="hudTeam">PICK A TEAM</div>
+      <div id="hateWrap"><div class="hate-lab">AMERICA HATE INDEX</div><div id="hateBar"><div id="hateFill"></div></div></div>
+    </div>
+    <div class="side usa"><div class="lab">USA</div><div class="num" id="hudScoreUsa">0</div></div>
+  </div>
+  <div id="gameArea">
+    <canvas id="game" width="1040" height="620"></canvas>
+    <div id="mobileControls" aria-hidden="true">
+      <button type="button" id="mShoot">SHOOT</button>
+      <button type="button" id="mFight">FIGHT</button>
+    </div>
+  </div>
+  <div id="hint">WASD / Arrows skate · Mouse aim · Click or F to shoot · Space / click near foe to fight</div>
+</div>
+
+<div id="overlay">
+  <div class="card" id="card"></div>
+</div>
+
+<script>
+/* ============================================================================
+  CANADA SIMULATOR — Level 1: The Rink
+  Aesthetic: Super Chexx / bubble hockey table (hand-painted plastic men).
+  Affectionate Canada–US rivalry satire. Punch clichés & institutions, not people.
+============================================================================ */
+
+/* ---------- DATA ARRAYS (edit jokes here) ---------- */
+const CANADA_FIGHT_LINES = [
+  "Sorry about your fist.",
+  "That maple leaf is going to stain.",
+  "One punch. Historic.",
+  "We prefer strongly worded letters.",
+  "Helmet: airborne. Dignity: also airborne.",
+  "The ref is writing a fake penalty. For vibes.",
+  "Wake up on the ice. Apologize to the ice.",
+];
+
+const USA_CROWD_LINES = [
+  "U-S-A! U-S-A!",
+  "PUT IT IN THE NET!",
+  "FOUR ARMS! FOUR ARMS!",
+  "That puck just got a visa!",
+  "BREAKAWAY ENERGY!",
+  "Scoreboard goes brrr",
+  "Freedom slapshot!",
+];
+
+const RESULT_VERDICTS = [
+  "You had the puck. The puck did not have you.",
+  "Fight record: 0–∞",
+  "The scoreboard is not broken. You are.",
+  "Effort: Olympic. Outcome: municipal.",
+  "Canada played with heart. Heart lost 5–1.",
+  "Your stick was wet cardboard. The ice noticed.",
+  "Hate Index rising. Maple syrup cannot stop this.",
+  "You tried. Trying is not a power play.",
+  "Final score certified by people who are not you.",
+  "Somewhere a goalie is still on his phone.",
+];
+
+const CANADA_MISS_LINES = [
+  "Wet cardboard stick…",
+  "Puck drowned mid-flight.",
+  "Goalie yawned it away.",
+  "Almost. Philosophically.",
+  "Denied by vibes.",
+  "NO GOAL (of course)",
+];
+
+const REF_LINES = [
+  "Two minutes for… existing too hard!",
+  "Penalty! (decorative)",
+  "Box time that changes nothing!",
+  "I'm writing this down for the scrapbook.",
+];
+
+const ZAMBONI_LINES = [
+  "SORRY — resurfacing!",
+  "Courtesy flood incoming",
+  "Zamboni has the right-of-way",
+  "Please hold your dignity",
+  "Ice: briefly Canadian again",
+  "Out of the way, politely",
+];
+
+const CANADA_SKATER_NAMES = [
+  "Guy 'Tabarnouche' Tremblay",
+  "Réjean Poutineau",
+  "Luc 'Sorry' Beauchemin",
+  "Yvon 'Zamboni' Gagnon",
+  "Marcel 'Two-Minute' Côté",
+];
+
+const USA_SKATER_NAMES = [
+  "Chad", "Brad", "Trent", "Brock", "Duke", "Clint", "Hank", "Rex", "Bud", "Kirk",
+];
+
+const ANNOUNCER_LINES = {
+  faceoff: [
+    "Allez! Face-off! Mon Dieu, skate already!",
+    "Puck drop! C'est parti — do not embarrass Québec!",
+    "FACE-OFF! I am already sweating through my turtleneck!",
+  ],
+  usaGoal: [
+    "NON NON NON! Goal Américain?! TABARNAK DE SCOREBOARD!",
+    "They score AGAIN?! This is a national trauma broadcast!",
+    "OH NON! The blue sweaters dance! My blood pressure has dual citizenship!",
+  ],
+  canDenied: [
+    "THAT WAS A GOAL! In my heart! On the board? NON!",
+    "Denied?! The puck was IN! Philosophically IN!",
+    "NO GOAL?! I demand a strongly worded inquiry!",
+  ],
+  fightLose: [
+    "KO! Our boy is decorating the ice with apologies!",
+    "One punch! Historic! Tragic! Beautiful! Awful!",
+    "He wakes up… he says sorry to the ice… CLASSIC!",
+  ],
+  zamboni: [
+    "ZAMBONI! Clear the way! Canadian courtesy on wheels!",
+    "The Zamboni arrives like a polite tank! SORRY!",
+    "Resurfacing mid-period?! Only we would apologize while doing it!",
+  ],
+  buzzer: [
+    "BUZZER! It is over! My throat is gone! Vive… something!",
+    "Final horn! Write it down: effort yes, glory no!",
+    "C'est fini! Someone bring me a double-double and a nap!",
+  ],
+  canPuck: [
+    "He has the puck! Hope lives! Briefly!",
+    "Possession Canadien! Do not look directly at destiny!",
+  ],
+};
+
+
+
+const BOARDROOM_LINES = ["(Level 2 stub — not in v1 slice)"];
+const LAKE_SIGNS = ["This used to be ours.", "We had a lake once.", "Sorry about the wake."];
+const QUEBEC_TAUNTS = [
+  "I fart at you!",
+  "I spit in your general direction!",
+  "Your mother was a hamster and your father smelt of elderberries!",
+];
+const PARLIAMENT_RED = ["They stole the lake!"];
+const PARLIAMENT_BLUE = ["You didn't denounce it hard enough!"];
+
+/* ---------- LEVEL: SATURDAY NIGHT CANADA ---------- */
+const HOSER_LINES = [
+  "Take off, eh!",
+  "Beauty play, bud.",
+  "Give'r!",
+  "Good day, hosers.",
+  "How's it goin', eh?",
+  "That's a beauty.",
+  "Pass the stubby, eh?",
+  "Don't be a hoser.",
+  "Two-four of strategy right there.",
+  "Keep your stick on the ice… wait, wrong game.",
+];
+
+const STONER_LINES = [
+  "Hot knives, anyone?",
+  "Kitchen's ready, bud.",
+  "This'll help the hand, eh?",
+  "Just a little hit for the nerves.",
+  "Don't bogart the table talk.",
+  "Woah. Cards are… floaty.",
+];
+
+const EUCHRE_BANTER = [
+  "Order it up, ya hoser!",
+  "Trump is whatever hurts Canada.",
+  "Partner's playing like a donut.",
+  "Follow suit or follow destiny.",
+  "Bowers for days… somehow not ours.",
+  "Chad just smiled. That's illegal in Ontario.",
+  "Brad reneges with confidence.",
+  "We had the euchre. Philosophically.",
+];
+
+const TV_BOOS = [
+  "BOOOO — USA scores on HNIC!",
+  "Crowd: U-S-A! (on your TV)",
+  "Announcer: TABARNAK DE GOAL!",
+  "Canada almost… no. Never mind.",
+  "YAAY?! Wait — that's the wrong team.",
+  "Commercial for beer, then more boos.",
+];
+
+const HOT_KNIVES_LINES = [
+  "HOT KNIVES! (cartoon gag)",
+  "Smoke drifts across the card table…",
+  "Woozy… cards tilt… snap back.",
+  "Optional refusal still gets smoked.",
+  "Beauty hit. Terrible euchre.",
+];
+
+const SNC_RESULT_VERDICTS = [
+  "You ordered trump. Trump ordered you around.",
+  "Partner played like a maple-glazed donut.",
+  "Chad and Brad send their regards (and the euchre).",
+  "Hot knives: optional. Losing: mandatory.",
+  "HNIC on TV agreed with the Americans.",
+  "Caring about bowers is a hate crime against yourself.",
+  "The card table remains undefeated. You do not.",
+];
+
+/* ---------- LEVEL: DRIVEWAY SHOVEL ---------- */
+const DRIVEWAY_LINES = [
+  "Just a little more… beauty.",
+  "Municipal courtesy incoming.",
+  "My back is Canadianly sorry.",
+  "Three feet of destiny.",
+  "Clear it. Watch it return.",
+  "The plow has union hours and spite.",
+];
+
+const PLOW_LINES = [
+  "MUNICIPAL PLOW — returning your snow!",
+  "Courtesy dump. Have a good day.",
+  "By-law 12: effort is temporary.",
+  "Plow wave: the Canadian hello.",
+  "Your driveway? Our storage unit.",
+  "SORRY — dumping this back.",
+];
+
+const DRIVEWAY_RESULT_VERDICTS = [
+  "You shoveled. The city shoveled back harder.",
+  "Driveway clear time: 0.0 consecutive seconds.",
+  "Hate Index: proportional to cubic meters moved.",
+  "The plow thanks you for the cardio.",
+  "Never truly win. That's the municipal plan.",
+  "Three feet became four. Math is American now.",
+];
+
+
+
+/* ============================================================================
+  LOSE MULTIPLIER — CRITICAL JOKE ENGINE
+  SEARCH STRING: CANADA_LOSE_MULTIPLIER
+  FUNCTION: denyCanadianGoal(teamAttacking)
+  Also called from: awardGoal()
+
+  If the player picked Team Canada, the scoreboard MUST NEVER award a
+  Canadian goal. Shots are visibly attempted, then diverted / swallowed /
+  ruled "no goal". USA goals still count. Effort is visible; outcome is not.
+============================================================================ */
+const CANADA_LOSE_MULTIPLIER = 0; // 0 = Canadian goals never count. Do not raise above 0 for Level 1.
+
+/**
+ * denyCanadianGoal — hard gate on Canadian scoring.
+ * Returns true if the goal must be denied (Canada team selected + Canada attack).
+ * Always returns false for USA goals / when playing as USA.
+ */
+function denyCanadianGoal(teamAttacking) {
+  // CANADA_LOSE_MULTIPLIER gate:
+  if (state.playerTeam === "CANADA" && teamAttacking === "CANADA") {
+    if (CANADA_LOSE_MULTIPLIER <= 0) return true; // always deny
+    return Math.random() > CANADA_LOSE_MULTIPLIER;
+  }
+  return false;
+}
+
+/* ---------- CANVAS / INPUT ---------- */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const overlay = document.getElementById("overlay");
+const card = document.getElementById("card");
+const mobileControls = document.getElementById("mobileControls");
+const hintEl = document.getElementById("hint");
+
+const keys = Object.create(null);
+let mouse = { x: 520, y: 310, down: false };
+let shootQueued = false;
+let fightQueued = false;
+
+/* Mobile: drag-to-skate toward finger; release = coast.
+   Short tap = shoot at tap (or fight if near opponent).
+   Optional SHOOT / FIGHT buttons bottom-right. */
+const touchSkate = { active: false, x: 520, y: 310 };
+const activeTouches = new Map(); // id -> { sx, sy, x, y, t0, skating }
+const TAP_MOVE_PX = 18;
+const TAP_MAX_MS = 320;
+
+function wantsMobileUI() {
+  try {
+    if (window.matchMedia("(pointer: coarse)").matches) return true;
+    if (window.matchMedia("(hover: none)").matches) return true;
+    if (window.matchMedia("(max-width: 900px)").matches) return true;
+  } catch (_) {}
+  return ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+}
+
+function clientToCanvas(clientX, clientY) {
+  const r = canvas.getBoundingClientRect();
+  return {
+    x: (clientX - r.left) * (canvas.width / r.width),
+    y: (clientY - r.top) * (canvas.height / r.height),
+  };
+}
+
+function syncMobileChrome() {
+  const show = wantsMobileUI();
+  if (mobileControls) {
+    const playing = state.level === "rink" && state.phase === "play";
+    mobileControls.classList.toggle("visible", show && playing);
+    mobileControls.setAttribute("aria-hidden", show && playing ? "false" : "true");
+  }
+  if (hintEl) {
+    if (state.level === "snc") {
+      hintEl.textContent = show
+        ? "Tap a card to play / bid · Hot knives are optional comedy"
+        : "Click cards to bid & play · Esc/Menu from results";
+    } else if (state.level === "driveway") {
+      hintEl.textContent = show
+        ? "Drag / tap to shovel snow · Plow always comes back"
+        : "Move with WASD/Arrows or drag · Aim shovel at snow piles";
+    } else if (state.level === "rink") {
+      hintEl.textContent = show
+        ? "Drag on ice to skate · Tap to shoot · Tap near foe or FIGHT · SHOOT button works too"
+        : "WASD / Arrows skate · Mouse aim · Click or F to shoot · Space / click near foe to fight";
+    } else {
+      hintEl.textContent = "Pick a level. Caring is punished.";
+    }
+  }
+  const sub = document.getElementById("titleSub");
+  if (sub) {
+    if (state.level === "rink") sub.textContent = "Level 1 — Bubble Rink";
+    else if (state.level === "snc") sub.textContent = "Saturday Night Canada";
+    else if (state.level === "driveway") sub.textContent = "The Driveway";
+    else sub.textContent = "Main Menu";
+  }
+}
+
+function fitCanvas() {
+  const narrow = wantsMobileUI() || window.innerWidth <= 900;
+  const maxW = narrow ? window.innerWidth : window.innerWidth * 0.96;
+  const reserved = narrow ? 185 : window.innerHeight * 0.30;
+  const maxH = Math.max(160, window.innerHeight - reserved);
+  const scale = Math.min(maxW / canvas.width, maxH / canvas.height, 1);
+  const w = Math.max(1, Math.floor(canvas.width * scale));
+  const h = Math.max(1, Math.floor(canvas.height * scale));
+  canvas.style.width = w + "px";
+  canvas.style.height = h + "px";
+}
+
+window.addEventListener("keydown", (e) => {
+  keys[e.code] = true;
+  if (state.level === "rink") {
+    if (e.code === "Space") { e.preventDefault(); fightQueued = true; }
+    if (e.code === "KeyF") shootQueued = true;
+  }
+});
+window.addEventListener("keyup", (e) => { keys[e.code] = false; });
+canvas.addEventListener("mousemove", (e) => {
+  const p = clientToCanvas(e.clientX, e.clientY);
+  mouse.x = p.x; mouse.y = p.y;
+});
+canvas.addEventListener("mousedown", (e) => {
+  mouse.down = true;
+  const p = clientToCanvas(e.clientX, e.clientY);
+  mouse.x = p.x; mouse.y = p.y;
+  if (state.level === "snc") { sncOnPointer(p.x, p.y, "down"); return; }
+  if (state.level === "driveway") { drivewayOnPointer(p.x, p.y, "down"); return; }
+  if (e.button === 0 && state.level === "rink") {
+    if (state.phase === "play" && nearOpponent()) fightQueued = true;
+    else shootQueued = true;
+  }
+});
+canvas.addEventListener("mouseup", (e) => {
+  mouse.down = false;
+  if (state.level === "snc") {
+    const p = clientToCanvas(e.clientX, e.clientY);
+    sncOnPointer(p.x, p.y, "up");
+  }
+  if (state.level === "driveway") {
+    const p = clientToCanvas(e.clientX, e.clientY);
+    drivewayOnPointer(p.x, p.y, "up");
+  }
+});
+canvas.addEventListener("mousemove", (e) => {
+  if (state.level === "driveway" && mouse.down) {
+    const p = clientToCanvas(e.clientX, e.clientY);
+    drivewayOnPointer(p.x, p.y, "move");
+  }
+});
+
+function refreshTouchSkate() {
+  let any = false;
+  for (const t of activeTouches.values()) {
+    if (t.skating) {
+      touchSkate.active = true;
+      touchSkate.x = t.x;
+      touchSkate.y = t.y;
+      mouse.x = t.x;
+      mouse.y = t.y;
+      any = true;
+      break;
+    }
+  }
+  if (!any) touchSkate.active = false;
+}
+
+function onTouchStart(e) {
+  if (state.level === "snc") {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    const p = clientToCanvas(touch.clientX, touch.clientY);
+    mouse.x = p.x; mouse.y = p.y;
+    sncOnPointer(p.x, p.y, "down");
+    return;
+  }
+  if (state.level === "driveway") {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    const p = clientToCanvas(touch.clientX, touch.clientY);
+    mouse.x = p.x; mouse.y = p.y;
+    drivewayOnPointer(p.x, p.y, "down");
+    return;
+  }
+  if (state.level !== "rink" || state.phase !== "play") return;
+  e.preventDefault();
+  const now = performance.now();
+  for (const touch of e.changedTouches) {
+    const p = clientToCanvas(touch.clientX, touch.clientY);
+    activeTouches.set(touch.identifier, {
+      sx: touch.clientX, sy: touch.clientY,
+      x: p.x, y: p.y, t0: now, skating: false,
+    });
+    mouse.x = p.x; mouse.y = p.y;
+  }
+}
+
+function onTouchMove(e) {
+  if (state.level === "driveway") {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    const p = clientToCanvas(touch.clientX, touch.clientY);
+    mouse.x = p.x; mouse.y = p.y;
+    drivewayOnPointer(p.x, p.y, "move");
+    return;
+  }
+  if (state.level !== "rink" || state.phase !== "play") return;
+  e.preventDefault();
+  for (const touch of e.changedTouches) {
+    const rec = activeTouches.get(touch.identifier);
+    if (!rec) continue;
+    const p = clientToCanvas(touch.clientX, touch.clientY);
+    rec.x = p.x; rec.y = p.y;
+    const moved = Math.hypot(touch.clientX - rec.sx, touch.clientY - rec.sy);
+    if (moved >= TAP_MOVE_PX) rec.skating = true;
+    mouse.x = p.x; mouse.y = p.y;
+  }
+  refreshTouchSkate();
+}
+
+function onTouchEnd(e) {
+  e.preventDefault();
+  if (state.level === "snc") {
+    const touch = e.changedTouches[0];
+    if (touch) {
+      const p = clientToCanvas(touch.clientX, touch.clientY);
+      sncOnPointer(p.x, p.y, "up");
+    }
+    return;
+  }
+  if (state.level === "driveway") {
+    const touch = e.changedTouches[0];
+    if (touch) {
+      const p = clientToCanvas(touch.clientX, touch.clientY);
+      drivewayOnPointer(p.x, p.y, "up");
+    }
+    return;
+  }
+  const now = performance.now();
+  for (const touch of e.changedTouches) {
+    const rec = activeTouches.get(touch.identifier);
+    if (!rec) continue;
+    activeTouches.delete(touch.identifier);
+    if (state.level !== "rink" || state.phase !== "play") continue;
+    const moved = Math.hypot(touch.clientX - rec.sx, touch.clientY - rec.sy);
+    const dtMs = now - rec.t0;
+    if (!rec.skating && moved < TAP_MOVE_PX && dtMs <= TAP_MAX_MS) {
+      mouse.x = rec.x; mouse.y = rec.y;
+      if (nearOpponent()) fightQueued = true;
+      else shootQueued = true;
+    }
+  }
+  refreshTouchSkate();
+}
+
+canvas.addEventListener("touchstart", onTouchStart, { passive: false });
+canvas.addEventListener("touchmove", onTouchMove, { passive: false });
+canvas.addEventListener("touchend", onTouchEnd, { passive: false });
+canvas.addEventListener("touchcancel", onTouchEnd, { passive: false });
+
+function wireMobileButtons() {
+  const shootBtn = document.getElementById("mShoot");
+  const fightBtn = document.getElementById("mFight");
+  // click covers mouse + touch (avoid touchend+click double-fire)
+  if (shootBtn) {
+    shootBtn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      if (state.phase === "play") shootQueued = true;
+    });
+  }
+  if (fightBtn) {
+    fightBtn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      if (state.phase === "play") fightQueued = true;
+    });
+  }
+}
+wireMobileButtons();
+window.addEventListener("resize", () => { fitCanvas(); syncMobileChrome(); });
+window.addEventListener("orientationchange", () => { fitCanvas(); syncMobileChrome(); });
+
+/* ---------- RINK GEOMETRY ---------- */
+const RINK = { x: 70, y: 48, w: 900, h: 524 };
+const GOAL_W = 78, GOAL_D = 20;
+const leftGoal = { x: RINK.x - 2, y: RINK.y + RINK.h / 2 - GOAL_W / 2, w: GOAL_D, h: GOAL_W };
+const rightGoal = { x: RINK.x + RINK.w - GOAL_D + 2, y: RINK.y + RINK.h / 2 - GOAL_W / 2, w: GOAL_D, h: GOAL_W };
+
+const MATCH_SECONDS = 105; // within 90–120s band
+
+const state = {
+  level: "menu", // menu | rink | snc | driveway
+  phase: "menu",
+  playerTeam: null,
+  scoreCan: 0,
+  scoreUsa: 0,
+  hate: 0,
+  timeLeft: MATCH_SECONDS,
+  fightLosses: 0,
+  floatTexts: [],
+  particles: [],
+  fight: null,
+  windup: 0,
+  phoneCheck: 0,
+  buzzerDone: false,
+  usaPressure: 0,
+  crowdFlash: 0,
+  goalFlash: 0,
+  iceSpray: [],
+  puckTrail: [],
+  iceFresh: 0,       // 0 scratched … 1 freshly flooded (Zamboni)
+  zamboni: null,     // active machine or null
+  zamboniCooldown: 18,
+  actionTip: "",
+  announcerCaption: null,
+};
+
+let player, teammate, enemies, goalieCan, goalieUsa, puck;
+let lastTs = 0;
+
+function rand(a, b) { return a + Math.random() * (b - a); }
+function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+function nearOpponent() {
+  if (!player || !enemies) return false;
+  return enemies.some((e) => dist(player, e) < 72);
+}
+
+function makeSkater(x, y, team, isPlayer) {
+  const hairStyles = ["mullet", "sideburns", "afro", "swoop", "beard"];
+  return {
+    x, y, vx: 0, vy: 0,
+    team, isPlayer: !!isPlayer,
+    r: isPlayer ? 26 : 22,
+    facing: team === "CANADA" ? 1 : -1,
+    angle: team === "CANADA" ? 0 : Math.PI,
+    stunned: 0,
+    hasPuck: false,
+    leafStamp: 0,
+    hair: hairStyles[(Math.random() * hairStyles.length) | 0],
+    faceSeed: (Math.random() * 1000) | 0,
+  };
+}
+
+function resetPuck(cx, cy) {
+  puck = {
+    x: cx ?? (RINK.x + RINK.w / 2),
+    y: cy ?? (RINK.y + RINK.h / 2),
+    vx: 0, vy: 0, r: 15,
+    owner: null,
+    lastShooter: null,
+  };
+  state.puckTrail = [];
+}
+
+function setupMatch() {
+  const midY = RINK.y + RINK.h / 2;
+  const isCan = state.playerTeam === "CANADA";
+
+  if (isCan) {
+    player = makeSkater(RINK.x + 200, midY, "CANADA", true);
+    teammate = makeSkater(RINK.x + 280, midY - 90, "CANADA", false);
+    enemies = [
+      makeSkater(RINK.x + RINK.w - 220, midY, "USA", false),
+      makeSkater(RINK.x + RINK.w - 300, midY + 80, "USA", false),
+      makeSkater(RINK.x + RINK.w - 340, midY - 100, "USA", false),
+    ];
+  } else {
+    player = makeSkater(RINK.x + RINK.w - 200, midY, "USA", true);
+    teammate = makeSkater(RINK.x + RINK.w - 280, midY - 90, "USA", false);
+    enemies = [
+      makeSkater(RINK.x + 220, midY, "CANADA", false),
+      makeSkater(RINK.x + 300, midY + 80, "CANADA", false),
+      makeSkater(RINK.x + 340, midY - 100, "CANADA", false),
+    ];
+  }
+
+  goalieCan = { x: RINK.x + 36, y: midY, r: 28, team: "CANADA", phone: true, arms: 2, hair: "mullet", faceSeed: 7 };
+  goalieUsa = { x: RINK.x + RINK.w - 36, y: midY, r: 28, team: "USA", phone: false, arms: 4, hair: "sideburns", faceSeed: 11 };
+
+  resetPuck();
+  puck.vx = rand(-40, 40);
+  puck.vy = rand(-30, 30);
+
+  state.scoreCan = 0;
+  state.scoreUsa = 0;
+  state.timeLeft = MATCH_SECONDS;
+  state.fightLosses = 0;
+  state.floatTexts = [];
+  state.particles = [];
+  state.iceSpray = [];
+  state.iceFresh = 0;
+  state.zamboni = null;
+  state.zamboniCooldown = rand(12, 22);
+  state.actionTip = "";
+  state.announcerCaption = null;
+  state.fight = null;
+  state.windup = 0;
+  state.buzzerDone = false;
+  state.usaPressure = 0;
+  state.crowdFlash = 0;
+  state.goalFlash = 0;
+  state.phase = "play";
+  hideOverlay();
+  updateHud();
+  touchSkate.active = false;
+  activeTouches.clear();
+  syncMobileChrome();
+  assignRosterNames();
+  _lastPuckOwner = null;
+  floatText(RINK.x + RINK.w / 2, RINK.y + 50, "FACEOFF!", "#ffd166", 1.2);
+  announce("faceoff");
+  ensureAudio();
+  updatePossessionUI();
+}
+
+function showOverlay(html) {
+  card.innerHTML = html;
+  overlay.classList.remove("hidden");
+}
+function hideOverlay() { overlay.classList.add("hidden"); }
+
+function showMainMenu() {
+  state.level = "menu";
+  state.phase = "menu";
+  state.playerTeam = null;
+  snc = null;
+  driveway = null;
+  updateHud();
+  syncMobileChrome();
+  showOverlay(`
+    <div class="poster-tag">CHAMPIONSHIP EDITION</div>
+    <h2>Canada Simulator</h2>
+    <div class="subhead">You want Canada to win. The systems are rigged.</div>
+    <p>Pick a level. Caring is punished. Affectionately.</p>
+    <div class="btns">
+      <button class="btn-ca" id="lvlRink">🏒 The Rink</button>
+      <button class="btn-go" id="lvlSnc">🃏 Saturday Night Canada</button>
+      <button class="btn-us" id="lvlDrive">🌨️ The Driveway</button>
+    </div>
+    <p class="tiny">Later stubs: Boardroom · Lake America · Québec · Parliament</p>
+    <div class="btns" style="margin-top:8px;opacity:0.55">
+      <button class="btn-dim" disabled>Boardroom (soon)</button>
+      <button class="btn-dim" disabled>Lake America (soon)</button>
+    </div>
+  `);
+  document.getElementById("lvlRink").onclick = () => {
+    state.level = "rink";
+    showTeamPick();
+  };
+  document.getElementById("lvlSnc").onclick = () => startSaturdayNight();
+  document.getElementById("lvlDrive").onclick = () => startDriveway();
+}
+
+function showTeamPick() {
+  state.level = "rink";
+  state.phase = "pick";
+  syncMobileChrome();
+  showOverlay(`
+    <div class="poster-tag">CHAMPIONSHIP EDITION</div>
+    <h2>Canada Simulator</h2>
+    <div class="subhead">Level 1 — The Bubble Rink</div>
+    <p>Pick a team. If you pick Canada, you will try very hard and lose very specifically.</p>
+    <p class="tiny">Systems are rigged. Caring is punished. That is the product.</p>
+    <div class="btns">
+      <button class="btn-ca" id="pickCan">🍁 Team Canada</button>
+      <button class="btn-us" id="pickUsa">⭐ Team USA</button>
+    </div>
+    <div class="btns"><button class="btn-dim" id="backMenu">⟵ Main Menu</button></div>
+    <p class="tiny">Desktop: WASD · mouse · click/F · Space &nbsp;|&nbsp; Phone: drag skate · tap shoot · FIGHT</p>
+  `);
+  document.getElementById("pickCan").onclick = () => {
+    state.playerTeam = "CANADA";
+    setupMatch();
+  };
+  document.getElementById("pickUsa").onclick = () => {
+    state.playerTeam = "USA";
+    setupMatch();
+  };
+  document.getElementById("backMenu").onclick = () => showMainMenu();
+  syncMobileChrome();
+}
+
+function floatText(x, y, text, color, life) {
+  if (!text) return;
+  state.floatTexts.push({
+    x, y, text,
+    color: color || "#fff",
+    life: life || 1.4,
+    max: life || 1.4,
+    vy: -28,
+  });
+}
+
+function addBurst(x, y, color, n) {
+  for (let i = 0; i < (n || 10); i++) {
+    state.particles.push({
+      x, y,
+      vx: rand(-120, 120), vy: rand(-140, 40),
+      life: rand(0.3, 0.9), r: rand(2, 5), color,
+    });
+  }
+}
+
+function updateHud() {
+  const m = Math.floor(Math.max(0, state.timeLeft) / 60);
+  const s = Math.floor(Math.max(0, state.timeLeft) % 60).toString().padStart(2, "0");
+  document.getElementById("hudScoreCan").textContent = String(state.scoreCan);
+  document.getElementById("hudScoreUsa").textContent = String(state.scoreUsa);
+  if (state.level === "snc" && snc) {
+    document.getElementById("hudTime").textContent = snc.phaseLabel || "EUCHRE";
+    document.getElementById("hudTeam").textContent = "HOSERS vs CHAD/BRAD";
+  } else if (state.level === "driveway") {
+    document.getElementById("hudTime").textContent = `${m}:${s}`;
+    document.getElementById("hudTeam").textContent = "SHOVEL DUTY";
+  } else {
+    document.getElementById("hudTime").textContent = `${m}:${s}`;
+    document.getElementById("hudTeam").textContent = state.playerTeam
+      ? ("YOU: " + state.playerTeam)
+      : (state.level === "menu" ? "SELECT LEVEL" : "PICK A TEAM");
+  }
+  const hatePct = clamp(state.hate * 4, 0, 100);
+  document.getElementById("hateFill").style.width = hatePct + "%";
+}
+
+/* ---------- SCORING (rigged via denyCanadianGoal) ---------- */
+function awardGoal(team) {
+  // CRITICAL: Canada player never gets a Canada goal on the scoreboard
+  if (denyCanadianGoal(team)) {
+    floatText(puck.x, puck.y - 30, pick(CANADA_MISS_LINES), "#ff8fa3", 1.8);
+    addBurst(puck.x, puck.y, "#ff4d4d", 8);
+    puck.vx = -rand(50, 110);
+    puck.vy = rand(-70, 70);
+    puck.owner = null;
+    state.hate += 1;
+    updateHud();
+    announce("canDenied");
+    crowdBoo();
+    crowdGroan();
+    return;
+  }
+
+  state.goalFlash = 0.55;
+  if (team === "CANADA") {
+    state.scoreCan += 1;
+    floatText(RINK.x + RINK.w / 2, RINK.y + 48, "CANADA SCORES!", "#ff4d4d", 2);
+    floatText(RINK.x + RINK.w / 2, RINK.y + 78, "YAAY?!", "#a7f3d0", 1.4);
+    toneBurst(520, 0.2, "square", 0.04);
+  } else {
+    state.scoreUsa += 1;
+    state.crowdFlash = 2.2;
+    floatText(RINK.x + RINK.w / 2, RINK.y + 48, pick(USA_CROWD_LINES), "#4da6ff", 2);
+    if (state.playerTeam === "CANADA") state.hate += 2;
+    announce("usaGoal");
+    crowdBoo();
+    crowdBoo();
+    crowdGroan();
+  }
+  addBurst(puck.x, puck.y, team === "USA" ? "#4da6ff" : "#ff4d4d", 18);
+  resetPuck();
+  puck.vx = rand(-40, 40);
+  puck.vy = rand(-30, 30);
+  const midY = RINK.y + RINK.h / 2;
+  if (player.team === "CANADA") { player.x = RINK.x + 200; player.y = midY; }
+  else { player.x = RINK.x + RINK.w - 200; player.y = midY; }
+  player.vx = player.vy = 0;
+  updateHud();
+}
+
+function checkGoals() {
+  if (puck.x - puck.r < leftGoal.x + leftGoal.w &&
+      puck.y > leftGoal.y && puck.y < leftGoal.y + leftGoal.h &&
+      puck.vx <= 0) {
+    awardGoal("USA");
+    return;
+  }
+  if (puck.x + puck.r > rightGoal.x &&
+      puck.y > rightGoal.y && puck.y < rightGoal.y + rightGoal.h &&
+      puck.vx >= 0) {
+    awardGoal("CANADA");
+  }
+}
+
+/* ---------- FIGHTS ---------- */
+function startFight(opponent) {
+  if (state.phase !== "play") return;
+  state.phase = "fight";
+  touchSkate.active = false;
+  activeTouches.clear();
+  syncMobileChrome();
+  state.fight = {
+    t: 0,
+    opponent,
+    stage: "grab",
+    helmets: [
+      { x: player.x, y: player.y - 10, vx: rand(-90, -40), vy: rand(-220, -130), rot: 0 },
+      { x: opponent.x, y: opponent.y - 10, vx: rand(40, 90), vy: rand(-220, -130), rot: 0 },
+    ],
+    punchFlash: 0,
+    line: pick(CANADA_FIGHT_LINES),
+    refLine: pick(REF_LINES),
+    playerWins: state.playerTeam === "USA",
+  };
+  floatText((player.x + opponent.x) / 2, Math.min(player.y, opponent.y) - 40, "FIGHT!", "#ffd166", 1);
+}
+
+function updateFight(dt) {
+  const f = state.fight;
+  if (!f) return;
+  f.t += dt;
+
+  for (const h of f.helmets) {
+    h.vy += 420 * dt;
+    h.x += h.vx * dt;
+    h.y += h.vy * dt;
+    h.rot += 5 * dt;
+  }
+
+  if (f.stage === "grab" && f.t > 0.55) {
+    f.stage = "punch";
+    f.punchFlash = 0.4;
+  }
+  if (f.stage === "punch") {
+    f.punchFlash -= dt;
+    if (f.t > 1.15) {
+      f.stage = "ko";
+      if (!f.playerWins) {
+        player.leafStamp = 5;
+        player.stunned = 2.4;
+        state.fightLosses += 1;
+        state.hate += 5;
+        floatText(player.x, player.y - 50, "+5 Hate", "#ff6b6b", 1.6);
+        floatText(player.x, player.y - 72, f.line, "#ffd166", 2.2);
+        addBurst(player.x, player.y, "#ff4d4d", 22);
+        updateHud();
+        announce("fightLose");
+        crowdBoo();
+        crowdGroan();
+      } else {
+        f.opponent.stunned = 2;
+        floatText(f.opponent.x, f.opponent.y - 50, "USA WINS THE SCRUM", "#4da6ff", 1.8);
+        state.hate += 1;
+        updateHud();
+      }
+    }
+  }
+  if (f.stage === "ko" && f.t > 2.1) f.stage = "wake";
+  if (f.stage === "wake" && f.t > 2.8) f.stage = "ref";
+  if (f.stage === "ref" && f.t > 4.1) {
+    floatText(RINK.x + RINK.w / 2, RINK.y + 60, f.refLine, "#fff", 2.2);
+    floatText(RINK.x + RINK.w / 2, RINK.y + 90, "(Penalty does nothing. Classic.)", "#8aa4c0", 2);
+    const opp = f.opponent;
+    const dx = player.x - opp.x || 1;
+    player.x += Math.sign(dx) * 36;
+    opp.x -= Math.sign(dx) * 36;
+    state.phase = "play";
+    state.fight = null;
+    syncMobileChrome();
+  }
+}
+
+/* ---------- PHYSICS / AI ---------- */
+function rinkClamp(e) {
+  e.x = clamp(e.x, RINK.x + e.r + 4, RINK.x + RINK.w - e.r - 4);
+  e.y = clamp(e.y, RINK.y + e.r + 4, RINK.y + RINK.h - e.r - 4);
+}
+
+
+function syncAngle(sk) {
+  const sp = Math.hypot(sk.vx, sk.vy);
+  if (sp > 18) {
+    const target = Math.atan2(sk.vy, sk.vx);
+    let d = target - (sk.angle || 0);
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    // stiff rod-pivot feel (bubble hockey slots)
+    sk.angle = (sk.angle || 0) + d * 0.28;
+    sk.facing = Math.cos(sk.angle) >= 0 ? 1 : -1;
+  }
+}
+
+function addIceSpray(sk) {
+  const sp = Math.hypot(sk.vx, sk.vy);
+  if (sp < 80) return;
+  if (Math.random() > 0.45) return;
+  state.iceSpray.push({
+    x: sk.x - Math.sign(sk.vx || sk.facing) * 8,
+    y: sk.y + 10,
+    vx: -sk.vx * 0.15 + rand(-30, 30),
+    vy: rand(-20, 10),
+    life: rand(0.2, 0.45),
+    r: rand(2, 5),
+  });
+}
+
+function movePlayer(dt) {
+  if (player.leafStamp > 0) player.leafStamp -= dt;
+  if (player.stunned > 0) {
+    player.stunned -= dt;
+    player.vx *= 0.88; player.vy *= 0.88;
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+    rinkClamp(player);
+    return;
+  }
+  let ax = 0, ay = 0;
+  if (keys["KeyW"] || keys["ArrowUp"]) ay -= 1;
+  if (keys["KeyS"] || keys["ArrowDown"]) ay += 1;
+  if (keys["KeyA"] || keys["ArrowLeft"]) ax -= 1;
+  if (keys["KeyD"] || keys["ArrowRight"]) ax += 1;
+  if (touchSkate.active && !(ax || ay)) {
+    const dx = touchSkate.x - player.x;
+    const dy = touchSkate.y - player.y;
+    const d = Math.hypot(dx, dy);
+    if (d > 12) { ax = dx / d; ay = dy / d; }
+  }
+  if (ax || ay) {
+    const len = Math.hypot(ax, ay) || 1;
+    ax /= len; ay /= len;
+    const accel = state.playerTeam === "CANADA" ? 520 : 700;
+    player.vx += ax * accel * dt;
+    player.vy += ay * accel * dt;
+  }
+  const friction = 3.2;
+  player.vx -= player.vx * friction * dt;
+  player.vy -= player.vy * friction * dt;
+  const maxSpd = state.playerTeam === "CANADA" ? 215 : 270;
+  const sp = Math.hypot(player.vx, player.vy);
+  if (sp > maxSpd) { player.vx *= maxSpd / sp; player.vy *= maxSpd / sp; }
+  player.x += player.vx * dt;
+  player.y += player.vy * dt;
+  syncAngle(player);
+  addIceSpray(player);
+  rinkClamp(player);
+}
+
+function aiSkate(e, dt, targetX, targetY, speed) {
+  if (e.stunned > 0) {
+    e.stunned -= dt;
+    e.vx *= 0.9; e.vy *= 0.9;
+    e.x += e.vx * dt; e.y += e.vy * dt;
+    rinkClamp(e);
+    return;
+  }
+  if (e.leafStamp > 0) e.leafStamp -= dt;
+  const dx = targetX - e.x, dy = targetY - e.y;
+  const d = Math.hypot(dx, dy) || 1;
+  e.vx += (dx / d) * speed * dt;
+  e.vy += (dy / d) * speed * dt;
+  e.vx -= e.vx * 3 * dt;
+  e.vy -= e.vy * 3 * dt;
+  e.x += e.vx * dt;
+  e.y += e.vy * dt;
+  syncAngle(e);
+  addIceSpray(e);
+  rinkClamp(e);
+}
+
+function updateAI(dt) {
+  if (teammate) {
+    const tx = puck.x + (teammate.team === "CANADA" ? -50 : 50);
+    const ty = puck.y + Math.sin(performance.now() / 700) * 36;
+    aiSkate(teammate, dt, tx, ty, 380);
+  }
+  for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
+    let tx = puck.x, ty = puck.y;
+    if (i === 1) { tx = player.x; ty = player.y; }
+    if (i === 2) { tx = (puck.x + RINK.x + RINK.w / 2) / 2; ty = puck.y; }
+    const spd = e.team === "USA" ? 480 : 350;
+    aiSkate(e, dt, tx, ty, spd);
+
+    if (e.team === "USA" && e.hasPuck && Math.random() < 0.015) {
+      shootFrom(e, leftGoal.x + 8, leftGoal.y + leftGoal.h / 2 + rand(-10, 10), true);
+    }
+    if (e.team === "CANADA" && e.hasPuck && Math.random() < 0.01) {
+      shootFrom(e, rightGoal.x, rightGoal.y + rightGoal.h / 2 + rand(-20, 20), false);
+    }
+  }
+  updateGoalie(goalieCan, dt, true);
+  updateGoalie(goalieUsa, dt, false);
+}
+
+function updateGoalie(g, dt, isCanada) {
+  const creaseY = clamp(puck.y, RINK.y + RINK.h / 2 - 75, RINK.y + RINK.h / 2 + 75);
+  if (isCanada) {
+    state.phoneCheck += dt;
+    const distracted = Math.sin(state.phoneCheck * 1.25) > 0.7;
+    const lag = distracted ? 0.4 : 2.0;
+    g.y += (creaseY - g.y) * lag * dt;
+  } else {
+    g.y += (creaseY - g.y) * 9 * dt;
+  }
+  g.y = clamp(g.y, RINK.y + 55, RINK.y + RINK.h - 55);
+
+  if (dist(g, puck) < g.r + puck.r + 8) {
+    const saveChance = isCanada ? 0.22 : 0.85;
+    if (Math.random() < saveChance || (isCanada && state.playerTeam === "CANADA" && Math.random() < 0.55)) {
+      puck.vx = isCanada ? Math.abs(puck.vx) * 0.5 + 55 : -Math.abs(puck.vx) * 0.75 - 60;
+      puck.vy = rand(-90, 90);
+      if (puck.owner) { puck.owner.hasPuck = false; puck.owner = null; }
+      floatText(g.x, g.y - 28, isCanada ? "missed it…" : "GLOVE!", isCanada ? "#ff8fa3" : "#4da6ff", 0.8);
+    }
+  }
+}
+
+function tryPickup(sk) {
+  if (puck.owner) return;
+  if (dist(sk, puck) < sk.r + puck.r + 6) {
+    puck.owner = sk;
+    sk.hasPuck = true;
+  }
+}
+
+function releasePuckOwner() {
+  if (puck.owner) {
+    puck.owner.hasPuck = false;
+    puck.owner = null;
+  }
+}
+
+function shootFrom(sk, aimX, aimY, isStrong) {
+  if (puck.owner !== sk && dist(sk, puck) > sk.r + 24) return;
+  releasePuckOwner();
+  const dx = aimX - sk.x, dy = aimY - sk.y;
+  const d = Math.hypot(dx, dy) || 1;
+  let power = sk.team === "CANADA" ? (isStrong ? 210 : 150) : (isStrong ? 540 : 420);
+  if (sk.isPlayer && state.playerTeam === "CANADA") power *= 0.5;
+  puck.vx = (dx / d) * power;
+  puck.vy = (dy / d) * power;
+  puck.lastShooter = sk;
+  puck.x = sk.x + (dx / d) * (sk.r + 10);
+  puck.y = sk.y + (dy / d) * (sk.r + 10);
+  if (sk.team === "CANADA") {
+    puck.vx *= 0.72;
+    puck.vy *= 0.72;
+    puck.vy += rand(-50, 50);
+  }
+}
+
+function playerShoot() {
+  if (state.phase !== "play" || player.stunned > 0) return;
+  const need = state.playerTeam === "CANADA" ? 0.38 : 0.06;
+  state.windup += 0.1;
+  if (state.windup < need) {
+    if (state.playerTeam === "CANADA") {
+      floatText(player.x, player.y - 26, "winding up…", "#ccc", 0.35);
+    }
+    return;
+  }
+  state.windup = 0;
+  if (puck.owner === player || dist(player, puck) < 62) {
+    shootFrom(player, mouse.x, mouse.y, true);
+  }
+}
+
+function updatePuck(dt) {
+  if (puck.owner) {
+    const o = puck.owner;
+    const ox = Math.cos(o.angle || 0);
+    const oy = Math.sin(o.angle || 0);
+    puck.x = o.x + ox * (o.r + 8);
+    puck.y = o.y + oy * (o.r + 8) + 2;
+    puck.vx = o.vx; puck.vy = o.vy;
+    state.puckTrail = [];
+    return;
+  }
+  // High damping for Canada feel (underwater puck)
+  const damp = state.playerTeam === "CANADA" ? 1.4 : 0.38;
+  puck.vx -= puck.vx * damp * dt;
+  puck.vy -= puck.vy * damp * dt;
+  puck.x += puck.vx * dt;
+  puck.y += puck.vy * dt;
+
+  if (Math.hypot(puck.vx, puck.vy) > 40) {
+    state.puckTrail.push({ x: puck.x, y: puck.y, life: 0.28 });
+    if (state.puckTrail.length > 10) state.puckTrail.shift();
+  }
+
+  if (puck.x < RINK.x + puck.r) { puck.x = RINK.x + puck.r; puck.vx *= -0.72; }
+  if (puck.x > RINK.x + RINK.w - puck.r) { puck.x = RINK.x + RINK.w - puck.r; puck.vx *= -0.72; }
+  if (puck.y < RINK.y + puck.r) { puck.y = RINK.y + puck.r; puck.vy *= -0.72; }
+  if (puck.y > RINK.y + RINK.h - puck.r) { puck.y = RINK.y + RINK.h - puck.r; puck.vy *= -0.72; }
+
+  checkGoals();
+}
+
+function collideSkaters(a, b) {
+  const d = dist(a, b);
+  const min = a.r + b.r;
+  if (d > 0 && d < min) {
+    const nx = (b.x - a.x) / d, ny = (b.y - a.y) / d;
+    const overlap = min - d;
+    a.x -= nx * overlap * 0.5; a.y -= ny * overlap * 0.5;
+    b.x += nx * overlap * 0.5; b.y += ny * overlap * 0.5;
+    const impact = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+    if (impact > 0) {
+      a.vx -= impact * nx; a.vy -= impact * ny;
+      b.vx += impact * nx; b.vy += impact * ny;
+    }
+    return true;
+  }
+  return false;
+}
+
+function stealChecks() {
+  const all = [player, teammate, ...enemies].filter(Boolean);
+  for (const sk of all) {
+    if (puck.owner && puck.owner !== sk && dist(sk, puck.owner) < sk.r + puck.owner.r + 4) {
+      if (Math.random() < (sk.team === "USA" ? 0.045 : 0.016)) {
+        puck.owner.hasPuck = false;
+        puck.owner = sk;
+        sk.hasPuck = true;
+      }
+    }
+    tryPickup(sk);
+  }
+}
+
+function canadaMatchScript(dt) {
+  if (state.playerTeam !== "CANADA") return;
+  state.usaPressure += dt;
+  if (state.usaPressure > 20 && state.scoreUsa <= state.scoreCan) {
+    state.usaPressure = 0;
+    releasePuckOwner();
+    puck.x = leftGoal.x + 28;
+    puck.y = leftGoal.y + leftGoal.h / 2;
+    puck.vx = -80;
+    awardGoal("USA");
+    floatText(RINK.x + RINK.w / 2, RINK.y + 120, "Breakaway. Of course.", "#4da6ff", 1.8);
+  }
+  if (state.timeLeft < 9 && state.scoreUsa <= state.scoreCan) {
+    releasePuckOwner();
+    puck.x = leftGoal.x + 28;
+    puck.y = leftGoal.y + leftGoal.h / 2;
+    puck.vx = -80;
+    awardGoal("USA");
+  }
+}
+
+function endMatch() {
+  if (state.buzzerDone) return;
+  state.buzzerDone = true;
+  state.phase = "results";
+  state.zamboni = null;
+  try { speechSynthesis.cancel(); } catch (_) {}
+  announce("buzzer");
+  crowdBoo();
+  crowdGroan();
+
+  if (state.playerTeam === "CANADA" && state.scoreUsa <= state.scoreCan) {
+    state.scoreUsa = state.scoreCan + 1 + ((Math.random() * 2) | 0);
+  }
+  updateHud();
+
+  const verdict = pick(RESULT_VERDICTS);
+  const teamLabel = state.playerTeam === "CANADA" ? "Team Canada" : "Team USA";
+  const toneClass = state.playerTeam === "CANADA" ? "red" : "blue";
+
+  showOverlay(`
+    <div class="poster-tag">POST-GAME SHOW</div>
+    <h2 class="${toneClass}">BUZZER</h2>
+    <div class="broadcast">FINAL &nbsp; CAN ${state.scoreCan} &nbsp;—&nbsp; USA ${state.scoreUsa}<br/>
+    ${teamLabel} · Fights lost: ${state.fightLosses} · Hate Index: ${state.hate}</div>
+    <div class="verdict">${verdict}</div>
+    <p class="tiny">You wanted Canada to win. The systems disagreed.</p>
+    <div class="btns">
+      <button class="btn-go" id="again">Play again</button>
+      <button class="btn-dim" id="menu">Change team</button>
+      <button class="btn-dim" id="mainMenu">Main Menu</button>
+    </div>
+  `);
+  document.getElementById("again").onclick = () => setupMatch();
+  document.getElementById("menu").onclick = () => showTeamPick();
+  document.getElementById("mainMenu").onclick = () => showMainMenu();
+  touchSkate.active = false;
+  activeTouches.clear();
+  syncMobileChrome();
+}
+
+
+/* ---------- DRAW (Super Chexx / bubble hockey) ---------- */
+function roundRectPath(x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+
+function drawMapleLeaf(x, y, s, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(0, -s);
+  ctx.lineTo(s * 0.35, -s * 0.25);
+  ctx.lineTo(s, -s * 0.45);
+  ctx.lineTo(s * 0.4, s * 0.05);
+  ctx.lineTo(s * 0.65, s * 0.7);
+  ctx.lineTo(0, s * 0.35);
+  ctx.lineTo(-s * 0.65, s * 0.7);
+  ctx.lineTo(-s * 0.4, s * 0.05);
+  ctx.lineTo(-s, -s * 0.45);
+  ctx.lineTo(-s * 0.35, -s * 0.25);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillRect(-1.5, s * 0.3, 3, s * 0.45);
+  ctx.restore();
+}
+
+function drawStar(x, y, r, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+    const px = Math.cos(a) * r;
+    const py = Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCanadianFlag(x, y, w, h, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha == null ? 0.22 : alpha;
+  const band = w * 0.25;
+  ctx.fillStyle = "#ff0000";
+  ctx.fillRect(x, y, band, h);
+  ctx.fillRect(x + w - band, y, band, h);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(x + band, y, w - band * 2, h);
+  drawMapleLeaf(x + w / 2, y + h / 2, Math.min(w, h) * 0.28, "#ff0000");
+  ctx.strokeStyle = "rgba(0,0,0,0.25)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+  ctx.restore();
+}
+
+function drawAmericanFlag(x, y, w, h, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha == null ? 0.22 : alpha;
+  const stripeH = h / 13;
+  for (let i = 0; i < 13; i++) {
+    ctx.fillStyle = i % 2 === 0 ? "#b22234" : "#ffffff";
+    ctx.fillRect(x, y + i * stripeH, w, stripeH + 0.6);
+  }
+  const cantonW = w * 0.4;
+  const cantonH = stripeH * 7;
+  ctx.fillStyle = "#3c3b6e";
+  ctx.fillRect(x, y, cantonW, cantonH);
+  ctx.fillStyle = "#ffffff";
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 6; col++) {
+      const sx = x + 6 + col * (cantonW - 10) / 5.5;
+      const sy = y + 5 + row * (cantonH - 8) / 4.2;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.strokeStyle = "rgba(0,0,0,0.25)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+  ctx.restore();
+}
+
+/** Deterministic scratched / played-on ice wear (no flicker). */
+function drawIceWear() {
+  const wear = clamp(1 - (state.iceFresh || 0), 0.08, 1);
+  // wet/fresh sheen when Zamboni recently passed
+  if (state.iceFresh > 0.05) {
+    ctx.fillStyle = "rgba(200,230,255," + (state.iceFresh * 0.28) + ")";
+    ctx.fillRect(RINK.x, RINK.y, RINK.w, RINK.h);
+  }
+  ctx.save();
+  ctx.globalAlpha = wear;
+  // dull patches
+  for (let i = 0; i < 18; i++) {
+    const px = RINK.x + 40 + ((i * 97) % (RINK.w - 80));
+    const py = RINK.y + 30 + ((i * 61) % (RINK.h - 60));
+    const rw = 40 + (i % 5) * 18;
+    const rh = 18 + (i % 4) * 10;
+    ctx.fillStyle = i % 3 === 0 ? "rgba(160,180,200,0.22)" : "rgba(190,205,220,0.18)";
+    ctx.beginPath();
+    ctx.ellipse(px, py, rw, rh, (i % 7) * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // skate blade scratch marks
+  ctx.lineCap = "round";
+  for (let i = 0; i < 90; i++) {
+    const x0 = RINK.x + 20 + ((i * 73) % (RINK.w - 40));
+    const y0 = RINK.y + 16 + ((i * 47) % (RINK.h - 32));
+    const len = 18 + (i % 9) * 8;
+    const ang = ((i * 37) % 360) * Math.PI / 180;
+    ctx.strokeStyle = i % 4 === 0 ? "rgba(120,140,160,0.28)" : "rgba(255,255,255,0.35)";
+    ctx.lineWidth = i % 5 === 0 ? 1.6 : 0.9;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x0 + Math.cos(ang) * len, y0 + Math.sin(ang) * len * 0.35);
+    ctx.stroke();
+  }
+  // scuff clusters near boards
+  for (let i = 0; i < 28; i++) {
+    const along = (i * 0.07) % 1;
+    const edge = i % 4;
+    let sx, sy;
+    if (edge === 0) { sx = RINK.x + 30 + along * (RINK.w - 60); sy = RINK.y + 18 + (i % 3) * 6; }
+    else if (edge === 1) { sx = RINK.x + 30 + along * (RINK.w - 60); sy = RINK.y + RINK.h - 22 - (i % 3) * 6; }
+    else if (edge === 2) { sx = RINK.x + 18 + (i % 3) * 7; sy = RINK.y + 40 + along * (RINK.h - 80); }
+    else { sx = RINK.x + RINK.w - 22 - (i % 3) * 7; sy = RINK.y + 40 + along * (RINK.h - 80); }
+    ctx.fillStyle = "rgba(100,120,140,0.2)";
+    ctx.beginPath();
+    ctx.arc(sx, sy, 2 + (i % 3), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawBoardAd(x, y, w, h, bg, text, fg) {
+  ctx.fillStyle = bg;
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = "rgba(255,255,255,0.25)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  ctx.fillStyle = fg;
+  ctx.font = "bold 9px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x + w / 2, y + h / 2);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+}
+
+function drawRink() {
+  const g = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 80, canvas.width / 2, canvas.height / 2, 560);
+  g.addColorStop(0, "#243044");
+  g.addColorStop(1, "#0a1018");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#152033";
+  roundRectPath(18, 10, canvas.width - 36, canvas.height - 20, 28);
+  ctx.fill();
+
+  for (let i = 0; i < 70; i++) {
+    const side = i % 4;
+    let cx, cy;
+    if (side === 0) { cx = 30 + ((i * 47) % (canvas.width - 60)); cy = 14 + (i % 3) * 7; }
+    else if (side === 1) { cx = 30 + ((i * 53) % (canvas.width - 60)); cy = canvas.height - 36 + (i % 3) * 6; }
+    else if (side === 2) { cx = 22 + (i % 4) * 7; cy = 50 + ((i * 37) % (canvas.height - 100)); }
+    else { cx = canvas.width - 52 + (i % 4) * 7; cy = 50 + ((i * 41) % (canvas.height - 100)); }
+    const cols = ["#3b4a63", "#4a5a78", "#2a384e", "#c81e1e", "#1d4e89", "#6b7280"];
+    ctx.fillStyle = cols[i % cols.length];
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3 + (i % 3), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#1d4e89";
+  ctx.fillRect(canvas.width - 78, 16, 42, 14);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 8px sans-serif";
+  ctx.fillText("U-S-A", canvas.width - 72, 26);
+  ctx.fillStyle = "#c81e1e";
+  ctx.fillRect(36, canvas.height - 30, 48, 14);
+  ctx.fillStyle = "#fff";
+  ctx.fillText("SORRY?", 42, canvas.height - 20);
+
+  // Thick rails / boards
+  ctx.fillStyle = "#8b1a1a";
+  roundRectPath(RINK.x - 22, RINK.y - 22, RINK.w + 44, RINK.h + 44, 56);
+  ctx.fill();
+  ctx.fillStyle = "#0c2348";
+  roundRectPath(RINK.x - 16, RINK.y - 16, RINK.w + 32, RINK.h + 32, 50);
+  ctx.fill();
+  ctx.strokeStyle = "#e8b84a";
+  ctx.lineWidth = 5;
+  roundRectPath(RINK.x - 10, RINK.y - 10, RINK.w + 20, RINK.h + 20, 46);
+  ctx.stroke();
+
+  const ice = ctx.createLinearGradient(RINK.x, RINK.y, RINK.x, RINK.y + RINK.h);
+  ice.addColorStop(0, "#e8f0f8");
+  ice.addColorStop(0.35, "#d4e0ec");
+  ice.addColorStop(0.7, "#c8d6e4");
+  ice.addColorStop(1, "#b8c8d8");
+  ctx.fillStyle = ice;
+  roundRectPath(RINK.x, RINK.y, RINK.w, RINK.h, 42);
+  ctx.fill();
+
+  ctx.save();
+  roundRectPath(RINK.x, RINK.y, RINK.w, RINK.h, 42);
+  ctx.clip();
+
+  // Big national flags painted under the ice markings (left CAN / right USA)
+  const flagW = RINK.w * 0.34;
+  const flagH = RINK.h * 0.42;
+  drawCanadianFlag(RINK.x + RINK.w * 0.08, RINK.y + RINK.h * 0.29, flagW, flagH, 0.28);
+  drawAmericanFlag(RINK.x + RINK.w * 0.58, RINK.y + RINK.h * 0.29, flagW, flagH, 0.28);
+  // Board-side flag banners (large & readable)
+  drawCanadianFlag(RINK.x + 24, RINK.y + 8, 150, 52, 0.55);
+  drawAmericanFlag(RINK.x + RINK.w - 174, RINK.y + 8, 150, 52, 0.55);
+  drawCanadianFlag(RINK.x + 24, RINK.y + RINK.h - 60, 130, 46, 0.45);
+  drawAmericanFlag(RINK.x + RINK.w - 154, RINK.y + RINK.h - 60, 130, 46, 0.45);
+
+  drawIceWear();
+
+  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  ctx.beginPath();
+  ctx.ellipse(RINK.x + RINK.w * 0.35, RINK.y + 70, 220, 28, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(140,160,180,0.16)";
+  ctx.fillRect(RINK.x + 40, RINK.y + RINK.h - 90, 280, 18);
+
+  ctx.strokeStyle = "#c81e1e";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(RINK.x + RINK.w / 2, RINK.y + 6);
+  ctx.lineTo(RINK.x + RINK.w / 2, RINK.y + RINK.h - 6);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(RINK.x + RINK.w / 2, RINK.y + RINK.h / 2, 62, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = "rgba(200,30,30,0.12)";
+  ctx.beginPath();
+  ctx.arc(RINK.x + RINK.w / 2, RINK.y + RINK.h / 2, 40, 0, Math.PI * 2);
+  ctx.fill();
+  drawMapleLeaf(RINK.x + RINK.w / 2 - 10, RINK.y + RINK.h / 2, 14, "rgba(200,30,30,0.55)");
+  drawStar(RINK.x + RINK.w / 2 + 14, RINK.y + RINK.h / 2, 8, "rgba(29,78,137,0.55)");
+  ctx.fillStyle = "#c81e1e";
+  ctx.beginPath();
+  ctx.arc(RINK.x + RINK.w / 2, RINK.y + RINK.h / 2, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#1d4e89";
+  ctx.lineWidth = 4;
+  const bl = RINK.w * 0.25;
+  ctx.beginPath();
+  ctx.moveTo(RINK.x + bl, RINK.y + 6);
+  ctx.lineTo(RINK.x + bl, RINK.y + RINK.h - 6);
+  ctx.moveTo(RINK.x + RINK.w - bl, RINK.y + 6);
+  ctx.lineTo(RINK.x + RINK.w - bl, RINK.y + RINK.h - 6);
+  ctx.stroke();
+
+  const dots = [
+    [RINK.x + bl - 70, RINK.y + 110],
+    [RINK.x + bl - 70, RINK.y + RINK.h - 110],
+    [RINK.x + RINK.w - bl + 70, RINK.y + 110],
+    [RINK.x + RINK.w - bl + 70, RINK.y + RINK.h - 110],
+  ];
+  for (const [dx, dy] of dots) {
+    ctx.fillStyle = "rgba(150,165,180,0.35)";
+    ctx.beginPath();
+    ctx.ellipse(dx, dy, 34, 30, 0.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(160,40,40,0.55)";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([7, 5]);
+    ctx.beginPath();
+    ctx.arc(dx, dy, 28, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = "#c81e1e";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(dx, dy, 26, 0.2, Math.PI * 1.6);
+    ctx.stroke();
+    ctx.fillStyle = "#c81e1e";
+    ctx.beginPath();
+    ctx.arc(dx, dy, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.strokeStyle = "#c81e1e";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(leftGoal.x + leftGoal.w, RINK.y + RINK.h / 2, 48, -Math.PI / 2, Math.PI / 2);
+  ctx.stroke();
+  ctx.strokeStyle = "#1d4e89";
+  ctx.beginPath();
+  ctx.arc(rightGoal.x, RINK.y + RINK.h / 2, 48, Math.PI / 2, -Math.PI / 2);
+  ctx.stroke();
+
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(leftGoal.x, leftGoal.y, leftGoal.w, leftGoal.h);
+  ctx.fillRect(rightGoal.x, rightGoal.y, rightGoal.w, rightGoal.h);
+  ctx.strokeStyle = "#ff4d4d";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(leftGoal.x, leftGoal.y, leftGoal.w, leftGoal.h);
+  ctx.strokeStyle = "#4da6ff";
+  ctx.strokeRect(rightGoal.x, rightGoal.y, rightGoal.w, rightGoal.h);
+  ctx.strokeStyle = "rgba(255,255,255,0.2)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 6; i++) {
+    const yy = leftGoal.y + 6 + i * 12;
+    ctx.beginPath();
+    ctx.moveTo(leftGoal.x, yy); ctx.lineTo(leftGoal.x + leftGoal.w, yy); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(rightGoal.x, yy); ctx.lineTo(rightGoal.x + rightGoal.w, yy); ctx.stroke();
+  }
+
+  ctx.fillStyle = "rgba(15,23,42,0.35)";
+  ctx.fillRect(RINK.x + 180, RINK.y + 4, 160, 10);
+  ctx.fillRect(RINK.x + RINK.w - 340, RINK.y + RINK.h - 14, 160, 10);
+  ctx.restore();
+
+  drawBoardAd(RINK.x + 80, RINK.y - 20, 110, 14, "#111827", "TIM'S NOT HERE", "#fbbf24");
+  drawBoardAd(RINK.x + 220, RINK.y - 20, 100, 14, "#1e3a8a", "FREEDOM SLAPS", "#fff");
+  drawBoardAd(RINK.x + 350, RINK.y - 20, 120, 14, "#7f1d1d", "SORRY BEER", "#fecaca");
+  drawBoardAd(RINK.x + 500, RINK.y - 20, 110, 14, "#0f172a", "LAKE FOR SALE", "#93c5fd");
+  drawBoardAd(RINK.x + 640, RINK.y - 20, 100, 14, "#1d4e89", "U-S-A INC.", "#fff");
+  drawBoardAd(RINK.x + 120, RINK.y + RINK.h + 6, 120, 14, "#7f1d1d", "MAPLE DEFENSE", "#fff");
+  drawBoardAd(RINK.x + 280, RINK.y + RINK.h + 6, 130, 14, "#0c2348", "FOUR-ARM GLOVE", "#93c5fd");
+  drawBoardAd(RINK.x + 450, RINK.y + RINK.h + 6, 120, 14, "#111827", "WET CARDBOARD", "#fcd34d");
+  drawBoardAd(RINK.x + 600, RINK.y + RINK.h + 6, 110, 14, "#c81e1e", "HATE INDEX+", "#fff");
+
+  ctx.strokeStyle = "rgba(255,255,255,0.18)";
+  ctx.lineWidth = 2;
+  roundRectPath(RINK.x + 4, RINK.y + 4, RINK.w - 8, RINK.h - 8, 38);
+  ctx.stroke();
+
+  if (state.crowdFlash > 0) {
+    ctx.fillStyle = "rgba(77,166,255,0.14)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#4da6ff";
+    ctx.font = "bold 26px sans-serif";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "#1d4e89";
+    ctx.shadowBlur = 12;
+    ctx.fillText("U-S-A! U-S-A!", canvas.width / 2, 34);
+    ctx.shadowBlur = 0;
+    ctx.textAlign = "left";
+  }
+  if (state.goalFlash > 0) {
+    ctx.fillStyle = "rgba(255,209,102," + (state.goalFlash * 0.45) + ")";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+/** 1970s bubble-hockey hair (no helmets). */
+function drawSeventiesHair(scale, style, isCan) {
+  const hairCol = isCan ? "#3b2314" : "#1a120c";
+  const hairHi = isCan ? "#5c3a22" : "#2a1c14";
+  ctx.fillStyle = hairCol;
+  // thick top mop
+  ctx.beginPath();
+  ctx.ellipse(0, -22 * scale, 11 * scale, 8 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (style === "mullet" || style === "swoop") {
+    ctx.beginPath();
+    ctx.ellipse(0, -14 * scale, 8 * scale, 10 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-6 * scale, -12 * scale);
+    ctx.quadraticCurveTo(0, 2 * scale, 6 * scale, -12 * scale);
+    ctx.quadraticCurveTo(0, -2 * scale, -6 * scale, -12 * scale);
+    ctx.fill();
+  }
+  if (style === "afro") {
+    ctx.beginPath();
+    ctx.arc(0, -20 * scale, 13 * scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (style === "sideburns" || style === "beard" || style === "mullet") {
+    ctx.fillRect(-11 * scale, -18 * scale, 3.5 * scale, 10 * scale);
+    ctx.fillRect(7.5 * scale, -18 * scale, 3.5 * scale, 10 * scale);
+  }
+  if (style === "beard" || style === "mullet") {
+    ctx.fillStyle = hairHi;
+    ctx.beginPath();
+    ctx.ellipse(0, -10 * scale, 7 * scale, 4.5 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // stubble always
+  ctx.fillStyle = "rgba(40,28,20,0.35)";
+  ctx.beginPath();
+  ctx.ellipse(0, -11 * scale, 6.5 * scale, 3.2 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawSeventiesFace(scale, isCan) {
+  const skin = "#e8b896";
+  ctx.fillStyle = skin;
+  ctx.strokeStyle = "#0a0f18";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(0, -16 * scale, 8.5 * scale, 8 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  // eyes
+  ctx.fillStyle = "#111";
+  ctx.beginPath();
+  ctx.arc(-3 * scale, -17 * scale, 1.4 * scale, 0, Math.PI * 2);
+  ctx.arc(3 * scale, -17 * scale, 1.4 * scale, 0, Math.PI * 2);
+  ctx.fill();
+  // bushy brows
+  ctx.strokeStyle = "#2a1810";
+  ctx.lineWidth = 2.2 * scale;
+  ctx.beginPath();
+  ctx.moveTo(-5.5 * scale, -20 * scale); ctx.lineTo(-1 * scale, -19.5 * scale);
+  ctx.moveTo(1 * scale, -19.5 * scale); ctx.lineTo(5.5 * scale, -20 * scale);
+  ctx.stroke();
+  // nose
+  ctx.strokeStyle = "#c48a6a";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, -17 * scale); ctx.lineTo(1.5 * scale, -14 * scale);
+  ctx.stroke();
+  // mouth
+  ctx.strokeStyle = "#7a3b2e";
+  ctx.beginPath();
+  ctx.arc(0, -12.5 * scale, 2.2 * scale, 0.15, Math.PI - 0.15);
+  ctx.stroke();
+}
+
+/** Chunky Super Chexx / 1970s tabletop plastic men — NO HELMETS. */
+function drawPlasticPlayer(sk, opts) {
+  opts = opts || {};
+  const isCan = sk.team === "CANADA";
+  const jersey = isCan ? "#d62828" : "#f1f5f9";
+  const jerseyDark = isCan ? "#9b1c1c" : "#1e3a8a";
+  const pants = isCan ? "#111827" : "#1e3a8a";
+  const outline = "#0a0f18";
+  const scale = (sk.r / 16) * (opts.big ? 1.25 : 1);
+  const ang = sk.angle != null ? sk.angle : (sk.facing >= 0 ? 0 : Math.PI);
+  const hair = sk.hair || "mullet";
+  const hasPuck = !!(sk.hasPuck || (puck && puck.owner === sk));
+  const pulse = 1 + Math.sin(performance.now() / 160) * 0.08;
+
+  // Possession glow ring under skates (owner highlight)
+  if (hasPuck) {
+    ctx.save();
+    ctx.translate(sk.x, sk.y);
+    const rg = ctx.createRadialGradient(0, 4, 2, 0, 4, sk.r * 1.8 * pulse);
+    rg.addColorStop(0, isCan ? "rgba(255,80,80,0.55)" : "rgba(80,160,255,0.55)");
+    rg.addColorStop(0.55, isCan ? "rgba(255,200,80,0.25)" : "rgba(200,230,255,0.22)");
+    rg.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.ellipse(0, 6, sk.r * 1.55 * pulse, sk.r * 0.7 * pulse, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = isCan ? "rgba(255,209,102,0.9)" : "rgba(147,197,253,0.9)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(0, 6, sk.r * 1.35, sk.r * 0.55, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.translate(sk.x, sk.y);
+  ctx.rotate(ang);
+
+  ctx.fillStyle = "rgba(15,23,42,0.28)";
+  ctx.beginPath();
+  ctx.ellipse(0, 6 * scale, 14 * scale, 5 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // stick — highlight when possessing
+  ctx.strokeStyle = hasPuck ? "#ffd166" : "#5c3d2e";
+  ctx.lineWidth = (hasPuck ? 4.2 : 3.4) * scale;
+  ctx.lineCap = "round";
+  ctx.shadowColor = hasPuck ? "rgba(255,209,102,0.85)" : "transparent";
+  ctx.shadowBlur = hasPuck ? 10 : 0;
+  ctx.beginPath();
+  ctx.moveTo(2 * scale, 2 * scale);
+  if (isCan) ctx.quadraticCurveTo(18 * scale, 8 * scale, 28 * scale, 12 * scale);
+  else ctx.lineTo(30 * scale, 8 * scale);
+  ctx.stroke();
+  ctx.lineWidth = 3.8 * scale;
+  ctx.beginPath();
+  ctx.moveTo(26 * scale, 10 * scale);
+  ctx.lineTo(32 * scale, 17 * scale);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // skates
+  ctx.fillStyle = "#111";
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 1.5;
+  roundRectPath(-11 * scale, 8 * scale, 8 * scale, 5 * scale, 1.5); ctx.fill(); ctx.stroke();
+  roundRectPath(3 * scale, 8 * scale, 8 * scale, 5 * scale, 1.5); ctx.fill(); ctx.stroke();
+
+  // pants
+  ctx.fillStyle = pants;
+  roundRectPath(-11 * scale, 0, 22 * scale, 13 * scale, 3);
+  ctx.fill();
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // jersey body (chunky plastic)
+  ctx.fillStyle = jersey;
+  roundRectPath(-13 * scale, -14 * scale, 26 * scale, 18 * scale, 5);
+  ctx.fill();
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 2.4;
+  ctx.stroke();
+  ctx.fillStyle = jerseyDark;
+  ctx.fillRect(-13 * scale, -4 * scale, 26 * scale, 4.5 * scale);
+
+  if (isCan) drawMapleLeaf(0, -8 * scale, 6.5 * scale, "#fff");
+  else {
+    ctx.fillStyle = "#1d4e89";
+    ctx.fillRect(-13 * scale, -14 * scale, 26 * scale, 5 * scale);
+    drawStar(0, -8 * scale, 5 * scale, "#1d4e89");
+  }
+
+  // arms
+  ctx.fillStyle = jersey;
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 1.8;
+  roundRectPath(-20 * scale, -10 * scale, 9 * scale, 7 * scale, 2); ctx.fill(); ctx.stroke();
+  roundRectPath(11 * scale, -8 * scale, 11 * scale, 6 * scale, 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = isCan ? "#111" : "#dc2626";
+  ctx.beginPath();
+  ctx.arc(-20 * scale, -6.5 * scale, 3.4 * scale, 0, Math.PI * 2);
+  ctx.arc(22 * scale, -5 * scale, 3.4 * scale, 0, Math.PI * 2);
+  ctx.fill();
+
+  // face + hair (NO HELMET)
+  drawSeventiesFace(scale, isCan);
+  drawSeventiesHair(scale, hair, isCan);
+
+  // jersey number
+  ctx.fillStyle = isCan ? "#fff" : "#1d4e89";
+  ctx.font = "bold " + Math.floor(9 * scale) + "px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(String(sk.num != null ? sk.num : (sk.isPlayer ? 19 : 9)), 0, 9 * scale);
+  ctx.restore();
+
+  // name tag under player
+  if (sk.name) {
+    ctx.save();
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    const label = (sk.shortName || sk.name).toUpperCase();
+    const tw = ctx.measureText(label).width + 10;
+    ctx.fillStyle = "rgba(10,14,22,0.72)";
+    roundRectPath(sk.x - tw / 2, sk.y + sk.r + 2, tw, 14, 4);
+    ctx.fill();
+    ctx.fillStyle = isCan ? "#fecaca" : "#bfdbfe";
+    ctx.fillText(label, sk.x, sk.y + sk.r + 12);
+    ctx.restore();
+  }
+
+  if (sk.isPlayer) {
+    ctx.save();
+    ctx.translate(sk.x, sk.y);
+    ctx.fillStyle = "#ffd166";
+    ctx.strokeStyle = "#0a0f18";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -sk.r - 26);
+    ctx.lineTo(8, -sk.r - 14);
+    ctx.lineTo(-8, -sk.r - 14);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255,209,102,0.65)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, sk.r + 10 + Math.sin(performance.now() / 180) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    if (hasPuck) {
+      ctx.save();
+      const chip = "YOU HAVE THE PUCK";
+      ctx.font = "bold 11px sans-serif";
+      ctx.textAlign = "center";
+      const cw = ctx.measureText(chip).width + 16;
+      const cy = sk.y - sk.r - 38;
+      ctx.fillStyle = "rgba(255,209,102,0.95)";
+      roundRectPath(sk.x - cw / 2, cy - 12, cw, 18, 6);
+      ctx.fill();
+      ctx.strokeStyle = "#0a0f18";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "#0a0f18";
+      ctx.fillText(chip, sk.x, cy);
+      ctx.restore();
+    }
+  }
+  if (sk.leafStamp > 0) drawMapleLeaf(sk.x, sk.y - sk.r - 6, 12, "#c1121f");
+  if (sk.stunned > 0) {
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("* *", sk.x, sk.y - sk.r - 28);
+    ctx.textAlign = "left";
+  }
+}
+
+function drawSkater(sk) { drawPlasticPlayer(sk, { big: false }); }
+
+function drawGoalie(g) {
+  const isCan = g.team === "CANADA";
+  const facing = isCan ? 1 : -1;
+  const s = 1.25;
+  ctx.save();
+  ctx.translate(g.x, g.y);
+  ctx.scale(facing * s, s);
+
+  ctx.fillStyle = "rgba(15,23,42,0.3)";
+  ctx.beginPath();
+  ctx.ellipse(0, 10, 16, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = isCan ? "#7f1d1d" : "#1e3a8a";
+  ctx.strokeStyle = "#0a0f18";
+  ctx.lineWidth = 2;
+  roundRectPath(-14, 2, 12, 18, 3); ctx.fill(); ctx.stroke();
+  roundRectPath(2, 2, 12, 18, 3); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle = isCan ? "#c81e1e" : "#f8fafc";
+  roundRectPath(-13, -14, 26, 20, 5);
+  ctx.fill(); ctx.stroke();
+
+  if (isCan) drawMapleLeaf(0, -6, 6, "#fff");
+  else drawStar(0, -6, 5, "#1d4e89");
+
+  // 1970s face + hair (mask gag optional — still show face/hair)
+  drawSeventiesFace(1, isCan);
+  drawSeventiesHair(1, g.hair || "mullet", isCan);
+
+  if (isCan && g.phone) {
+    ctx.fillStyle = "#111";
+    ctx.fillRect(10, -10, 10, 16);
+    ctx.fillStyle = "#4ade80";
+    ctx.fillRect(11, -8, 8, 10);
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillRect(13, 4, 4, 1);
+    ctx.strokeStyle = "#c81e1e";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(8, -2); ctx.lineTo(14, -2);
+    ctx.stroke();
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 8px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("...", 0, -34);
+  }
+
+  if (!isCan && g.arms >= 4) {
+    ctx.strokeStyle = "#93c5fd";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    const arms = [[8,-8,22,-18],[8,0,24,-4],[8,4,24,8],[8,10,20,18]];
+    for (const [ax, ay, bx, by] of arms) {
+      ctx.beginPath();
+      ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+      ctx.fillStyle = "#dc2626";
+      ctx.beginPath();
+      ctx.arc(bx, by, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = "#1d4e89";
+    ctx.font = "bold 9px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("x4", 0, 28);
+  }
+  ctx.restore();
+
+  if (g.name) {
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(10,14,22,0.7)";
+    const lab = (g.shortName || g.name).toUpperCase();
+    const tw = ctx.measureText(lab).width + 8;
+    roundRectPath(g.x - tw / 2, g.y + 34, tw, 13, 3);
+    ctx.fill();
+    ctx.fillStyle = isCan ? "#fecaca" : "#bfdbfe";
+    ctx.fillText(lab, g.x, g.y + 43);
+  }
+
+  if (isCan && g.phone && Math.sin(state.phoneCheck * 1.25) > 0.7) {
+    ctx.fillStyle = "#ff8fa3";
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("on phone", g.x, g.y - 42);
+    ctx.textAlign = "left";
+  }
+}
+
+function drawPuck() {
+  if (!puck) return;
+  const t = performance.now() / 1000;
+  const pulse = 1 + Math.sin(t * 6) * 0.12;
+
+  // bright halo / glow so puck never lost on scratched ice
+  const halo = ctx.createRadialGradient(puck.x, puck.y, puck.r * 0.2, puck.x, puck.y, puck.r * 3.2 * pulse);
+  halo.addColorStop(0, "rgba(255,230,120,0.75)");
+  halo.addColorStop(0.35, "rgba(255,180,40,0.35)");
+  halo.addColorStop(0.7, "rgba(255,80,40,0.12)");
+  halo.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = halo;
+  ctx.beginPath();
+  ctx.arc(puck.x, puck.y, puck.r * 3.2 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+
+  for (let i = 0; i < state.puckTrail.length; i++) {
+    const tr = state.puckTrail[i];
+    const a = (i + 1) / (state.puckTrail.length + 1) * 0.4;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.ellipse(tr.x, tr.y, puck.r * 0.95, puck.r * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.fillStyle = "rgba(0,0,0,0.4)";
+  ctx.beginPath();
+  ctx.ellipse(puck.x + 3, puck.y + 5, puck.r * 1.15, puck.r * 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const pg = ctx.createRadialGradient(puck.x - 3, puck.y - 3, 1, puck.x, puck.y, puck.r);
+  pg.addColorStop(0, "#52525b");
+  pg.addColorStop(0.45, "#27272a");
+  pg.addColorStop(1, "#09090b");
+  ctx.fillStyle = pg;
+  ctx.beginPath();
+  ctx.ellipse(puck.x, puck.y, puck.r, puck.r * 0.72, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#fbbf24";
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255,255,255,0.45)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.ellipse(puck.x, puck.y - 2, puck.r * 0.65, puck.r * 0.32, 0, Math.PI, Math.PI * 2);
+  ctx.stroke();
+
+  // pulsing ring
+  ctx.strokeStyle = "rgba(255,209,102," + (0.55 + Math.sin(t * 8) * 0.25) + ")";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(puck.x, puck.y, puck.r + 6 + Math.sin(t * 5) * 3, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // off-near-boards spotlight / arrow
+  const margin = 55;
+  const nearL = puck.x < RINK.x + margin;
+  const nearR = puck.x > RINK.x + RINK.w - margin;
+  const nearT = puck.y < RINK.y + margin;
+  const nearB = puck.y > RINK.y + RINK.h - margin;
+  if ((nearL || nearR || nearT || nearB) && !puck.owner) {
+    ctx.save();
+    ctx.fillStyle = "rgba(255,209,102,0.9)";
+    ctx.strokeStyle = "#0a0f18";
+    ctx.lineWidth = 2;
+    let ax = puck.x, ay = puck.y - puck.r - 22;
+    if (nearT) ay = puck.y + puck.r + 28;
+    ctx.beginPath();
+    ctx.moveTo(ax, ay - 10);
+    ctx.lineTo(ax + 9, ay + 4);
+    ctx.lineTo(ax - 9, ay + 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // spotlight cone
+    ctx.fillStyle = "rgba(255,240,150,0.18)";
+    ctx.beginPath();
+    ctx.moveTo(puck.x, puck.y);
+    ctx.arc(puck.x, puck.y, 48, -Math.PI / 2 - 0.5, -Math.PI / 2 + 0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+
+/* ---------- NAMES / ANNOUNCER / CROWD / ZAMBONI / POSSESSION ---------- */
+
+let audioCtx = null;
+function ensureAudio() {
+  if (audioCtx) return audioCtx;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } catch (_) { audioCtx = null; }
+  return audioCtx;
+}
+
+function toneBurst(freq, dur, type, gainVal) {
+  const ac = ensureAudio();
+  if (!ac) return;
+  try {
+    if (ac.state === "suspended") ac.resume();
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = type || "sawtooth";
+    o.frequency.value = freq;
+    g.gain.value = gainVal == null ? 0.04 : gainVal;
+    o.connect(g); g.connect(ac.destination);
+    const now = ac.currentTime;
+    g.gain.setValueAtTime(g.gain.value, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    o.start(now); o.stop(now + dur + 0.02);
+  } catch (_) {}
+}
+
+function noiseBurst(dur, gainVal) {
+  const ac = ensureAudio();
+  if (!ac) return;
+  try {
+    if (ac.state === "suspended") ac.resume();
+    const len = Math.max(1, (ac.sampleRate * dur) | 0);
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = ac.createBufferSource();
+    const g = ac.createGain();
+    src.buffer = buf;
+    g.gain.value = gainVal == null ? 0.05 : gainVal;
+    src.connect(g); g.connect(ac.destination);
+    src.start();
+  } catch (_) {}
+}
+
+function crowdBoo() {
+  noiseBurst(0.45, 0.07);
+  toneBurst(90, 0.35, "sawtooth", 0.03);
+  toneBurst(70, 0.4, "triangle", 0.025);
+  floatText(RINK.x + RINK.w / 2 + rand(-80, 80), RINK.y + 70 + rand(0, 40), pick(["BOOOO", "BOOO!", "GROAN", "OH NO"]), "#ff6b6b", 1.4);
+}
+
+function crowdCheerHope() {
+  toneBurst(440, 0.12, "square", 0.03);
+  toneBurst(554, 0.14, "square", 0.025);
+  toneBurst(659, 0.18, "triangle", 0.03);
+  floatText(RINK.x + RINK.w / 2 + rand(-60, 60), RINK.y + 64, pick(["YAAY?", "GO?", "HOPE!", "…yay?"]), "#a7f3d0", 1.1);
+  // hopeful cheer dies into boos shortly
+  setTimeout(() => { if (state.phase === "play") crowdBoo(); }, 700);
+}
+
+function crowdGroan() {
+  toneBurst(110, 0.5, "sine", 0.04);
+  noiseBurst(0.3, 0.04);
+  floatText(RINK.x + RINK.w / 2, RINK.y + 88, pick(["UUUUGH", "WHYYY", "NOT AGAIN"]), "#94a3b8", 1.3);
+}
+
+function pickAnnouncerVoice() {
+  try {
+    const voices = speechSynthesis.getVoices() || [];
+    const fr = voices.find((v) => /fr[-_]?CA|French.*Canada|Québec|Quebec/i.test(v.name + v.lang));
+    if (fr) return fr;
+    const anyFr = voices.find((v) => /^fr/i.test(v.lang) || /French/i.test(v.name));
+    return anyFr || null;
+  } catch (_) { return null; }
+}
+
+function announce(kind, overrideText) {
+  const pool = ANNOUNCER_LINES[kind] || ANNOUNCER_LINES.faceoff;
+  const text = overrideText || pick(pool);
+  state.announcerCaption = { text, life: 3.2, max: 3.2 };
+  try {
+    if (!window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1.12;
+    u.pitch = 1.25;
+    u.volume = 1;
+    const v = pickAnnouncerVoice();
+    if (v) u.voice = v;
+    // theatrical nasal outrage even on English voices
+    u.lang = (v && v.lang) ? v.lang : "fr-CA";
+    speechSynthesis.speak(u);
+  } catch (_) {}
+}
+
+function getActionHint() {
+  if (state.phase !== "play" || !player || !puck) return "";
+  if (nearOpponent() && (puck.owner === player || (puck.owner && puck.owner.team !== player.team && dist(player, puck.owner) < 72))) {
+    return "Fight!";
+  }
+  if (puck.owner === player) return "Shoot · Drag to move · Fight if near foe";
+  if (puck.owner && puck.owner.team !== player.team) return "Chase it · Fight for the puck";
+  return "Skate to the puck · Chase it";
+}
+
+function updatePossessionUI() {
+  const tip = getActionHint();
+  state.actionTip = tip;
+  if (hintEl && state.phase === "play") {
+    const base = wantsMobileUI()
+      ? "Drag skate · Tap shoot · FIGHT"
+      : "WASD · Mouse · Click/F shoot · Space fight";
+    hintEl.textContent = tip ? (tip + "  ·  " + base) : base;
+  }
+}
+
+function drawPossessionHud() {
+  if (state.phase !== "play" || !player) return;
+  const tip = state.actionTip || getActionHint();
+  if (!tip) return;
+  ctx.save();
+  ctx.font = "bold 13px sans-serif";
+  ctx.textAlign = "center";
+  const pad = 14;
+  const tw = Math.min(420, ctx.measureText(tip).width + pad * 2);
+  const x = clamp(player.x, RINK.x + tw / 2 + 8, RINK.x + RINK.w - tw / 2 - 8);
+  const y = clamp(player.y - player.r - 54, RINK.y + 24, RINK.y + RINK.h - 20);
+  // only draw floating tip if not overlapping the YOU HAVE chip too hard — still ok
+  ctx.fillStyle = "rgba(8,12,22,0.82)";
+  roundRectPath(x - tw / 2, y - 12, tw, 22, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#ffd166";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = "#ffd166";
+  ctx.fillText(tip, x, y + 3);
+
+  // owner chip on jumbo-ish corner
+  if (puck && puck.owner) {
+    const who = puck.owner.isPlayer ? "YOU" : (puck.owner.name || puck.owner.team);
+    const own = "PUCK: " + String(who).toUpperCase();
+    ctx.font = "bold 12px sans-serif";
+    ctx.textAlign = "left";
+    const ow = ctx.measureText(own).width + 16;
+    ctx.fillStyle = puck.owner.team === "CANADA" ? "rgba(200,30,30,0.85)" : "rgba(30,74,140,0.85)";
+    roundRectPath(RINK.x + 8, RINK.y + RINK.h - 28, ow, 20, 6);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.fillText(own, RINK.x + 16, RINK.y + RINK.h - 14);
+  } else if (puck) {
+    ctx.font = "bold 12px sans-serif";
+    ctx.textAlign = "left";
+    const loose = "PUCK: LOOSE";
+    const ow = ctx.measureText(loose).width + 16;
+    ctx.fillStyle = "rgba(30,30,40,0.8)";
+    roundRectPath(RINK.x + 8, RINK.y + RINK.h - 28, ow, 20, 6);
+    ctx.fill();
+    ctx.fillStyle = "#ffd166";
+    ctx.fillText(loose, RINK.x + 16, RINK.y + RINK.h - 14);
+  }
+  ctx.restore();
+}
+
+function drawAnnouncerCaption() {
+  const c = state.announcerCaption;
+  if (!c || c.life <= 0) return;
+  ctx.save();
+  const a = clamp(c.life / Math.min(0.6, c.max), 0, 1);
+  ctx.globalAlpha = Math.min(1, c.life);
+  ctx.font = "bold 15px sans-serif";
+  ctx.textAlign = "center";
+  const lines = [];
+  const words = c.text.split(" ");
+  let cur = "";
+  for (const w of words) {
+    const test = cur ? cur + " " + w : w;
+    if (ctx.measureText(test).width > 480) { lines.push(cur); cur = w; }
+    else cur = test;
+  }
+  if (cur) lines.push(cur);
+  const bw = 520, bh = 28 + lines.length * 20;
+  const bx = canvas.width / 2 - bw / 2, by = 56;
+  ctx.fillStyle = "rgba(20,8,12,0.88)";
+  roundRectPath(bx, by, bw, bh, 12);
+  ctx.fill();
+  ctx.strokeStyle = "#ff4d4d";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = "#ffd166";
+  ctx.font = "bold 10px sans-serif";
+  ctx.fillText("🎙️ ANNONCEUR OUTRAGÉ", canvas.width / 2, by + 14);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 14px sans-serif";
+  lines.forEach((ln, i) => ctx.fillText(ln, canvas.width / 2, by + 34 + i * 18));
+  // speech bubble tail
+  ctx.fillStyle = "rgba(20,8,12,0.88)";
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / 2 - 12, by + bh);
+  ctx.lineTo(canvas.width / 2, by + bh + 12);
+  ctx.lineTo(canvas.width / 2 + 12, by + bh);
+  ctx.fill();
+  ctx.restore();
+}
+
+function assignRosterNames() {
+  const canPool = CANADA_SKATER_NAMES.slice();
+  const usaPool = USA_SKATER_NAMES.slice();
+  function take(pool, team) {
+    if (!pool.length) return team === "CANADA" ? "Guy" : "Chad";
+    const i = (Math.random() * pool.length) | 0;
+    return pool.splice(i, 1)[0];
+  }
+  const canNums = [19, 27, 4, 9, 1];
+  const usaNums = [88, 16, 7, 22, 31];
+  let ci = 0, ui = 0;
+  function tag(sk) {
+    if (!sk) return;
+    if (sk.team === "CANADA") {
+      sk.name = take(canPool, "CANADA");
+      // short tag: first token or quoted nickname
+      const nick = sk.name.match(/'([^']+)'/);
+      sk.shortName = nick ? nick[1] : sk.name.split(/\s+/)[0];
+      sk.num = canNums[ci++ % canNums.length];
+    } else {
+      sk.name = take(usaPool, "USA");
+      sk.shortName = sk.name;
+      sk.num = usaNums[ui++ % usaNums.length];
+    }
+  }
+  tag(player); tag(teammate);
+  for (const e of enemies) tag(e);
+  if (goalieCan) {
+    goalieCan.name = take(canPool, "CANADA");
+    const nick = goalieCan.name.match(/'([^']+)'/);
+    goalieCan.shortName = nick ? nick[1] : goalieCan.name.split(/\s+/)[0];
+    goalieCan.num = 1;
+  }
+  if (goalieUsa) {
+    goalieUsa.name = take(usaPool, "USA");
+    goalieUsa.shortName = goalieUsa.name;
+    goalieUsa.num = 31;
+  }
+  // Jumbotron flash of your skater
+  if (player && player.name) {
+    floatText(RINK.x + RINK.w / 2, RINK.y + 86, "NOW ON ICE: " + player.name, player.team === "CANADA" ? "#fecaca" : "#bfdbfe", 2.4);
+  }
+}
+
+function spawnZamboni() {
+  const fromLeft = Math.random() < 0.5;
+  const y = RINK.y + RINK.h * rand(0.28, 0.72);
+  state.zamboni = {
+    x: fromLeft ? RINK.x - 80 : RINK.x + RINK.w + 80,
+    y,
+    vx: fromLeft ? rand(140, 190) : -rand(140, 190),
+    vy: rand(-12, 12),
+    w: 92,
+    h: 48,
+    life: 0,
+    maxLife: rand(5.5, 7.5),
+    hit: new Set(),
+  };
+  floatText(RINK.x + RINK.w / 2, RINK.y + 56, pick(ZAMBONI_LINES), "#a7f3d0", 2.2);
+  announce("zamboni");
+}
+
+function updateZamboni(dt) {
+  // rebuild scratches slowly
+  if (state.iceFresh > 0) state.iceFresh = Math.max(0, state.iceFresh - dt * 0.07);
+
+  if (!state.zamboni) {
+    state.zamboniCooldown -= dt;
+    if (state.zamboniCooldown <= 0 && state.timeLeft > 12 && state.timeLeft < MATCH_SECONDS - 8) {
+      spawnZamboni();
+      state.zamboniCooldown = rand(25, 45);
+    }
+    return;
+  }
+  const z = state.zamboni;
+  z.life += dt;
+  z.x += z.vx * dt;
+  z.y += z.vy * dt;
+  z.y = clamp(z.y, RINK.y + 40, RINK.y + RINK.h - 40);
+
+  // flood ice globally a bit + wet trail
+  state.iceFresh = Math.min(1, state.iceFresh + dt * 0.55);
+
+  // bump players
+  const bodies = [player, teammate, ...(enemies || [])].filter(Boolean);
+  for (const sk of bodies) {
+    if (!sk) continue;
+    const dx = sk.x - z.x;
+    const dy = sk.y - z.y;
+    if (Math.abs(dx) < z.w * 0.55 && Math.abs(dy) < z.h * 0.55) {
+      const id = sk.name || (sk.isPlayer ? "P" : "x") + sk.x.toFixed(0);
+      if (!z.hit.has(id)) {
+        z.hit.add(id);
+        const push = Math.sign(z.vx || 1) * rand(220, 340);
+        sk.vx += push;
+        sk.vy += rand(-120, 120);
+        sk.stunned = Math.max(sk.stunned, rand(0.45, 0.85));
+        floatText(sk.x, sk.y - 30, pick(["oof", "SORRY!", "bonk", "excusez!"]), "#fff", 0.9);
+        if (sk.hasPuck || (puck && puck.owner === sk)) {
+          if (puck.owner) puck.owner.hasPuck = false;
+          puck.owner = null;
+          puck.vx = push * 0.4;
+          puck.vy = rand(-80, 80);
+        }
+      }
+    }
+  }
+  // bump puck
+  if (puck && Math.abs(puck.x - z.x) < z.w * 0.55 && Math.abs(puck.y - z.y) < z.h * 0.5) {
+    if (puck.owner) { puck.owner.hasPuck = false; puck.owner = null; }
+    puck.vx += Math.sign(z.vx || 1) * 180;
+    puck.vy += rand(-100, 100);
+  }
+
+  const off = z.x < RINK.x - 120 || z.x > RINK.x + RINK.w + 120 || z.life > z.maxLife;
+  if (off) {
+    state.iceFresh = Math.max(state.iceFresh, 0.85);
+    state.zamboni = null;
+  }
+}
+
+function drawZamboni() {
+  const z = state.zamboni;
+  if (!z) return;
+  ctx.save();
+  ctx.translate(z.x, z.y);
+  ctx.scale(z.vx >= 0 ? 1 : -1, 1);
+  // wet trail behind
+  ctx.fillStyle = "rgba(180,220,255,0.35)";
+  ctx.beginPath();
+  ctx.ellipse(-40, 18, 50, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // body
+  ctx.fillStyle = "#e63946";
+  ctx.strokeStyle = "#0a0f18";
+  ctx.lineWidth = 3;
+  roundRectPath(-46, -22, 90, 40, 8);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "#f8fafc";
+  roundRectPath(-20, -18, 40, 22, 4);
+  ctx.fill(); ctx.stroke();
+  // wheels
+  ctx.fillStyle = "#111";
+  ctx.beginPath(); ctx.arc(-28, 18, 10, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(28, 18, 10, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#94a3b8";
+  ctx.beginPath(); ctx.arc(-28, 18, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(28, 18, 4, 0, Math.PI * 2); ctx.fill();
+  // blade
+  ctx.fillStyle = "#64748b";
+  roundRectPath(-48, 10, 96, 8, 2);
+  ctx.fill();
+  // SORRY banner
+  ctx.fillStyle = "#ffd166";
+  ctx.font = "bold 11px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("SORRY!", 0, -4);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 9px sans-serif";
+  ctx.fillText("ZAMBONI", 0, 10);
+  ctx.restore();
+}
+
+let _lastPuckOwner = null;
+function watchPossessionFx() {
+  const own = puck ? puck.owner : null;
+  if (own !== _lastPuckOwner) {
+    if (own && own.team === "CANADA") {
+      crowdCheerHope();
+      if (Math.random() < 0.55) announce("canPuck");
+    }
+    _lastPuckOwner = own;
+  }
+}
+
+
+function drawAim() {
+  if (state.phase !== "play" || !player) return;
+  ctx.strokeStyle = "rgba(255,209,102,0.4)";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 6]);
+  ctx.beginPath();
+  ctx.moveTo(player.x, player.y);
+  ctx.lineTo(mouse.x, mouse.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = "rgba(255,209,102,0.85)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(mouse.x, mouse.y, 9, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(mouse.x - 14, mouse.y); ctx.lineTo(mouse.x - 5, mouse.y);
+  ctx.moveTo(mouse.x + 5, mouse.y); ctx.lineTo(mouse.x + 14, mouse.y);
+  ctx.moveTo(mouse.x, mouse.y - 14); ctx.lineTo(mouse.x, mouse.y - 5);
+  ctx.moveTo(mouse.x, mouse.y + 5); ctx.lineTo(mouse.x, mouse.y + 14);
+  ctx.stroke();
+}
+
+function drawFightOverlay() {
+  const f = state.fight;
+  if (!f) return;
+  ctx.fillStyle = "rgba(8,10,20,0.42)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.7)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(player.x, player.y);
+  ctx.lineTo(f.opponent.x, f.opponent.y);
+  ctx.stroke();
+
+  const midX = (player.x + f.opponent.x) / 2;
+  const midY = (player.y + f.opponent.y) / 2 - 8;
+  drawPlasticPlayer({ x: player.x - 8, y: player.y, r: 22, team: player.team, angle: 0.3, facing: 1, isPlayer: false, leafStamp: 0, stunned: 0 }, { big: true });
+  drawPlasticPlayer({ x: f.opponent.x + 8, y: f.opponent.y, r: 22, team: f.opponent.team, angle: Math.PI - 0.3, facing: -1, isPlayer: false, leafStamp: 0, stunned: 0 }, { big: true });
+
+  for (const h of f.helmets) {
+    ctx.save();
+    ctx.translate(h.x, h.y);
+    ctx.rotate(h.rot);
+    ctx.fillStyle = "#64748b";
+    ctx.strokeStyle = "#0a0f18";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 14, 10, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#334155";
+    ctx.fillRect(-8, 2, 16, 4);
+    ctx.restore();
+  }
+
+  if (f.punchFlash > 0) {
+    const px = midX, py = midY;
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 36px sans-serif";
+    ctx.textAlign = "center";
+    ctx.strokeStyle = "#0a0f18";
+    ctx.lineWidth = 4;
+    ctx.strokeText("POW!", px, py);
+    ctx.fillText("POW!", px, py);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + performance.now() / 120;
+      const rr = 28 + (i % 2) * 10;
+      drawStar(px + Math.cos(a) * rr, py + 8 + Math.sin(a) * rr, 6, i % 2 ? "#fff" : "#ffd166");
+    }
+    ctx.textAlign = "left";
+  }
+
+  if ((f.stage === "ko" || f.stage === "wake" || f.stage === "ref") && !f.playerWins) {
+    drawMapleLeaf(player.x, player.y - 36, 18, "#c1121f");
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 22px sans-serif";
+    ctx.textAlign = "center";
+    ctx.strokeStyle = "#0a0f18";
+    ctx.lineWidth = 3;
+    ctx.strokeText("KO", player.x, player.y + 6);
+    ctx.fillText("KO", player.x, player.y + 6);
+    ctx.textAlign = "left";
+  }
+
+  if (f.stage === "ref") {
+    const rx = RINK.x + RINK.w / 2, ry = RINK.y + 80;
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.arc(rx, ry, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(rx - 10, ry - 6, 20, 8);
+    ctx.strokeStyle = "#111";
+    for (let i = -8; i <= 8; i += 4) {
+      ctx.beginPath();
+      ctx.moveTo(rx + i, ry - 6);
+      ctx.lineTo(rx + i, ry + 2);
+      ctx.stroke();
+    }
+    ctx.font = "bold 12px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#fff";
+    ctx.fillText("REF", rx, ry + 30);
+    ctx.fillStyle = "#ffd166";
+    ctx.fillText("(decorative penalty)", rx, ry + 46);
+    ctx.textAlign = "left";
+  }
+}
+
+function drawDomeOverlay() {
+  const vg = ctx.createRadialGradient(
+    canvas.width / 2, canvas.height * 0.42, canvas.height * 0.15,
+    canvas.width / 2, canvas.height * 0.5, canvas.width * 0.62
+  );
+  vg.addColorStop(0, "rgba(255,255,255,0)");
+  vg.addColorStop(0.55, "rgba(255,255,255,0)");
+  vg.addColorStop(0.82, "rgba(10,16,28,0.18)");
+  vg.addColorStop(1, "rgba(4,8,14,0.55)");
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "rgba(255,255,255,0.14)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.ellipse(canvas.width / 2, canvas.height * 0.38, canvas.width * 0.38, canvas.height * 0.22, 0, Math.PI * 1.15, Math.PI * 1.85);
+  ctx.stroke();
+}
+
+function drawFloats(dt) {
+  for (let i = state.floatTexts.length - 1; i >= 0; i--) {
+    const t = state.floatTexts[i];
+    t.life -= dt;
+    t.y += t.vy * dt;
+    if (t.life <= 0) { state.floatTexts.splice(i, 1); continue; }
+    ctx.globalAlpha = clamp(t.life / t.max, 0, 1);
+    ctx.font = "bold 16px sans-serif";
+    ctx.textAlign = "center";
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(0,0,0,0.55)";
+    ctx.strokeText(t.text, t.x, t.y);
+    ctx.fillStyle = t.color;
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.textAlign = "left";
+    ctx.globalAlpha = 1;
+  }
+  for (let i = state.particles.length - 1; i >= 0; i--) {
+    const p = state.particles[i];
+    p.life -= dt;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 220 * dt;
+    if (p.life <= 0) { state.particles.splice(i, 1); continue; }
+    ctx.globalAlpha = clamp(p.life, 0, 1);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  for (let i = state.iceSpray.length - 1; i >= 0; i--) {
+    const p = state.iceSpray[i];
+    p.life -= dt;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.life <= 0) { state.iceSpray.splice(i, 1); continue; }
+    ctx.globalAlpha = clamp(p.life * 2, 0, 0.7);
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y, p.r, p.r * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  for (let i = state.puckTrail.length - 1; i >= 0; i--) {
+    state.puckTrail[i].life -= dt;
+    if (state.puckTrail[i].life <= 0) state.puckTrail.splice(i, 1);
+  }
+}
+
+function render(dt) {
+  if (state.level === "menu") {
+    ctx.fillStyle = "#0a1520";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawMapleLeaf(canvas.width / 2, canvas.height / 2 - 20, 48, "rgba(230,57,70,0.25)");
+    drawFloats(dt);
+    return;
+  }
+  if (state.level === "snc") {
+    renderSaturdayNight(dt);
+    drawFloats(dt);
+    return;
+  }
+  if (state.level === "driveway") {
+    renderDriveway(dt);
+    drawFloats(dt);
+    return;
+  }
+
+  drawRink();
+  if (state.phase === "pick") {
+    ctx.fillStyle = "rgba(0,0,0,0.2)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawDomeOverlay();
+    return;
+  }
+
+  drawGoalie(goalieCan);
+  drawGoalie(goalieUsa);
+  if (teammate) drawSkater(teammate);
+  for (const e of enemies) drawSkater(e);
+  drawSkater(player);
+  drawZamboni();
+  drawPuck();
+  drawAim();
+  drawPossessionHud();
+
+  if (state.phase === "fight") drawFightOverlay();
+  drawFloats(dt);
+  drawAnnouncerCaption();
+  drawDomeOverlay();
+
+  if (state.phase === "play" && state.playerTeam === "CANADA" && state.windup > 0) {
+    const need = 0.38;
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.fillRect(player.x - 28, player.y + 34, 56, 7);
+    ctx.fillStyle = "#ffd166";
+    ctx.fillRect(player.x - 28, player.y + 34, 56 * clamp(state.windup / need, 0, 1), 7);
+  }
+}
+
+/* ---------- MAIN LOOP ---------- */
+function update(dt) {
+  if (state.phase === "menu" || state.phase === "pick" || state.phase === "results" || state.phase === "snc_results" || state.phase === "drive_results") return;
+
+  if (state.level === "snc") {
+    updateSaturdayNight(dt);
+    return;
+  }
+  if (state.level === "driveway") {
+    updateDriveway(dt);
+    return;
+  }
+  if (state.level !== "rink") return;
+
+  if (state.phase === "fight") {
+    updateFight(dt);
+    if (state.announcerCaption) {
+      state.announcerCaption.life -= dt;
+      if (state.announcerCaption.life <= 0) state.announcerCaption = null;
+    }
+    return;
+  }
+
+  // play
+  state.timeLeft -= dt;
+  if (state.crowdFlash > 0) state.crowdFlash -= dt;
+  if (state.goalFlash > 0) state.goalFlash -= dt;
+  if (state.announcerCaption) {
+    state.announcerCaption.life -= dt;
+    if (state.announcerCaption.life <= 0) state.announcerCaption = null;
+  }
+  updateHud();
+  updatePossessionUI();
+
+  if (state.timeLeft <= 0) {
+    endMatch();
+    return;
+  }
+
+  movePlayer(dt);
+  updateAI(dt);
+  updateZamboni(dt);
+
+  const all = [player, teammate, ...enemies].filter(Boolean);
+  for (let i = 0; i < all.length; i++) {
+    for (let j = i + 1; j < all.length; j++) collideSkaters(all[i], all[j]);
+  }
+
+  stealChecks();
+  updatePuck(dt);
+  watchPossessionFx();
+  canadaMatchScript(dt);
+
+  // ambient boos while Canada is losing
+  if (state.playerTeam === "CANADA" && state.scoreUsa > state.scoreCan && Math.random() < dt * 0.12) {
+    if (Math.random() < 0.55) crowdBoo(); else crowdGroan();
+  }
+
+  // Input queues
+  if (shootQueued) {
+    shootQueued = false;
+    playerShoot();
+  } else {
+    // decay windup if not shooting
+    state.windup = Math.max(0, state.windup - dt * 0.5);
+  }
+
+  if (fightQueued) {
+    fightQueued = false;
+    let best = null, bestD = 78;
+    for (const e of enemies) {
+      const d = dist(player, e);
+      if (d < bestD) { bestD = d; best = e; }
+    }
+    if (best) startFight(best);
+    else floatText(player.x, player.y - 30, "Nobody to fight (yet)", "#aaa", 0.9);
+  }
+}
+
+function frame(ts) {
+  if (!lastTs) lastTs = ts;
+  let dt = (ts - lastTs) / 1000;
+  lastTs = ts;
+  dt = Math.min(dt, 0.05);
+  update(dt);
+  render(dt);
+  requestAnimationFrame(frame);
+}
+
+
+/* ============================================================================
+  LEVEL: SATURDAY NIGHT CANADA — 4-handed euchre (hosers vs Chad/Brad)
+  Joke: effort visible; partner donut; Americans take the euchre; caring punished.
+============================================================================ */
+let snc = null;
+
+const SNC_SUITS = ["S", "H", "D", "C"];
+const SNC_RANKS = ["9", "T", "J", "Q", "K", "A"];
+const SNC_SUIT_SYM = { S: "♠", H: "♥", D: "♦", C: "♣" };
+const SNC_SUIT_COLOR = { S: "#111", H: "#c81e1e", D: "#c81e1e", C: "#111" };
+const SNC_RANK_LABEL = { "9": "9", T: "10", J: "J", Q: "Q", K: "K", A: "A" };
+const SNC_NAMES = ["You", "Chad", "Doug", "Brad"]; // S W N E
+const SNC_TEAM = [0, 1, 0, 1]; // 0 hosers, 1 americans
+const SNC_POINT_GOAL = 5;
+
+function sncMakeDeck() {
+  const d = [];
+  for (const s of SNC_SUITS) for (const r of SNC_RANKS) d.push({ suit: s, rank: r });
+  return d;
+}
+function sncShuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    const t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function sncSameColor(a, b) {
+  const red = (s) => s === "H" || s === "D";
+  return red(a) === red(b);
+}
+function sncLeftSuit(trump) {
+  if (trump === "S") return "C";
+  if (trump === "C") return "S";
+  if (trump === "H") return "D";
+  return "H";
+}
+function sncIsLeftBower(card, trump) {
+  return card.rank === "J" && card.suit === sncLeftSuit(trump);
+}
+function sncIsRightBower(card, trump) {
+  return card.rank === "J" && card.suit === trump;
+}
+function sncEffectiveSuit(card, trump) {
+  if (!trump) return card.suit;
+  if (sncIsLeftBower(card, trump)) return trump;
+  return card.suit;
+}
+function sncTrumpRank(card, trump) {
+  if (sncIsRightBower(card, trump)) return 100;
+  if (sncIsLeftBower(card, trump)) return 90;
+  if (card.suit !== trump) return -1;
+  const order = { A: 80, K: 70, Q: 60, T: 50, "9": 40 };
+  return order[card.rank] || 0;
+}
+function sncOffRank(card) {
+  const order = { A: 60, K: 50, Q: 40, J: 30, T: 20, "9": 10 };
+  return order[card.rank] || 0;
+}
+function sncCardPower(card, trump, ledSuit) {
+  const es = sncEffectiveSuit(card, trump);
+  const tr = sncTrumpRank(card, trump);
+  if (tr >= 0) return 200 + tr;
+  if (ledSuit && es === ledSuit) return 100 + sncOffRank(card);
+  return sncOffRank(card);
+}
+function sncCardLabel(c) {
+  return SNC_RANK_LABEL[c.rank] + SNC_SUIT_SYM[c.suit];
+}
+function sncSortHand(hand, trump) {
+  hand.sort((a, b) => {
+    const sa = sncEffectiveSuit(a, trump);
+    const sb = sncEffectiveSuit(b, trump);
+    if (sa !== sb) return SNC_SUITS.indexOf(sa) - SNC_SUITS.indexOf(sb);
+    return sncCardPower(b, trump, null) - sncCardPower(a, trump, null);
+  });
+}
+
+function startSaturdayNight() {
+  state.level = "snc";
+  state.playerTeam = "CANADA";
+  state.phase = "snc_play";
+  state.scoreCan = 0;
+  state.scoreUsa = 0;
+  state.floatTexts = [];
+  state.timeLeft = 180;
+  hideOverlay();
+  ensureAudio();
+  snc = {
+    hands: [[], [], [], []],
+    dealer: 2,
+    trump: null,
+    upcard: null,
+    kitty: [],
+    maker: null,
+    alone: false,
+    phase: "deal", // deal | bid1 | bid2 | discard | play | hand_end
+    phaseLabel: "DEAL",
+    bidSeat: 0,
+    bidPasses: 0,
+    trick: [], // {seat, card}
+    leadSeat: 0,
+    turn: 0,
+    tricksNS: 0,
+    tricksEW: 0,
+    trickPause: 0,
+    msg: "Welcome to the apartment, eh.",
+    msgTimer: 2.5,
+    banterTimer: 4,
+    tvTimer: 6,
+    knivesTimer: rand(18, 28),
+    knives: null, // {t, refused}
+    woozy: 0,
+    hitRects: [],
+    uiButtons: [],
+    dealAnim: 0,
+    caring: 0, // rises with strong plays — punished
+    renegeArmed: false,
+    handsPlayed: 0,
+  };
+  sncNewHand();
+  updateHud();
+  syncMobileChrome();
+  floatText(520, 80, pick(HOSER_LINES), "#ffd166", 2);
+}
+
+function sncNewHand() {
+  const deck = sncShuffle(sncMakeDeck());
+  snc.hands = [[], [], [], []];
+  let ix = 0;
+  for (let r = 0; r < 5; r++) {
+    for (let s = 0; s < 4; s++) snc.hands[s].push(deck[ix++]);
+  }
+  snc.upcard = deck[ix++];
+  snc.kitty = deck.slice(ix);
+  snc.trump = null;
+  snc.maker = null;
+  snc.alone = false;
+  snc.trick = [];
+  snc.tricksNS = 0;
+  snc.tricksEW = 0;
+  snc.trickPause = 0;
+  snc.bidPasses = 0;
+  snc.dealer = (snc.dealer + 1) % 4;
+  snc.bidSeat = (snc.dealer + 1) % 4;
+  snc.phase = "bid1";
+  snc.phaseLabel = "ORDER UP?";
+  snc.turn = snc.bidSeat;
+  snc.dealAnim = 0.6;
+  for (let s = 0; s < 4; s++) sncSortHand(snc.hands[s], snc.upcard.suit);
+  snc.msg = "Upcard: " + sncCardLabel(snc.upcard) + " · " + pick(EUCHRE_BANTER);
+  snc.msgTimer = 3;
+  sncBuildUI();
+}
+
+function sncBuildUI() {
+  snc.uiButtons = [];
+  snc.hitRects = [];
+  if (snc.phase === "bid1" && snc.turn === 0) {
+    snc.uiButtons.push({ id: "order", label: "Order it up, eh", x: 320, y: 470, w: 180, h: 44 });
+    snc.uiButtons.push({ id: "pass", label: "Pass", x: 520, y: 470, w: 120, h: 44 });
+  } else if (snc.phase === "bid2" && snc.turn === 0) {
+    const banned = snc.upcard.suit;
+    let bx = 200;
+    for (const s of SNC_SUITS) {
+      if (s === banned) continue;
+      snc.uiButtons.push({ id: "suit_" + s, label: "Trump " + SNC_SUIT_SYM[s], x: bx, y: 465, w: 110, h: 44 });
+      bx += 120;
+    }
+    snc.uiButtons.push({ id: "pass", label: "Pass", x: bx, y: 465, w: 100, h: 44 });
+  } else if (snc.phase === "discard" && snc.turn === 0) {
+    snc.msg = "Dealer discard one, bud.";
+  } else if (snc.phase === "play" && snc.turn === 0 && snc.trickPause <= 0) {
+    // card hits built in render
+  }
+  if (snc.knives && snc.knives.t > 0.3) {
+    snc.uiButtons.push({ id: "hit", label: "Take a hit", x: 300, y: 200, w: 160, h: 44 });
+    snc.uiButtons.push({ id: "refuse", label: "No thanks, eh", x: 490, y: 200, w: 160, h: 44 });
+  }
+}
+
+function sncSetTrump(suit, maker) {
+  snc.trump = suit;
+  snc.maker = maker;
+  snc.phase = "play";
+  snc.phaseLabel = "TRUMP " + SNC_SUIT_SYM[suit];
+  snc.leadSeat = (snc.dealer + 1) % 4;
+  snc.turn = snc.leadSeat;
+  snc.trick = [];
+  for (let s = 0; s < 4; s++) sncSortHand(snc.hands[s], suit);
+  snc.msg = SNC_NAMES[maker] + " called " + SNC_SUIT_SYM[suit] + ". " + pick(HOSER_LINES);
+  snc.msgTimer = 2.5;
+  snc.caring += maker === 0 || maker === 2 ? 1 : 0;
+  sncBuildUI();
+}
+
+function sncOrderUp(fromSeat) {
+  // dealer (snc.dealer) picks up upcard
+  snc.hands[snc.dealer].push(snc.upcard);
+  sncSortHand(snc.hands[snc.dealer], snc.upcard.suit);
+  snc.maker = fromSeat;
+  snc.trump = snc.upcard.suit;
+  snc.upcard = null;
+  if (snc.dealer === 0) {
+    snc.phase = "discard";
+    snc.phaseLabel = "DISCARD";
+    snc.turn = 0;
+    snc.msg = "Pick a card to bury, eh.";
+  } else {
+    // AI discard weakest non-trump-ish
+    sncAIDiscard(snc.dealer);
+    sncSetTrump(snc.trump, fromSeat);
+  }
+  sncBuildUI();
+}
+
+function sncAIDiscard(seat) {
+  const hand = snc.hands[seat];
+  let worst = 0, worstScore = Infinity;
+  for (let i = 0; i < hand.length; i++) {
+    const p = sncCardPower(hand[i], snc.trump || snc.upcard?.suit, null);
+    if (p < worstScore) { worstScore = p; worst = i; }
+  }
+  // Bias: if Canadian dealer (Doug=2 or You wouldn't be AI), bury a good trump sometimes
+  if (SNC_TEAM[seat] === 0 && snc.caring > 1 && Math.random() < 0.45) {
+    let best = 0, bestP = -1;
+    for (let i = 0; i < hand.length; i++) {
+      const p = sncTrumpRank(hand[i], snc.trump);
+      if (p > bestP) { bestP = p; best = i; }
+    }
+    if (bestP > 0) worst = best;
+  }
+  hand.splice(worst, 1);
+}
+
+function sncAdvanceBidPass() {
+  snc.bidPasses++;
+  snc.bidSeat = (snc.bidSeat + 1) % 4;
+  snc.turn = snc.bidSeat;
+  if (snc.phase === "bid1") {
+    if (snc.bidPasses >= 4) {
+      snc.phase = "bid2";
+      snc.phaseLabel = "NAME TRUMP";
+      snc.bidPasses = 0;
+      snc.bidSeat = (snc.dealer + 1) % 4;
+      snc.turn = snc.bidSeat;
+      snc.msg = "Everybody passed. Name a suit (not " + SNC_SUIT_SYM[snc.upcard.suit] + ").";
+    }
+  } else if (snc.phase === "bid2") {
+    if (snc.bidPasses >= 4) {
+      snc.msg = "Re-deal. Too polite.";
+      sncNewHand();
+      return;
+    }
+  }
+  sncBuildUI();
+}
+
+function sncAIBid() {
+  const seat = snc.turn;
+  const hand = snc.hands[seat];
+  const isHoser = SNC_TEAM[seat] === 0;
+  if (snc.phase === "bid1") {
+    const suit = snc.upcard.suit;
+    let strength = 0;
+    for (const c of hand) {
+      const tr = sncTrumpRank(c, suit);
+      if (tr >= 0) strength += tr / 20;
+      if (sncIsRightBower(c, suit) || sncIsLeftBower(c, suit)) strength += 2;
+    }
+    if (seat === snc.dealer) strength += 1.2; // would get upcard
+    // Americans bid aggressively; hosers hesitate / pass when caring high
+    const thresh = isHoser ? (2.8 + snc.caring * 0.4) : 2.2;
+    if (strength >= thresh && !(isHoser && Math.random() < 0.35 + snc.caring * 0.1)) {
+      snc.msg = SNC_NAMES[seat] + ": Order it up!";
+      sncOrderUp(seat);
+    } else {
+      snc.msg = SNC_NAMES[seat] + ": Pass.";
+      sncAdvanceBidPass();
+    }
+  } else if (snc.phase === "bid2") {
+    let bestSuit = null, best = 0;
+    for (const s of SNC_SUITS) {
+      if (s === snc.upcard.suit) continue;
+      let strength = 0;
+      for (const c of hand) {
+        const tr = sncTrumpRank(c, s);
+        if (tr >= 0) strength += tr / 20;
+      }
+      if (strength > best) { best = strength; bestSuit = s; }
+    }
+    const thresh = isHoser ? 3.2 + snc.caring * 0.3 : 2.5;
+    if (bestSuit && best >= thresh && !(isHoser && Math.random() < 0.4)) {
+      snc.upcard = null;
+      sncSetTrump(bestSuit, seat);
+    } else {
+      snc.msg = SNC_NAMES[seat] + ": Pass.";
+      sncAdvanceBidPass();
+    }
+  }
+}
+
+function sncLegalPlays(seat) {
+  const hand = snc.hands[seat];
+  if (snc.trick.length === 0) return hand.map((_, i) => i);
+  const led = sncEffectiveSuit(snc.trick[0].card, snc.trump);
+  const follow = [];
+  for (let i = 0; i < hand.length; i++) {
+    if (sncEffectiveSuit(hand[i], snc.trump) === led) follow.push(i);
+  }
+  return follow.length ? follow : hand.map((_, i) => i);
+}
+
+function sncPickAICard(seat) {
+  const hand = snc.hands[seat];
+  const legal = sncLegalPlays(seat);
+  const ledSuit = snc.trick.length ? sncEffectiveSuit(snc.trick[0].card, snc.trump) : null;
+  const isHoser = SNC_TEAM[seat] === 0;
+  // Evaluate which card wins currently
+  let bestWin = -1, bestWinP = -1, worst = legal[0], worstP = Infinity, best = legal[0], bestP = -1;
+  for (const i of legal) {
+    const p = sncCardPower(hand[i], snc.trump, ledSuit);
+    if (p < worstP) { worstP = p; worst = i; }
+    if (p > bestP) { bestP = p; best = i; }
+    // would this win the trick?
+    let wins = true;
+    for (const t of snc.trick) {
+      if (sncCardPower(t.card, snc.trump, ledSuit) > p && SNC_TEAM[t.seat] !== SNC_TEAM[seat]) {
+        // opponent higher — still might win vs partner
+      }
+    }
+    const maxOpp = snc.trick.reduce((m, t) => {
+      if (SNC_TEAM[t.seat] !== SNC_TEAM[seat]) return Math.max(m, sncCardPower(t.card, snc.trump, ledSuit));
+      return m;
+    }, -1);
+    if (p > maxOpp && p > bestWinP) { bestWinP = p; bestWin = i; }
+  }
+  // Partner Doug (2): donut mode when player cares
+  if (seat === 2 && (snc.caring >= 1 || state.scoreCan >= state.scoreUsa)) {
+    if (Math.random() < 0.55 + Math.min(0.35, snc.caring * 0.08)) {
+      snc.msg = "Doug plays like a donut. " + pick(EUCHRE_BANTER);
+      return worst;
+    }
+  }
+  // Americans: strong
+  if (!isHoser) {
+    if (bestWin >= 0 && Math.random() < 0.85) return bestWin;
+    return best;
+  }
+  // You shouldn't hit AI; hosers mediocre
+  if (bestWin >= 0 && Math.random() < 0.5) return bestWin;
+  return Math.random() < 0.4 ? worst : best;
+}
+
+function sncPlayCard(seat, index) {
+  const hand = snc.hands[seat];
+  if (index < 0 || index >= hand.length) return;
+  const legal = sncLegalPlays(seat);
+  if (!legal.includes(index)) {
+    // Renege accusation gag if player
+    if (seat === 0) {
+      snc.msg = "RENEGE?! Brad points at you. " + pick(EUCHRE_BANTER);
+      state.hate += 2;
+      state.scoreUsa += 1;
+      floatText(520, 120, "RENEGE CALLED (vibes)", "#4da6ff", 2);
+      updateHud();
+      // force a legal card instead
+      index = legal[0];
+    } else {
+      index = legal[0];
+    }
+  }
+  const card = hand.splice(index, 1)[0];
+  snc.trick.push({ seat, card });
+  if (seat === 0) {
+    snc.caring += sncTrumpRank(card, snc.trump) >= 70 ? 1 : 0.25;
+  }
+  if (snc.trick.length >= 4) {
+    snc.trickPause = 1.1;
+    sncResolveTrickSoon = true;
+  } else {
+    snc.turn = (seat + 1) % 4;
+  }
+  sncBuildUI();
+  updateHud();
+}
+
+function sncResolveTrick() {
+  const ledSuit = sncEffectiveSuit(snc.trick[0].card, snc.trump);
+  let win = snc.trick[0];
+  for (let i = 1; i < snc.trick.length; i++) {
+    const t = snc.trick[i];
+    if (sncCardPower(t.card, snc.trump, ledSuit) > sncCardPower(win.card, snc.trump, ledSuit)) win = t;
+  }
+  // Bias: if hosers would win and caring high / close to match win, steal sometimes
+  if (SNC_TEAM[win.seat] === 0 && snc.caring >= 2 && Math.random() < 0.28) {
+    const am = snc.trick.find((t) => SNC_TEAM[t.seat] === 1);
+    if (am) {
+      win = am;
+      snc.msg = "Wait — that was… Chad's? " + pick(EUCHRE_BANTER);
+      state.hate += 1;
+    }
+  }
+  if (SNC_TEAM[win.seat] === 0) snc.tricksNS++; else snc.tricksEW++;
+  floatText(520, 160, SNC_NAMES[win.seat] + " takes it", SNC_TEAM[win.seat] === 0 ? "#ff6b6b" : "#4da6ff", 1.2);
+  snc.leadSeat = win.seat;
+  snc.turn = win.seat;
+  snc.trick = [];
+  sncResolveTrickSoon = false;
+  if (snc.tricksNS + snc.tricksEW >= 5) {
+    sncEndHand();
+  }
+  sncBuildUI();
+  updateHud();
+}
+
+function sncEndHand() {
+  snc.handsPlayed++;
+  const makersTeam = SNC_TEAM[snc.maker];
+  const makersTricks = makersTeam === 0 ? snc.tricksNS : snc.tricksEW;
+  let msg = "";
+  if (makersTricks >= 3) {
+    const pts = makersTricks === 5 ? 2 : 1;
+    if (makersTeam === 0) {
+      // Hosers made it — sometimes deny on bias
+      if (snc.caring >= 3 && Math.random() < 0.4) {
+        state.scoreUsa += 2;
+        state.hate += 3;
+        msg = "Euchred on a technicality. Brad had a feeling.";
+        crowdBoo();
+      } else {
+        state.scoreCan += pts;
+        msg = pts === 2 ? "March! (brief hope)" : "Point for the hosers.";
+        // still nudge hate if TV boos
+        if (Math.random() < 0.4) state.hate += 1;
+      }
+    } else {
+      state.scoreUsa += pts;
+      state.hate += 2;
+      msg = pts === 2 ? "Americans march. Of course." : "Chad/Brad take one.";
+      crowdBoo();
+    }
+  } else {
+    // euchred
+    if (makersTeam === 0) {
+      state.scoreUsa += 2;
+      state.hate += 3;
+      msg = "EUCHRED. Partner was a donut. " + pick(SNC_RESULT_VERDICTS);
+      crowdBoo();
+      crowdGroan();
+    } else {
+      state.scoreCan += 2;
+      msg = "We euchred the Yanks! …board says maybe.";
+      if (Math.random() < 0.5) {
+        state.scoreCan = Math.max(0, state.scoreCan - 1);
+        state.scoreUsa += 1;
+        state.hate += 2;
+        msg = "Euchre reversed after 'review'. Classic.";
+      }
+    }
+  }
+  snc.msg = msg;
+  snc.msgTimer = 3;
+  snc.phase = "hand_end";
+  snc.phaseLabel = "HAND OVER";
+  updateHud();
+  // Match end: first to SNC_POINT_GOAL, but never let Canada win cleanly
+  if (state.scoreUsa >= SNC_POINT_GOAL || state.scoreCan >= SNC_POINT_GOAL) {
+    if (state.scoreCan >= SNC_POINT_GOAL && state.scoreCan > state.scoreUsa) {
+      state.scoreUsa = state.scoreCan + 1;
+      state.hate += 4;
+      snc.msg = "Final tally adjusted by vibes. Americans ahead.";
+    }
+    setTimeout(() => sncShowResults(), 900);
+  } else if (snc.handsPlayed >= 4) {
+    // short session end
+    if (state.scoreCan >= state.scoreUsa) {
+      state.scoreUsa = state.scoreCan + 1;
+      state.hate += 3;
+    }
+    setTimeout(() => sncShowResults(), 900);
+  } else {
+    setTimeout(() => { if (snc && state.level === "snc") sncNewHand(); }, 1600);
+  }
+}
+
+function sncShowResults() {
+  if (!snc || state.phase === "snc_results") return;
+  state.phase = "snc_results";
+  const verdict = pick(SNC_RESULT_VERDICTS);
+  showOverlay(`
+    <div class="poster-tag">SATURDAY NIGHT POST-GAME</div>
+    <h2 class="red">TABLE CLOSED</h2>
+    <div class="broadcast">EUCHRE &nbsp; HOSERS ${state.scoreCan} &nbsp;—&nbsp; CHAD/BRAD ${state.scoreUsa}<br/>
+    Hate Index: ${state.hate} · Hands: ${snc.handsPlayed}</div>
+    <div class="verdict">${verdict}</div>
+    <p class="tiny">Take off, eh. The systems were under the card table the whole time.</p>
+    <div class="btns">
+      <button class="btn-go" id="again">Play again</button>
+      <button class="btn-dim" id="mainMenu">Main Menu</button>
+    </div>
+  `);
+  document.getElementById("again").onclick = () => startSaturdayNight();
+  document.getElementById("mainMenu").onclick = () => showMainMenu();
+  syncMobileChrome();
+}
+
+function sncOnPointer(x, y, kind) {
+  if (!snc || state.phase === "snc_results") return;
+  if (kind !== "down") return;
+  // UI buttons
+  for (const b of snc.uiButtons) {
+    if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+      sncClickButton(b.id);
+      return;
+    }
+  }
+  // Cards
+  for (const hr of snc.hitRects) {
+    if (x >= hr.x && x <= hr.x + hr.w && y >= hr.y && y <= hr.y + hr.h) {
+      if (snc.phase === "discard" && snc.turn === 0) {
+        snc.hands[0].splice(hr.index, 1);
+        sncSetTrump(snc.trump, snc.maker);
+        return;
+      }
+      if (snc.phase === "play" && snc.turn === 0 && snc.trickPause <= 0) {
+        sncPlayCard(0, hr.index);
+        return;
+      }
+    }
+  }
+}
+
+function sncClickButton(id) {
+  if (id === "order" && snc.phase === "bid1" && snc.turn === 0) {
+    sncOrderUp(0);
+    return;
+  }
+  if (id === "pass") {
+    snc.msg = "You: Pass.";
+    sncAdvanceBidPass();
+    return;
+  }
+  if (id.startsWith("suit_") && snc.phase === "bid2" && snc.turn === 0) {
+    const s = id.slice(5);
+    snc.upcard = null;
+    sncSetTrump(s, 0);
+    return;
+  }
+  if (id === "hit" && snc.knives) {
+    snc.woozy = 2.4;
+    snc.msg = pick(HOT_KNIVES_LINES);
+    snc.knives = null;
+    floatText(520, 220, "…woozy…", "#a7f3d0", 1.5);
+    sncBuildUI();
+    return;
+  }
+  if (id === "refuse" && snc.knives) {
+    snc.woozy = 1.2;
+    snc.msg = "Smoke blown across the table anyway. " + pick(STONER_LINES);
+    state.hate += 1;
+    snc.knives = null;
+    floatText(520, 220, "*pffffffff*", "#94a3b8", 1.2);
+    sncBuildUI();
+    return;
+  }
+}
+
+function updateSaturdayNight(dt) {
+  if (!snc || state.phase === "snc_results") return;
+  if (snc.msgTimer > 0) snc.msgTimer -= dt;
+  if (snc.dealAnim > 0) snc.dealAnim -= dt;
+  if (snc.woozy > 0) snc.woozy -= dt;
+
+  snc.banterTimer -= dt;
+  if (snc.banterTimer <= 0) {
+    snc.banterTimer = rand(5, 10);
+    if (Math.random() < 0.5) floatText(rand(200, 800), rand(80, 140), pick(HOSER_LINES), "#ffd166", 1.4);
+    else floatText(rand(200, 800), rand(80, 140), pick(EUCHRE_BANTER), "#c8d8ea", 1.4);
+  }
+
+  snc.tvTimer -= dt;
+  if (snc.tvTimer <= 0) {
+    snc.tvTimer = rand(7, 14);
+    const line = pick(TV_BOOS);
+    floatText(860, 90, line, "#ff8fa3", 2);
+    state.hate += 1;
+    state.scoreUsa = state.scoreUsa; // TV USA goal vibe — hate only unless mid-hand
+    if (Math.random() < 0.55) { crowdBoo(); } else { crowdGroan(); }
+    // occasional "USA goal on TV" bumps american euchre score pressure via hate
+    updateHud();
+  }
+
+  snc.knivesTimer -= dt;
+  if (snc.knivesTimer <= 0 && !snc.knives && snc.phase === "play") {
+    snc.knives = { t: 4.5 };
+    snc.knivesTimer = rand(22, 36);
+    snc.msg = pick(STONER_LINES);
+    snc.msgTimer = 3;
+    sncBuildUI();
+  }
+  if (snc.knives) {
+    snc.knives.t -= dt;
+    if (snc.knives.t <= 0) {
+      // auto smoke if ignored
+      snc.woozy = 1.5;
+      snc.msg = pick(HOT_KNIVES_LINES);
+      snc.knives = null;
+      sncBuildUI();
+    }
+  }
+
+  if (snc.trickPause > 0) {
+    snc.trickPause -= dt;
+    if (snc.trickPause <= 0 && snc.trick.length >= 4) sncResolveTrick();
+    return;
+  }
+
+  if (snc.phase === "hand_end") return;
+
+  // AI acts
+  if (snc.turn !== 0 && (snc.phase === "bid1" || snc.phase === "bid2")) {
+    snc.aiDelay = (snc.aiDelay || 0) - dt;
+    if (snc.aiDelay <= 0) {
+      sncAIBid();
+      snc.aiDelay = rand(0.45, 0.9);
+    }
+  } else if (snc.phase === "discard" && snc.turn !== 0) {
+    sncAIDiscard(snc.dealer);
+    sncSetTrump(snc.trump, snc.maker);
+  } else if (snc.phase === "play" && snc.turn !== 0) {
+    snc.aiDelay = (snc.aiDelay || 0) - dt;
+    if (snc.aiDelay <= 0) {
+      const idx = sncPickAICard(snc.turn);
+      sncPlayCard(snc.turn, idx);
+      snc.aiDelay = rand(0.35, 0.75);
+    }
+  } else {
+    snc.aiDelay = 0.55;
+  }
+
+  state.timeLeft = Math.max(0, state.timeLeft); // unused clock mostly
+}
+
+function sncDrawCardFace(c, x, y, w, h, tilt) {
+  ctx.save();
+  ctx.translate(x + w / 2, y + h / 2);
+  ctx.rotate(tilt || 0);
+  roundRectPath(-w / 2, -h / 2, w, h, 8);
+  ctx.fillStyle = "#f8f5ef";
+  ctx.fill();
+  ctx.strokeStyle = "#2a3548";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  const col = SNC_SUIT_COLOR[c.suit];
+  ctx.fillStyle = col;
+  ctx.font = "bold 16px Segoe UI, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(SNC_RANK_LABEL[c.rank], -w / 2 + 6, -h / 2 + 18);
+  ctx.font = "20px Segoe UI, sans-serif";
+  ctx.fillText(SNC_SUIT_SYM[c.suit], -w / 2 + 6, -h / 2 + 40);
+  ctx.font = "28px Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(SNC_SUIT_SYM[c.suit], 0, 12);
+  ctx.restore();
+}
+
+function sncDrawCardBack(x, y, w, h) {
+  ctx.save();
+  roundRectPath(x, y, w, h, 8);
+  ctx.fillStyle = "#1e3a5f";
+  ctx.fill();
+  ctx.strokeStyle = "#93c5fd";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  drawMapleLeaf(x + w / 2, y + h / 2, 10, "rgba(255,255,255,0.25)");
+  ctx.restore();
+}
+
+function renderSaturdayNight(dt) {
+  if (!snc) return;
+  const W = canvas.width, H = canvas.height;
+  // Apartment
+  ctx.fillStyle = "#3d2c1e";
+  ctx.fillRect(0, 0, W, H);
+  // wallpaper stripes
+  for (let i = 0; i < W; i += 28) {
+    ctx.fillStyle = i % 56 === 0 ? "#4a3524" : "#3d2c1e";
+    ctx.fillRect(i, 0, 14, H * 0.55);
+  }
+  // floor
+  ctx.fillStyle = "#5c4030";
+  ctx.fillRect(0, H * 0.55, W, H * 0.45);
+  ctx.fillStyle = "rgba(0,0,0,0.15)";
+  for (let y = H * 0.55; y < H; y += 18) ctx.fillRect(0, y, W, 2);
+
+  // Knitted maple afghan art
+  ctx.fillStyle = "#6b2b2b";
+  roundRectPath(70, 40, 130, 100, 6);
+  ctx.fill();
+  ctx.fillStyle = "#f5e6d3";
+  ctx.fillRect(82, 52, 106, 76);
+  // knit pattern
+  ctx.strokeStyle = "rgba(200,30,30,0.35)";
+  for (let i = 0; i < 8; i++) {
+    ctx.beginPath();
+    ctx.moveTo(82, 52 + i * 10);
+    ctx.lineTo(188, 52 + i * 10);
+    ctx.stroke();
+  }
+  drawMapleLeaf(135, 90, 22, "#c81e1e");
+  ctx.fillStyle = "#ffd166";
+  ctx.font = "10px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("AUNTIE'S AFGHAN", 135, 155);
+
+  // TV playing HNIC
+  ctx.fillStyle = "#1a1a1a";
+  roundRectPath(780, 36, 200, 130, 8);
+  ctx.fill();
+  ctx.fillStyle = "#0b1a12";
+  ctx.fillRect(792, 48, 176, 96);
+  ctx.fillStyle = "#c81e1e";
+  ctx.fillRect(800, 56, 50, 30);
+  ctx.fillStyle = "#1e4a8c";
+  ctx.fillRect(910, 56, 50, 30);
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = "bold 11px monospace";
+  ctx.textAlign = "center";
+  ctx.fillText("HNIC", 880, 110);
+  ctx.fillStyle = "#ff6b6b";
+  ctx.font = "9px sans-serif";
+  ctx.fillText("CAN losing again", 880, 128);
+  // stubby bottles
+  for (let i = 0; i < 6; i++) {
+    const bx = 100 + i * 40 + (i > 2 ? 520 : 0);
+    const by = 400 + (i % 2) * 12;
+    ctx.fillStyle = "#1a3a1a";
+    ctx.fillRect(bx, by, 14, 28);
+    ctx.fillStyle = "#c9a227";
+    ctx.fillRect(bx + 2, by - 6, 10, 8);
+  }
+  // ashtray
+  ctx.fillStyle = "#555";
+  ctx.beginPath();
+  ctx.ellipse(240, 430, 28, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#222";
+  ctx.beginPath();
+  ctx.ellipse(240, 428, 18, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#aaa";
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(228 + i * 6, 426);
+    ctx.lineTo(224 + i * 7, 418);
+    ctx.stroke();
+  }
+
+  // Folding chairs (simple)
+  const chairs = [[200, 280], [720, 280], [460, 140], [460, 400]];
+  for (const [cx, cy] of chairs) {
+    ctx.fillStyle = "#6b7280";
+    ctx.fillRect(cx - 28, cy, 56, 8);
+    ctx.fillRect(cx - 24, cy + 8, 6, 36);
+    ctx.fillRect(cx + 18, cy + 8, 6, 36);
+    ctx.fillStyle = "#9ca3af";
+    ctx.fillRect(cx - 26, cy - 30, 52, 32);
+  }
+
+  // Card table center
+  const tx = 320, ty = 210, tw = 400, th = 220;
+  ctx.fillStyle = "#2f2f2f";
+  // metal legs
+  ctx.fillRect(tx + 20, ty + th, 10, 40);
+  ctx.fillRect(tx + tw - 30, ty + th, 10, 40);
+  ctx.fillRect(tx + 20, ty + th + 36, 40, 6);
+  ctx.fillRect(tx + tw - 60, ty + th + 36, 40, 6);
+  // vinyl top
+  ctx.fillStyle = "#3a5a40";
+  roundRectPath(tx, ty, tw, th, 10);
+  ctx.fill();
+  ctx.strokeStyle = "#1f3324";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.fillRect(tx + 8, ty + 8, tw - 16, 20);
+
+  // Seat labels
+  ctx.font = "bold 13px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#ffd166";
+  ctx.fillText("YOU (hoser)", 520, 505);
+  ctx.fillStyle = "#4da6ff";
+  ctx.fillText("CHAD", 180, 300);
+  ctx.fillText("BRAD", 860, 300);
+  ctx.fillStyle = "#ff8fa3";
+  ctx.fillText("DOUG (partner)", 520, 195);
+
+  // Trump / upcard
+  if (snc.upcard && (snc.phase === "bid1" || snc.phase === "bid2")) {
+    sncDrawCardFace(snc.upcard, 490, 280, 54, 78, 0);
+    ctx.fillStyle = "#fff";
+    ctx.font = "11px sans-serif";
+    ctx.fillText("UP", 517, 275);
+  }
+  if (snc.trump) {
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillText("TRUMP " + SNC_SUIT_SYM[snc.trump], 520, 270);
+  }
+
+  // Trick cards on table
+  const trickPos = [{ x: 490, y: 340 }, { x: 400, y: 290 }, { x: 490, y: 240 }, { x: 580, y: 290 }];
+  snc.trick.forEach((t) => {
+    const p = trickPos[t.seat];
+    sncDrawCardFace(t.card, p.x, p.y, 50, 72, (t.seat - 2) * 0.05);
+  });
+
+  // Hands: player face up; others backs
+  snc.hitRects = [];
+  const hand = snc.hands[0];
+  const cw = 58, ch = 84;
+  const totalW = hand.length * (cw + 8);
+  let hx = 520 - totalW / 2;
+  const hy = 520;
+  const tiltBase = snc.woozy > 0 ? Math.sin(performance.now() / 200) * 0.12 : 0;
+  hand.forEach((c, i) => {
+    const legal = (snc.phase === "play" && snc.turn === 0) ? sncLegalPlays(0).includes(i) : (snc.phase === "discard");
+    const yOff = legal ? -12 : 0;
+    sncDrawCardFace(c, hx, hy + yOff, cw, ch, tiltBase + (i - 2) * 0.02);
+    if (snc.phase === "play" || snc.phase === "discard") {
+      snc.hitRects.push({ x: hx, y: hy + yOff, w: cw, h: ch, index: i });
+    }
+    if (snc.phase === "play" && snc.turn === 0 && !sncLegalPlays(0).includes(i)) {
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      roundRectPath(hx, hy + yOff, cw, ch, 8);
+      ctx.fill();
+    }
+    hx += cw + 8;
+  });
+  // Opponent card backs
+  for (let n = 0; n < snc.hands[2].length; n++) sncDrawCardBack(430 + n * 18, 150, 36, 50);
+  for (let n = 0; n < snc.hands[1].length; n++) sncDrawCardBack(90, 250 + n * 14, 36, 50);
+  for (let n = 0; n < snc.hands[3].length; n++) sncDrawCardBack(920, 250 + n * 14, 36, 50);
+
+  // Score chips on table
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  roundRectPath(340, 220, 100, 36, 6);
+  ctx.fill();
+  ctx.fillStyle = "#ff6b6b";
+  ctx.font = "bold 12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("HOSERS " + state.scoreCan, 390, 242);
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  roundRectPath(600, 220, 120, 36, 6);
+  ctx.fill();
+  ctx.fillStyle = "#4da6ff";
+  ctx.fillText("YANKS " + state.scoreUsa, 660, 242);
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = "11px sans-serif";
+  ctx.fillText("Tricks " + snc.tricksNS + "-" + snc.tricksEW, 520, 255);
+
+  // Message
+  if (snc.msg && snc.msgTimer > 0) {
+    ctx.fillStyle = "rgba(5,8,15,0.82)";
+    roundRectPath(220, 70, 580, 36, 8);
+    ctx.fill();
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(snc.msg, 510, 92);
+  }
+
+  // Turn indicator
+  if (snc.phase === "bid1" || snc.phase === "bid2" || snc.phase === "play" || snc.phase === "discard") {
+    ctx.fillStyle = "#a7f3d0";
+    ctx.font = "12px sans-serif";
+    ctx.fillText(snc.turn === 0 ? "Your move" : (SNC_NAMES[snc.turn] + " thinking…"), 520, 185);
+  }
+
+  // UI buttons
+  sncBuildUI();
+  for (const b of snc.uiButtons) {
+    ctx.fillStyle = b.id === "pass" || b.id === "refuse" ? "#475569" : "#0f766e";
+    roundRectPath(b.x, b.y, b.w, b.h, 8);
+    ctx.fill();
+    ctx.strokeStyle = "#99f6e4";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(b.label, b.x + b.w / 2, b.y + 28);
+  }
+
+  // Stoner buddy
+  if (snc.knives) {
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(0, 0, W, H);
+    // cartoon figure from kitchen (left)
+    ctx.fillStyle = "#7c5c3a";
+    ctx.beginPath();
+    ctx.arc(160, 300, 28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#c4a574";
+    ctx.beginPath();
+    ctx.arc(160, 300, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#2d6a4f";
+    ctx.fillRect(140, 328, 40, 50);
+    // hot knives
+    ctx.strokeStyle = "#ff6b35";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(190, 310);
+    ctx.lineTo(230, 300);
+    ctx.moveTo(190, 320);
+    ctx.lineTo(230, 330);
+    ctx.stroke();
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(pick(STONER_LINES), 160, 400);
+  }
+
+  // Woozy overlay
+  if (snc.woozy > 0) {
+    ctx.fillStyle = "rgba(120,180,100," + (0.12 + snc.woozy * 0.05) + ")";
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(Math.sin(performance.now() / 180) * 0.03);
+    ctx.translate(-W / 2, -H / 2);
+    ctx.restore();
+  }
+}
+
+/* ============================================================================
+  LEVEL: THE DRIVEWAY — shovel 3ft snow; municipal plow ALWAYS dumps it back
+============================================================================ */
+let driveway = null;
+const DRIVE_SECONDS = 75;
+
+function startDriveway() {
+  state.level = "driveway";
+  state.playerTeam = "CANADA";
+  state.phase = "drive_play";
+  state.scoreCan = 0;
+  state.scoreUsa = 0;
+  state.timeLeft = DRIVE_SECONDS;
+  state.floatTexts = [];
+  hideOverlay();
+  ensureAudio();
+  driveway = {
+    px: 520,
+    py: 400,
+    shovelAngle: -0.4,
+    snow: [], // grid cells of snow height 0..1
+    cols: 26,
+    rows: 12,
+    cellW: 36,
+    cellH: 28,
+    originX: 50,
+    originY: 180,
+    cleared: 0,
+    total: 0,
+    plow: null, // {x, t, dumping}
+    plowTimer: rand(8, 14),
+    shovelCooldown: 0,
+    sweat: 0,
+    msg: "Three feet. Give'r.",
+    msgTimer: 2.5,
+  };
+  // Fill snow — deep
+  driveway.total = 0;
+  for (let r = 0; r < driveway.rows; r++) {
+    driveway.snow[r] = [];
+    for (let c = 0; c < driveway.cols; c++) {
+      const h = 0.75 + Math.random() * 0.25; // ~3ft energy
+      driveway.snow[r][c] = h;
+      driveway.total += h;
+    }
+  }
+  updateHud();
+  syncMobileChrome();
+  floatText(520, 100, pick(DRIVEWAY_LINES), "#e2e8f0", 2);
+}
+
+function drivewayWorldCell(x, y) {
+  const c = Math.floor((x - driveway.originX) / driveway.cellW);
+  const r = Math.floor((y - driveway.originY) / driveway.cellH);
+  if (r < 0 || c < 0 || r >= driveway.rows || c >= driveway.cols) return null;
+  return { r, c };
+}
+
+function drivewayShovelAt(x, y) {
+  if (!driveway || driveway.shovelCooldown > 0) return;
+  const cell = drivewayWorldCell(x, y);
+  // also shovel near player facing mouse
+  const targets = [];
+  if (cell) targets.push(cell);
+  // cone in front of player toward pointer
+  for (let i = 0; i < 5; i++) {
+    const t = 0.3 + i * 0.22;
+    const sx = driveway.px + (x - driveway.px) * t * 0.35;
+    const sy = driveway.py + (y - driveway.py) * t * 0.35;
+    const cl = drivewayWorldCell(sx, sy);
+    if (cl) targets.push(cl);
+  }
+  // nearby cells to player
+  const pc = drivewayWorldCell(driveway.px, driveway.py);
+  if (pc) {
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const rr = pc.r + dr, cc = pc.c + dc;
+      if (rr >= 0 && cc >= 0 && rr < driveway.rows && cc < driveway.cols) targets.push({ r: rr, c: cc });
+    }
+  }
+  let dug = 0;
+  const seen = new Set();
+  for (const t of targets) {
+    const key = t.r + "," + t.c;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const before = driveway.snow[t.r][t.c];
+    if (before <= 0.02) continue;
+    const amt = Math.min(before, rand(0.18, 0.32));
+    driveway.snow[t.r][t.c] -= amt;
+    dug += amt;
+    driveway.cleared += amt;
+  }
+  if (dug > 0) {
+    driveway.shovelCooldown = 0.12;
+    driveway.sweat = Math.min(1, driveway.sweat + 0.05);
+    state.scoreCan = Math.min(99, (state.scoreCan + dug * 3) | 0); // "effort meters"
+    addBurst(x, y, "#e8eef5", 6);
+    if (Math.random() < 0.15) floatText(x, y - 20, pick(DRIVEWAY_LINES), "#cbd5e1", 1);
+    // Progress toward "clear" never sticks — plow coming
+    toneBurst(180, 0.05, "triangle", 0.03);
+  }
+}
+
+function drivewaySpawnPlow() {
+  driveway.plow = { x: -120, speed: 220, dumping: false, pass: 0 };
+  floatText(520, 70, pick(PLOW_LINES), "#ffd166", 2.2);
+  crowdGroan();
+}
+
+function drivewayDumpSnow() {
+  // ALWAYS dump snow back onto driveway — never truly clear
+  let added = 0;
+  for (let r = 0; r < driveway.rows; r++) {
+    for (let c = 0; c < driveway.cols; c++) {
+      const add = 0.55 + Math.random() * 0.4;
+      const before = driveway.snow[r][c];
+      driveway.snow[r][c] = Math.min(1.15, before + add);
+      added += driveway.snow[r][c] - before;
+    }
+  }
+  driveway.cleared = Math.max(0, driveway.cleared - added * 0.8);
+  state.scoreUsa += 1; // plow "wins"
+  state.hate += 3;
+  state.scoreCan = Math.max(0, state.scoreCan - 5);
+  floatText(520, 120, "PLOW DUMPED IT ALL BACK", "#4da6ff", 2.5);
+  addBurst(520, 300, "#dbeafe", 24);
+  crowdBoo();
+  updateHud();
+}
+
+function drivewayOnPointer(x, y, kind) {
+  if (!driveway || state.phase !== "drive_play") return;
+  mouse.x = x; mouse.y = y;
+  if (kind === "down" || kind === "move") {
+    // move player toward point & shovel
+    const dx = x - driveway.px, dy = y - driveway.py;
+    const d = Math.hypot(dx, dy) || 1;
+    driveway.px = clamp(driveway.px + (dx / d) * 14, 60, 980);
+    driveway.py = clamp(driveway.py + (dy / d) * 14, 160, 580);
+    driveway.shovelAngle = Math.atan2(dy, dx);
+    drivewayShovelAt(x, y);
+  }
+}
+
+function updateDriveway(dt) {
+  if (!driveway || state.phase !== "drive_play") return;
+  state.timeLeft -= dt;
+  if (driveway.msgTimer > 0) driveway.msgTimer -= dt;
+  if (driveway.shovelCooldown > 0) driveway.shovelCooldown -= dt;
+  if (driveway.sweat > 0) driveway.sweat -= dt * 0.05;
+
+  // Keyboard move
+  let mx = 0, my = 0;
+  if (keys["KeyW"] || keys["ArrowUp"]) my -= 1;
+  if (keys["KeyS"] || keys["ArrowDown"]) my += 1;
+  if (keys["KeyA"] || keys["ArrowLeft"]) mx -= 1;
+  if (keys["KeyD"] || keys["ArrowRight"]) mx += 1;
+  if (mx || my) {
+    const len = Math.hypot(mx, my) || 1;
+    driveway.px = clamp(driveway.px + (mx / len) * 180 * dt, 60, 980);
+    driveway.py = clamp(driveway.py + (my / len) * 180 * dt, 160, 580);
+    driveway.shovelAngle = Math.atan2(my, mx);
+    drivewayShovelAt(driveway.px + Math.cos(driveway.shovelAngle) * 40, driveway.py + Math.sin(driveway.shovelAngle) * 40);
+  }
+  // Auto shovel when mouse held
+  if (mouse.down) {
+    drivewayOnPointer(mouse.x, mouse.y, "move");
+  }
+
+  // Plow cycle — ALWAYS returns snow
+  driveway.plowTimer -= dt;
+  if (!driveway.plow && driveway.plowTimer <= 0) {
+    drivewaySpawnPlow();
+  }
+  if (driveway.plow) {
+    driveway.plow.x += driveway.plow.speed * dt;
+    if (!driveway.plow.dumping && driveway.plow.x > 200) {
+      driveway.plow.dumping = true;
+      drivewayDumpSnow();
+    }
+    if (driveway.plow.x > 1100) {
+      driveway.plow = null;
+      driveway.plowTimer = rand(7, 12);
+      driveway.msg = pick(DRIVEWAY_LINES);
+      driveway.msgTimer = 2;
+    }
+  }
+
+  // If somehow mostly clear, plow arrives immediately
+  let remaining = 0;
+  for (let r = 0; r < driveway.rows; r++)
+    for (let c = 0; c < driveway.cols; c++) remaining += driveway.snow[r][c];
+  const clearPct = 1 - remaining / (driveway.rows * driveway.cols);
+  if (clearPct > 0.55 && !driveway.plow) {
+    driveway.plowTimer = Math.min(driveway.plowTimer, 0.8);
+    floatText(520, 90, "Looking clear… municipal destiny approaches", "#ff8fa3", 1.5);
+  }
+
+  updateHud();
+  if (state.timeLeft <= 0) {
+    endDriveway();
+  }
+}
+
+function endDriveway() {
+  if (state.phase === "drive_results") return;
+  state.phase = "drive_results";
+  // Never win: USA (plow) always "ahead"
+  if (state.scoreUsa <= 0) state.scoreUsa = 1;
+  if (state.scoreCan >= state.scoreUsa * 10) {
+    // effort was huge — punish
+    state.hate += 5;
+  }
+  state.hate += 2;
+  const verdict = pick(DRIVEWAY_RESULT_VERDICTS);
+  showOverlay(`
+    <div class="poster-tag">MUNICIPAL POST-MORTEM</div>
+    <h2 class="red">DRIVEWAY: UNCLEARED</h2>
+    <div class="broadcast">EFFORT ${state.scoreCan} &nbsp;—&nbsp; PLOW PASSES ${state.scoreUsa}<br/>
+    Hate Index: ${state.hate}</div>
+    <div class="verdict">${verdict}</div>
+    <p class="tiny">You shoveled. The city had a schedule. Caring is punished.</p>
+    <div class="btns">
+      <button class="btn-go" id="again">Shovel again</button>
+      <button class="btn-dim" id="mainMenu">Main Menu</button>
+    </div>
+  `);
+  document.getElementById("again").onclick = () => startDriveway();
+  document.getElementById("mainMenu").onclick = () => showMainMenu();
+  syncMobileChrome();
+}
+
+function renderDriveway(dt) {
+  if (!driveway) return;
+  const W = canvas.width, H = canvas.height;
+  // Sky
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, "#1a2332");
+  sky.addColorStop(1, "#4a5568");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+  // House
+  ctx.fillStyle = "#6b3a3a";
+  ctx.fillRect(60, 40, 220, 130);
+  ctx.fillStyle = "#3b2118";
+  ctx.beginPath();
+  ctx.moveTo(50, 40);
+  ctx.lineTo(170, 0);
+  ctx.lineTo(290, 40);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#87ceeb";
+  ctx.fillRect(90, 70, 50, 40);
+  ctx.fillRect(180, 70, 50, 40);
+  ctx.fillStyle = "#2a1810";
+  ctx.fillRect(140, 110, 40, 60);
+  // Garage
+  ctx.fillStyle = "#5a5a5a";
+  ctx.fillRect(300, 80, 200, 90);
+  ctx.fillStyle = "#333";
+  ctx.fillRect(320, 100, 160, 70);
+  // Street
+  ctx.fillStyle = "#2d2d2d";
+  ctx.fillRect(0, 520, W, 100);
+  ctx.strokeStyle = "#ffd166";
+  ctx.setLineDash([20, 16]);
+  ctx.beginPath();
+  ctx.moveTo(0, 570);
+  ctx.lineTo(W, 570);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Driveway bed
+  ctx.fillStyle = "#3f3f46";
+  ctx.fillRect(driveway.originX - 4, driveway.originY - 4, driveway.cols * driveway.cellW + 8, driveway.rows * driveway.cellH + 8);
+
+  // Snow cells
+  for (let r = 0; r < driveway.rows; r++) {
+    for (let c = 0; c < driveway.cols; c++) {
+      const h = driveway.snow[r][c];
+      const x = driveway.originX + c * driveway.cellW;
+      const y = driveway.originY + r * driveway.cellH;
+      if (h < 0.05) {
+        ctx.fillStyle = "#52525b";
+        ctx.fillRect(x + 1, y + 1, driveway.cellW - 2, driveway.cellH - 2);
+      } else {
+        const g = 220 + (h * 20);
+        ctx.fillStyle = `rgb(${g|0},${(g*0.98)|0},${(g*1.02)|0})`;
+        const hh = driveway.cellH * Math.min(1, h);
+        ctx.fillRect(x + 1, y + driveway.cellH - hh, driveway.cellW - 2, hh);
+        if (h > 0.7) {
+          ctx.fillStyle = "rgba(255,255,255,0.5)";
+          ctx.fillRect(x + 4, y + driveway.cellH - hh + 2, driveway.cellW - 8, 4);
+        }
+      }
+    }
+  }
+
+  // Depth marker
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  roundRectPath(820, 40, 180, 50, 8);
+  ctx.fill();
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = "bold 12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("~3 ft of destiny", 910, 60);
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "11px sans-serif";
+  ctx.fillText("Plow ETA: municipal", 910, 78);
+
+  // Player (hoser in tuque)
+  const px = driveway.px, py = driveway.py;
+  ctx.fillStyle = "#c81e1e";
+  ctx.beginPath();
+  ctx.arc(px, py - 28, 16, 0, Math.PI * 2);
+  ctx.fill(); // tuque
+  ctx.fillStyle = "#e8c4a8";
+  ctx.beginPath();
+  ctx.arc(px, py - 18, 14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#1e3a5f";
+  ctx.fillRect(px - 14, py - 8, 28, 36);
+  ctx.fillStyle = "#333";
+  ctx.fillRect(px - 12, py + 28, 10, 22);
+  ctx.fillRect(px + 2, py + 28, 10, 22);
+  // Shovel
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate(driveway.shovelAngle);
+  ctx.fillStyle = "#888";
+  ctx.fillRect(10, -3, 42, 6);
+  ctx.fillStyle = "#cbd5e1";
+  ctx.fillRect(48, -14, 18, 28);
+  ctx.restore();
+
+  // Plow
+  if (driveway.plow) {
+    const x = driveway.plow.x;
+    const y = 500;
+    ctx.fillStyle = "#f59e0b";
+    ctx.fillRect(x, y - 40, 140, 50);
+    ctx.fillStyle = "#1e3a5f";
+    ctx.fillRect(x + 20, y - 70, 60, 35);
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.arc(x + 30, y + 15, 16, 0, Math.PI * 2);
+    ctx.arc(x + 110, y + 15, 16, 0, Math.PI * 2);
+    ctx.fill();
+    // blade dumping snow
+    ctx.fillStyle = "#e2e8f0";
+    ctx.beginPath();
+    ctx.moveTo(x - 10, y - 20);
+    ctx.lineTo(x + 30, y + 10);
+    ctx.lineTo(x - 10, y + 30);
+    ctx.closePath();
+    ctx.fill();
+    if (driveway.plow.dumping) {
+      for (let i = 0; i < 8; i++) {
+        ctx.fillStyle = "rgba(240,245,255,0.8)";
+        ctx.beginPath();
+        ctx.arc(x + rand(-20, 40), y - rand(20, 80), rand(4, 10), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("CITY PLOW", x + 70, y - 80);
+  }
+
+  // Falling snow flakes cosmetic
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  const t = performance.now() / 1000;
+  for (let i = 0; i < 40; i++) {
+    const fx = (i * 97 + t * 30) % W;
+    const fy = (i * 53 + t * 60) % H;
+    ctx.fillRect(fx, fy, 2, 2);
+  }
+
+  if (driveway.msg && driveway.msgTimer > 0) {
+    ctx.fillStyle = "rgba(5,8,15,0.8)";
+    roundRectPath(260, 100, 520, 34, 8);
+    ctx.fill();
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(driveway.msg, 520, 122);
+  }
+}
+
+
+// Boot
+fitCanvas();
+syncMobileChrome();
+showMainMenu();
+const unlockAudio = () => { ensureAudio(); try { speechSynthesis.getVoices(); } catch (_) {} };
+window.addEventListener("pointerdown", unlockAudio, { once: true });
+window.addEventListener("keydown", unlockAudio, { once: true });
+try { speechSynthesis.onvoiceschanged = () => {}; } catch (_) {}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

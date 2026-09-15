@@ -2,71 +2,91 @@
 
 Affectionate, self-deprecating Canada–US rivalry satire. You want Canada to win. The systems are rigged. Caring is punished.
 
-**Visual style:** Super Chexx / bubble-hockey chunky **1970s** flat-vector cartoon (not photo-real). Canvas 2D single-file.
+**Flagship:** **Saturday Night Canada** — full **3D WebGL** (Three.js) apartment euchre with large low-poly hosers.
 
-## Levels (main menu)
+**Legacy:** Canvas 2D Super Chexx / bubble-hockey cartoon for **The Rink** and **The Driveway** (plus the old flat SNC).
 
-| Level | What you do | The joke |
-|---|---|---|
-| **The Rink** | Team pick → bubble hockey → fights | Canada never scores; fights are one-punch KOs |
-| **Saturday Night Canada** | 4-handed euchre in a hoser apartment | Partner plays like a donut; Chad/Brad take the euchre |
-| **The Driveway** | Shovel ~3 ft of snow | Municipal plow **always** dumps it back |
+## Quick start
 
-Stubs (menu only): Boardroom · Lake America · Québec · Parliament
+```bash
+cd canada-simulator
+python3 -m http.server 8080
+# open http://localhost:8080/          → 3D Saturday Night Canada
+#      http://localhost:8080/snc-3d.html
+#      http://localhost:8080/legacy-2d.html
+```
+
+Needs a static HTTP server (or GitHub Pages). ES modules + Three.js CDN do not load reliably from `file://`.
+
+**No npm / no bundler.** Deploy the folder as static files.
 
 ## Files
 
-- `canada-simulator.html` — complete playable game (Canvas 2D + vanilla JS, no build)
-- `README.md` — this file
+| Path | Role |
+|---|---|
+| `index.html` | Flagship **3D** Saturday Night Canada (GitHub Pages entry) |
+| `snc-3d.html` | Same 3D experience (explicit URL) |
+| `js/snc-scene.js` | Three.js room, large characters, idle / knives gag |
+| `js/euchre.js` | Playable euchre + joke bias / Hate Index / TV boos |
+| `legacy-2d.html` | Full **Canvas 2D** game (Rink · SNC · Driveway) |
+| `canada-simulator-2d.html` | Same as legacy (Pages-friendly alias) |
+| `canada-simulator.html` | Original 2D single-file (kept; do not delete) |
+| `README.md` | This file |
 
-## How to open
+## How to play — Saturday Night Canada (3D)
 
-```bash
-# double-click the HTML, or:
-python3 -m http.server 8080
-# http://localhost:8080/canada-simulator.html
-```
+1. Open `index.html` / `snc-3d.html` via HTTP → click **Play, eh**
+2. **Bid:** Order it up / Pass; round 2 name trump (not the upcard suit)
+3. **Discard:** If you are dealer and pick up, tap one card to bury
+4. **Play:** Tap highlighted legal cards (follow suit when you can)
+5. **Hot knives:** Optional comedy when Gary walks in from the kitchen
+6. Match ends ~5 points or ~4 hands — hosers don’t win cleanly; Hate Index rises with HNIC boos
 
-No backend, no npm.
+**Mobile:** large tap targets on cards and bid buttons.
 
-## Controls
+## How to play — Legacy 2D
 
-**The Rink:** WASD/arrows skate · mouse aim · click/F shoot · Space/near-click fight. Mobile: drag skate · tap shoot · SHOOT/FIGHT buttons.
+Open `legacy-2d.html` (or `canada-simulator.html`):
 
-**Saturday Night Canada:** tap/click cards to bid & play · hot-knives gag buttons when the stoner appears.
+- **The Rink:** WASD/arrows skate · click/F shoot · Space fight
+- **Saturday Night Canada (2D):** tap cards to bid & play
+- **The Driveway:** move & shovel; the plow always returns
 
-**The Driveway:** WASD/arrows or drag/tap to move & shovel toward the pointer.
+## Tech choices (3D)
+
+- **Three.js r170** via CDN `importmap` (jsDelivr)
+- Perspective camera, hemisphere + directional soft shadows (1024 map)
+- Procedural low-poly characters (readable faces, 1970s hair/stubble, jersey colors) — **no helmets**
+- Apartment set: wood panel walls, carpet, green felt card table, folding chairs, stubbies, ashtray, maple afghan, CRT with HNIC “CAN losing” canvas texture
+- Cards / bids as **HTML overlay HUD** so faces stay the visual star; trick cards also mirrored as simple table meshes
+- Idle loops: breathing, head turn, beer lift; knives buddy walk-in from kitchen doorway
 
 ## Joke engine (do not “fix”)
 
-- **Rink:** `CANADA_LOSE_MULTIPLIER = 0` + `denyCanadianGoal()` — Canadian goals never count when playing Canada.
-- **Euchre:** partner (Doug) donut AI, trick steals when you care, renege vibes, HNIC TV boos raise Hate Index; match tally biases Americans.
-- **Driveway:** clearing snow only summons the plow sooner; `drivewayDumpSnow()` always refills the grid.
+- **Euchre:** Doug donut AI, trick steals when you care, renege vibes, HNIC TV boos raise Hate Index; match tally biases Chad/Brad
+- **Rink (2D):** `CANADA_LOSE_MULTIPLIER = 0` — Canadian goals never count
+- **Driveway (2D):** shovel summons the plow; snow always returns
 
-## Joke / dialogue arrays (top of `<script>`)
+**Tone:** Punch clichés & institutions — not real civilian identity groups. Hot knives = comedy only.
 
-**Rink:** `CANADA_FIGHT_LINES`, `USA_CROWD_LINES`, `RESULT_VERDICTS`, `CANADA_MISS_LINES`, `REF_LINES`, `ZAMBONI_LINES`, `ANNOUNCER_LINES`, roster names.
+## Limits vs India Simulator–class bar
 
-**Saturday Night:** `HOSER_LINES`, `STONER_LINES`, `EUCHRE_BANTER`, `TV_BOOS`, `HOT_KNIVES_LINES`, `SNC_RESULT_VERDICTS`.
+| | This build | India Simulator (north star) |
+|---|---|---|
+| Characters | Large stylized low-poly, readable faces | Often richer mesh / animation sets |
+| Environment | One apartment set, props, CRT | Broader location variety |
+| Animation | Idle + knives walk-in | More authored cutscenes / locomotion |
+| Gameplay depth | Full euchre loop + gag bias | Broader mini-game suite |
+| Pipeline | Static HTML + CDN, no build | May use heavier tooling |
 
-**Driveway:** `DRIVEWAY_LINES`, `PLOW_LINES`, `DRIVEWAY_RESULT_VERDICTS`.
-
-**Tone:** Punch clichés & institutions — not real civilian identity groups.
-
-## Match flow
-
-1. Main menu → pick a level  
-2. Play (rink ~105s / euchre to ~5 pts or ~4 hands / driveway ~75s)  
-3. Results card + Hate Index → Again or Main Menu  
-
-Hate Index persists for the page session; refresh resets it.
+Goal met: **first load feels like a 3D browser game** with characters filling a medium shot — not flat chairs-and-nameplates.
 
 ## Known limits
 
-- Euchre is legal-*ish* North American (bowers, order-up, name trump); AI is cartoonish and intentionally biased.
-- Hot knives = set-piece comedy only (woozy tilt), not instructional.
-- Procedural Web Audio + SpeechSynthesis; captions/text always work muted.
-- Single HTML file; mobile-friendly taps; not a native app.
+- Euchre is legal-*ish* North American; AI is cartoonish and intentionally biased
+- Shadows / poly count kept modest for laptop + mobile WebGL
+- Online CDN required for Three.js unless you vendor `three.module.js`
+- Procedural look (not photo-real); speech/audio from legacy 2D not fully ported to 3D HUD
 
 ## Creative north star
 
