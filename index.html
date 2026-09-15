@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Canada Simulator — Level 1: The Rink</title>
+<title>Canada Simulator</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -220,7 +220,7 @@
 <div id="wrap">
   <div id="titleBar">
     <svg class="logo-leaf" viewBox="0 0 24 24" aria-hidden="true"><path fill="#e63946" d="M12 2 L14 8 L20 6 L16 11 L22 14 L15 14 L17 20 L12 16 L7 20 L9 14 L2 14 L8 11 L4 6 L10 8 Z"/></svg>
-    <h1>CANADA SIMULATOR<span>Level 1 — Bubble Rink</span></h1>
+    <h1>CANADA SIMULATOR<span id="titleSub">Main Menu</span></h1>
     <svg class="logo-leaf" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4da6ff" d="M12 2l2.2 6.8H22l-5.5 4 2.1 6.7L12 15.8 5.4 19.5l2.1-6.7L2 8.8h7.8z"/></svg>
   </div>
   <div id="jumbotron" aria-live="polite">
@@ -373,6 +373,97 @@ const QUEBEC_TAUNTS = [
 const PARLIAMENT_RED = ["They stole the lake!"];
 const PARLIAMENT_BLUE = ["You didn't denounce it hard enough!"];
 
+/* ---------- LEVEL: SATURDAY NIGHT CANADA ---------- */
+const HOSER_LINES = [
+  "Take off, eh!",
+  "Beauty play, bud.",
+  "Give'r!",
+  "Good day, hosers.",
+  "How's it goin', eh?",
+  "That's a beauty.",
+  "Pass the stubby, eh?",
+  "Don't be a hoser.",
+  "Two-four of strategy right there.",
+  "Keep your stick on the ice… wait, wrong game.",
+];
+
+const STONER_LINES = [
+  "Hot knives, anyone?",
+  "Kitchen's ready, bud.",
+  "This'll help the hand, eh?",
+  "Just a little hit for the nerves.",
+  "Don't bogart the table talk.",
+  "Woah. Cards are… floaty.",
+];
+
+const EUCHRE_BANTER = [
+  "Order it up, ya hoser!",
+  "Trump is whatever hurts Canada.",
+  "Partner's playing like a donut.",
+  "Follow suit or follow destiny.",
+  "Bowers for days… somehow not ours.",
+  "Chad just smiled. That's illegal in Ontario.",
+  "Brad reneges with confidence.",
+  "We had the euchre. Philosophically.",
+];
+
+const TV_BOOS = [
+  "BOOOO — USA scores on HNIC!",
+  "Crowd: U-S-A! (on your TV)",
+  "Announcer: TABARNAK DE GOAL!",
+  "Canada almost… no. Never mind.",
+  "YAAY?! Wait — that's the wrong team.",
+  "Commercial for beer, then more boos.",
+];
+
+const HOT_KNIVES_LINES = [
+  "HOT KNIVES! (cartoon gag)",
+  "Smoke drifts across the card table…",
+  "Woozy… cards tilt… snap back.",
+  "Optional refusal still gets smoked.",
+  "Beauty hit. Terrible euchre.",
+];
+
+const SNC_RESULT_VERDICTS = [
+  "You ordered trump. Trump ordered you around.",
+  "Partner played like a maple-glazed donut.",
+  "Chad and Brad send their regards (and the euchre).",
+  "Hot knives: optional. Losing: mandatory.",
+  "HNIC on TV agreed with the Americans.",
+  "Caring about bowers is a hate crime against yourself.",
+  "The card table remains undefeated. You do not.",
+];
+
+/* ---------- LEVEL: DRIVEWAY SHOVEL ---------- */
+const DRIVEWAY_LINES = [
+  "Just a little more… beauty.",
+  "Municipal courtesy incoming.",
+  "My back is Canadianly sorry.",
+  "Three feet of destiny.",
+  "Clear it. Watch it return.",
+  "The plow has union hours and spite.",
+];
+
+const PLOW_LINES = [
+  "MUNICIPAL PLOW — returning your snow!",
+  "Courtesy dump. Have a good day.",
+  "By-law 12: effort is temporary.",
+  "Plow wave: the Canadian hello.",
+  "Your driveway? Our storage unit.",
+  "SORRY — dumping this back.",
+];
+
+const DRIVEWAY_RESULT_VERDICTS = [
+  "You shoveled. The city shoveled back harder.",
+  "Driveway clear time: 0.0 consecutive seconds.",
+  "Hate Index: proportional to cubic meters moved.",
+  "The plow thanks you for the cardio.",
+  "Never truly win. That's the municipal plan.",
+  "Three feet became four. Math is American now.",
+];
+
+
+
 /* ============================================================================
   LOSE MULTIPLIER — CRITICAL JOKE ENGINE
   SEARCH STRING: CANADA_LOSE_MULTIPLIER
@@ -440,14 +531,33 @@ function clientToCanvas(clientX, clientY) {
 function syncMobileChrome() {
   const show = wantsMobileUI();
   if (mobileControls) {
-    const playing = state.phase === "play";
+    const playing = state.level === "rink" && state.phase === "play";
     mobileControls.classList.toggle("visible", show && playing);
     mobileControls.setAttribute("aria-hidden", show && playing ? "false" : "true");
   }
   if (hintEl) {
-    hintEl.textContent = show
-      ? "Drag on ice to skate · Tap to shoot · Tap near foe or FIGHT · SHOOT button works too"
-      : "WASD / Arrows skate · Mouse aim · Click or F to shoot · Space / click near foe to fight";
+    if (state.level === "snc") {
+      hintEl.textContent = show
+        ? "Tap a card to play / bid · Hot knives are optional comedy"
+        : "Click cards to bid & play · Esc/Menu from results";
+    } else if (state.level === "driveway") {
+      hintEl.textContent = show
+        ? "Drag / tap to shovel snow · Plow always comes back"
+        : "Move with WASD/Arrows or drag · Aim shovel at snow piles";
+    } else if (state.level === "rink") {
+      hintEl.textContent = show
+        ? "Drag on ice to skate · Tap to shoot · Tap near foe or FIGHT · SHOOT button works too"
+        : "WASD / Arrows skate · Mouse aim · Click or F to shoot · Space / click near foe to fight";
+    } else {
+      hintEl.textContent = "Pick a level. Caring is punished.";
+    }
+  }
+  const sub = document.getElementById("titleSub");
+  if (sub) {
+    if (state.level === "rink") sub.textContent = "Level 1 — Bubble Rink";
+    else if (state.level === "snc") sub.textContent = "Saturday Night Canada";
+    else if (state.level === "driveway") sub.textContent = "The Driveway";
+    else sub.textContent = "Main Menu";
   }
 }
 
@@ -465,8 +575,10 @@ function fitCanvas() {
 
 window.addEventListener("keydown", (e) => {
   keys[e.code] = true;
-  if (e.code === "Space") { e.preventDefault(); fightQueued = true; }
-  if (e.code === "KeyF") shootQueued = true;
+  if (state.level === "rink") {
+    if (e.code === "Space") { e.preventDefault(); fightQueued = true; }
+    if (e.code === "KeyF") shootQueued = true;
+  }
 });
 window.addEventListener("keyup", (e) => { keys[e.code] = false; });
 canvas.addEventListener("mousemove", (e) => {
@@ -475,12 +587,32 @@ canvas.addEventListener("mousemove", (e) => {
 });
 canvas.addEventListener("mousedown", (e) => {
   mouse.down = true;
-  if (e.button === 0) {
+  const p = clientToCanvas(e.clientX, e.clientY);
+  mouse.x = p.x; mouse.y = p.y;
+  if (state.level === "snc") { sncOnPointer(p.x, p.y, "down"); return; }
+  if (state.level === "driveway") { drivewayOnPointer(p.x, p.y, "down"); return; }
+  if (e.button === 0 && state.level === "rink") {
     if (state.phase === "play" && nearOpponent()) fightQueued = true;
     else shootQueued = true;
   }
 });
-canvas.addEventListener("mouseup", () => { mouse.down = false; });
+canvas.addEventListener("mouseup", (e) => {
+  mouse.down = false;
+  if (state.level === "snc") {
+    const p = clientToCanvas(e.clientX, e.clientY);
+    sncOnPointer(p.x, p.y, "up");
+  }
+  if (state.level === "driveway") {
+    const p = clientToCanvas(e.clientX, e.clientY);
+    drivewayOnPointer(p.x, p.y, "up");
+  }
+});
+canvas.addEventListener("mousemove", (e) => {
+  if (state.level === "driveway" && mouse.down) {
+    const p = clientToCanvas(e.clientX, e.clientY);
+    drivewayOnPointer(p.x, p.y, "move");
+  }
+});
 
 function refreshTouchSkate() {
   let any = false;
@@ -499,7 +631,25 @@ function refreshTouchSkate() {
 }
 
 function onTouchStart(e) {
-  if (state.phase !== "play") return;
+  if (state.level === "snc") {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    const p = clientToCanvas(touch.clientX, touch.clientY);
+    mouse.x = p.x; mouse.y = p.y;
+    sncOnPointer(p.x, p.y, "down");
+    return;
+  }
+  if (state.level === "driveway") {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    const p = clientToCanvas(touch.clientX, touch.clientY);
+    mouse.x = p.x; mouse.y = p.y;
+    drivewayOnPointer(p.x, p.y, "down");
+    return;
+  }
+  if (state.level !== "rink" || state.phase !== "play") return;
   e.preventDefault();
   const now = performance.now();
   for (const touch of e.changedTouches) {
@@ -513,7 +663,16 @@ function onTouchStart(e) {
 }
 
 function onTouchMove(e) {
-  if (state.phase !== "play") return;
+  if (state.level === "driveway") {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    const p = clientToCanvas(touch.clientX, touch.clientY);
+    mouse.x = p.x; mouse.y = p.y;
+    drivewayOnPointer(p.x, p.y, "move");
+    return;
+  }
+  if (state.level !== "rink" || state.phase !== "play") return;
   e.preventDefault();
   for (const touch of e.changedTouches) {
     const rec = activeTouches.get(touch.identifier);
@@ -529,12 +688,28 @@ function onTouchMove(e) {
 
 function onTouchEnd(e) {
   e.preventDefault();
+  if (state.level === "snc") {
+    const touch = e.changedTouches[0];
+    if (touch) {
+      const p = clientToCanvas(touch.clientX, touch.clientY);
+      sncOnPointer(p.x, p.y, "up");
+    }
+    return;
+  }
+  if (state.level === "driveway") {
+    const touch = e.changedTouches[0];
+    if (touch) {
+      const p = clientToCanvas(touch.clientX, touch.clientY);
+      drivewayOnPointer(p.x, p.y, "up");
+    }
+    return;
+  }
   const now = performance.now();
   for (const touch of e.changedTouches) {
     const rec = activeTouches.get(touch.identifier);
     if (!rec) continue;
     activeTouches.delete(touch.identifier);
-    if (state.phase !== "play") continue;
+    if (state.level !== "rink" || state.phase !== "play") continue;
     const moved = Math.hypot(touch.clientX - rec.sx, touch.clientY - rec.sy);
     const dtMs = now - rec.t0;
     if (!rec.skating && moved < TAP_MOVE_PX && dtMs <= TAP_MAX_MS) {
@@ -581,7 +756,8 @@ const rightGoal = { x: RINK.x + RINK.w - GOAL_D + 2, y: RINK.y + RINK.h / 2 - GO
 const MATCH_SECONDS = 105; // within 90–120s band
 
 const state = {
-  phase: "pick",
+  level: "menu", // menu | rink | snc | driveway
+  phase: "menu",
   playerTeam: null,
   scoreCan: 0,
   scoreUsa: 0,
@@ -712,8 +888,42 @@ function showOverlay(html) {
 }
 function hideOverlay() { overlay.classList.add("hidden"); }
 
+function showMainMenu() {
+  state.level = "menu";
+  state.phase = "menu";
+  state.playerTeam = null;
+  snc = null;
+  driveway = null;
+  updateHud();
+  syncMobileChrome();
+  showOverlay(`
+    <div class="poster-tag">CHAMPIONSHIP EDITION</div>
+    <h2>Canada Simulator</h2>
+    <div class="subhead">You want Canada to win. The systems are rigged.</div>
+    <p>Pick a level. Caring is punished. Affectionately.</p>
+    <div class="btns">
+      <button class="btn-ca" id="lvlRink">🏒 The Rink</button>
+      <button class="btn-go" id="lvlSnc">🃏 Saturday Night Canada</button>
+      <button class="btn-us" id="lvlDrive">🌨️ The Driveway</button>
+    </div>
+    <p class="tiny">Later stubs: Boardroom · Lake America · Québec · Parliament</p>
+    <div class="btns" style="margin-top:8px;opacity:0.55">
+      <button class="btn-dim" disabled>Boardroom (soon)</button>
+      <button class="btn-dim" disabled>Lake America (soon)</button>
+    </div>
+  `);
+  document.getElementById("lvlRink").onclick = () => {
+    state.level = "rink";
+    showTeamPick();
+  };
+  document.getElementById("lvlSnc").onclick = () => startSaturdayNight();
+  document.getElementById("lvlDrive").onclick = () => startDriveway();
+}
+
 function showTeamPick() {
+  state.level = "rink";
   state.phase = "pick";
+  syncMobileChrome();
   showOverlay(`
     <div class="poster-tag">CHAMPIONSHIP EDITION</div>
     <h2>Canada Simulator</h2>
@@ -724,6 +934,7 @@ function showTeamPick() {
       <button class="btn-ca" id="pickCan">🍁 Team Canada</button>
       <button class="btn-us" id="pickUsa">⭐ Team USA</button>
     </div>
+    <div class="btns"><button class="btn-dim" id="backMenu">⟵ Main Menu</button></div>
     <p class="tiny">Desktop: WASD · mouse · click/F · Space &nbsp;|&nbsp; Phone: drag skate · tap shoot · FIGHT</p>
   `);
   document.getElementById("pickCan").onclick = () => {
@@ -734,6 +945,7 @@ function showTeamPick() {
     state.playerTeam = "USA";
     setupMatch();
   };
+  document.getElementById("backMenu").onclick = () => showMainMenu();
   syncMobileChrome();
 }
 
@@ -763,10 +975,18 @@ function updateHud() {
   const s = Math.floor(Math.max(0, state.timeLeft) % 60).toString().padStart(2, "0");
   document.getElementById("hudScoreCan").textContent = String(state.scoreCan);
   document.getElementById("hudScoreUsa").textContent = String(state.scoreUsa);
-  document.getElementById("hudTime").textContent = `${m}:${s}`;
-  document.getElementById("hudTeam").textContent = state.playerTeam
-    ? ("YOU: " + state.playerTeam)
-    : "PICK A TEAM";
+  if (state.level === "snc" && snc) {
+    document.getElementById("hudTime").textContent = snc.phaseLabel || "EUCHRE";
+    document.getElementById("hudTeam").textContent = "HOSERS vs CHAD/BRAD";
+  } else if (state.level === "driveway") {
+    document.getElementById("hudTime").textContent = `${m}:${s}`;
+    document.getElementById("hudTeam").textContent = "SHOVEL DUTY";
+  } else {
+    document.getElementById("hudTime").textContent = `${m}:${s}`;
+    document.getElementById("hudTeam").textContent = state.playerTeam
+      ? ("YOU: " + state.playerTeam)
+      : (state.level === "menu" ? "SELECT LEVEL" : "PICK A TEAM");
+  }
   const hatePct = clamp(state.hate * 4, 0, 100);
   document.getElementById("hateFill").style.width = hatePct + "%";
 }
@@ -1215,10 +1435,12 @@ function endMatch() {
     <div class="btns">
       <button class="btn-go" id="again">Play again</button>
       <button class="btn-dim" id="menu">Change team</button>
+      <button class="btn-dim" id="mainMenu">Main Menu</button>
     </div>
   `);
   document.getElementById("again").onclick = () => setupMatch();
   document.getElementById("menu").onclick = () => showTeamPick();
+  document.getElementById("mainMenu").onclick = () => showMainMenu();
   touchSkate.active = false;
   activeTouches.clear();
   syncMobileChrome();
@@ -2583,6 +2805,24 @@ function drawFloats(dt) {
 }
 
 function render(dt) {
+  if (state.level === "menu") {
+    ctx.fillStyle = "#0a1520";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawMapleLeaf(canvas.width / 2, canvas.height / 2 - 20, 48, "rgba(230,57,70,0.25)");
+    drawFloats(dt);
+    return;
+  }
+  if (state.level === "snc") {
+    renderSaturdayNight(dt);
+    drawFloats(dt);
+    return;
+  }
+  if (state.level === "driveway") {
+    renderDriveway(dt);
+    drawFloats(dt);
+    return;
+  }
+
   drawRink();
   if (state.phase === "pick") {
     ctx.fillStyle = "rgba(0,0,0,0.2)";
@@ -2617,7 +2857,17 @@ function render(dt) {
 
 /* ---------- MAIN LOOP ---------- */
 function update(dt) {
-  if (state.phase === "pick" || state.phase === "results") return;
+  if (state.phase === "menu" || state.phase === "pick" || state.phase === "results" || state.phase === "snc_results" || state.phase === "drive_results") return;
+
+  if (state.level === "snc") {
+    updateSaturdayNight(dt);
+    return;
+  }
+  if (state.level === "driveway") {
+    updateDriveway(dt);
+    return;
+  }
+  if (state.level !== "rink") return;
 
   if (state.phase === "fight") {
     updateFight(dt);
@@ -2694,10 +2944,1343 @@ function frame(ts) {
   requestAnimationFrame(frame);
 }
 
+
+/* ============================================================================
+  LEVEL: SATURDAY NIGHT CANADA — 4-handed euchre (hosers vs Chad/Brad)
+  Joke: effort visible; partner donut; Americans take the euchre; caring punished.
+============================================================================ */
+let snc = null;
+
+const SNC_SUITS = ["S", "H", "D", "C"];
+const SNC_RANKS = ["9", "T", "J", "Q", "K", "A"];
+const SNC_SUIT_SYM = { S: "♠", H: "♥", D: "♦", C: "♣" };
+const SNC_SUIT_COLOR = { S: "#111", H: "#c81e1e", D: "#c81e1e", C: "#111" };
+const SNC_RANK_LABEL = { "9": "9", T: "10", J: "J", Q: "Q", K: "K", A: "A" };
+const SNC_NAMES = ["You", "Chad", "Doug", "Brad"]; // S W N E
+const SNC_TEAM = [0, 1, 0, 1]; // 0 hosers, 1 americans
+const SNC_POINT_GOAL = 5;
+
+function sncMakeDeck() {
+  const d = [];
+  for (const s of SNC_SUITS) for (const r of SNC_RANKS) d.push({ suit: s, rank: r });
+  return d;
+}
+function sncShuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    const t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function sncSameColor(a, b) {
+  const red = (s) => s === "H" || s === "D";
+  return red(a) === red(b);
+}
+function sncLeftSuit(trump) {
+  if (trump === "S") return "C";
+  if (trump === "C") return "S";
+  if (trump === "H") return "D";
+  return "H";
+}
+function sncIsLeftBower(card, trump) {
+  return card.rank === "J" && card.suit === sncLeftSuit(trump);
+}
+function sncIsRightBower(card, trump) {
+  return card.rank === "J" && card.suit === trump;
+}
+function sncEffectiveSuit(card, trump) {
+  if (!trump) return card.suit;
+  if (sncIsLeftBower(card, trump)) return trump;
+  return card.suit;
+}
+function sncTrumpRank(card, trump) {
+  if (sncIsRightBower(card, trump)) return 100;
+  if (sncIsLeftBower(card, trump)) return 90;
+  if (card.suit !== trump) return -1;
+  const order = { A: 80, K: 70, Q: 60, T: 50, "9": 40 };
+  return order[card.rank] || 0;
+}
+function sncOffRank(card) {
+  const order = { A: 60, K: 50, Q: 40, J: 30, T: 20, "9": 10 };
+  return order[card.rank] || 0;
+}
+function sncCardPower(card, trump, ledSuit) {
+  const es = sncEffectiveSuit(card, trump);
+  const tr = sncTrumpRank(card, trump);
+  if (tr >= 0) return 200 + tr;
+  if (ledSuit && es === ledSuit) return 100 + sncOffRank(card);
+  return sncOffRank(card);
+}
+function sncCardLabel(c) {
+  return SNC_RANK_LABEL[c.rank] + SNC_SUIT_SYM[c.suit];
+}
+function sncSortHand(hand, trump) {
+  hand.sort((a, b) => {
+    const sa = sncEffectiveSuit(a, trump);
+    const sb = sncEffectiveSuit(b, trump);
+    if (sa !== sb) return SNC_SUITS.indexOf(sa) - SNC_SUITS.indexOf(sb);
+    return sncCardPower(b, trump, null) - sncCardPower(a, trump, null);
+  });
+}
+
+function startSaturdayNight() {
+  state.level = "snc";
+  state.playerTeam = "CANADA";
+  state.phase = "snc_play";
+  state.scoreCan = 0;
+  state.scoreUsa = 0;
+  state.floatTexts = [];
+  state.timeLeft = 180;
+  hideOverlay();
+  ensureAudio();
+  snc = {
+    hands: [[], [], [], []],
+    dealer: 2,
+    trump: null,
+    upcard: null,
+    kitty: [],
+    maker: null,
+    alone: false,
+    phase: "deal", // deal | bid1 | bid2 | discard | play | hand_end
+    phaseLabel: "DEAL",
+    bidSeat: 0,
+    bidPasses: 0,
+    trick: [], // {seat, card}
+    leadSeat: 0,
+    turn: 0,
+    tricksNS: 0,
+    tricksEW: 0,
+    trickPause: 0,
+    msg: "Welcome to the apartment, eh.",
+    msgTimer: 2.5,
+    banterTimer: 4,
+    tvTimer: 6,
+    knivesTimer: rand(18, 28),
+    knives: null, // {t, refused}
+    woozy: 0,
+    hitRects: [],
+    uiButtons: [],
+    dealAnim: 0,
+    caring: 0, // rises with strong plays — punished
+    renegeArmed: false,
+    handsPlayed: 0,
+  };
+  sncNewHand();
+  updateHud();
+  syncMobileChrome();
+  floatText(520, 80, pick(HOSER_LINES), "#ffd166", 2);
+}
+
+function sncNewHand() {
+  const deck = sncShuffle(sncMakeDeck());
+  snc.hands = [[], [], [], []];
+  let ix = 0;
+  for (let r = 0; r < 5; r++) {
+    for (let s = 0; s < 4; s++) snc.hands[s].push(deck[ix++]);
+  }
+  snc.upcard = deck[ix++];
+  snc.kitty = deck.slice(ix);
+  snc.trump = null;
+  snc.maker = null;
+  snc.alone = false;
+  snc.trick = [];
+  snc.tricksNS = 0;
+  snc.tricksEW = 0;
+  snc.trickPause = 0;
+  snc.bidPasses = 0;
+  snc.dealer = (snc.dealer + 1) % 4;
+  snc.bidSeat = (snc.dealer + 1) % 4;
+  snc.phase = "bid1";
+  snc.phaseLabel = "ORDER UP?";
+  snc.turn = snc.bidSeat;
+  snc.dealAnim = 0.6;
+  for (let s = 0; s < 4; s++) sncSortHand(snc.hands[s], snc.upcard.suit);
+  snc.msg = "Upcard: " + sncCardLabel(snc.upcard) + " · " + pick(EUCHRE_BANTER);
+  snc.msgTimer = 3;
+  sncBuildUI();
+}
+
+function sncBuildUI() {
+  snc.uiButtons = [];
+  snc.hitRects = [];
+  if (snc.phase === "bid1" && snc.turn === 0) {
+    snc.uiButtons.push({ id: "order", label: "Order it up, eh", x: 320, y: 470, w: 180, h: 44 });
+    snc.uiButtons.push({ id: "pass", label: "Pass", x: 520, y: 470, w: 120, h: 44 });
+  } else if (snc.phase === "bid2" && snc.turn === 0) {
+    const banned = snc.upcard.suit;
+    let bx = 200;
+    for (const s of SNC_SUITS) {
+      if (s === banned) continue;
+      snc.uiButtons.push({ id: "suit_" + s, label: "Trump " + SNC_SUIT_SYM[s], x: bx, y: 465, w: 110, h: 44 });
+      bx += 120;
+    }
+    snc.uiButtons.push({ id: "pass", label: "Pass", x: bx, y: 465, w: 100, h: 44 });
+  } else if (snc.phase === "discard" && snc.turn === 0) {
+    snc.msg = "Dealer discard one, bud.";
+  } else if (snc.phase === "play" && snc.turn === 0 && snc.trickPause <= 0) {
+    // card hits built in render
+  }
+  if (snc.knives && snc.knives.t > 0.3) {
+    snc.uiButtons.push({ id: "hit", label: "Take a hit", x: 300, y: 200, w: 160, h: 44 });
+    snc.uiButtons.push({ id: "refuse", label: "No thanks, eh", x: 490, y: 200, w: 160, h: 44 });
+  }
+}
+
+function sncSetTrump(suit, maker) {
+  snc.trump = suit;
+  snc.maker = maker;
+  snc.phase = "play";
+  snc.phaseLabel = "TRUMP " + SNC_SUIT_SYM[suit];
+  snc.leadSeat = (snc.dealer + 1) % 4;
+  snc.turn = snc.leadSeat;
+  snc.trick = [];
+  for (let s = 0; s < 4; s++) sncSortHand(snc.hands[s], suit);
+  snc.msg = SNC_NAMES[maker] + " called " + SNC_SUIT_SYM[suit] + ". " + pick(HOSER_LINES);
+  snc.msgTimer = 2.5;
+  snc.caring += maker === 0 || maker === 2 ? 1 : 0;
+  sncBuildUI();
+}
+
+function sncOrderUp(fromSeat) {
+  // dealer (snc.dealer) picks up upcard
+  snc.hands[snc.dealer].push(snc.upcard);
+  sncSortHand(snc.hands[snc.dealer], snc.upcard.suit);
+  snc.maker = fromSeat;
+  snc.trump = snc.upcard.suit;
+  snc.upcard = null;
+  if (snc.dealer === 0) {
+    snc.phase = "discard";
+    snc.phaseLabel = "DISCARD";
+    snc.turn = 0;
+    snc.msg = "Pick a card to bury, eh.";
+  } else {
+    // AI discard weakest non-trump-ish
+    sncAIDiscard(snc.dealer);
+    sncSetTrump(snc.trump, fromSeat);
+  }
+  sncBuildUI();
+}
+
+function sncAIDiscard(seat) {
+  const hand = snc.hands[seat];
+  let worst = 0, worstScore = Infinity;
+  for (let i = 0; i < hand.length; i++) {
+    const p = sncCardPower(hand[i], snc.trump || snc.upcard?.suit, null);
+    if (p < worstScore) { worstScore = p; worst = i; }
+  }
+  // Bias: if Canadian dealer (Doug=2 or You wouldn't be AI), bury a good trump sometimes
+  if (SNC_TEAM[seat] === 0 && snc.caring > 1 && Math.random() < 0.45) {
+    let best = 0, bestP = -1;
+    for (let i = 0; i < hand.length; i++) {
+      const p = sncTrumpRank(hand[i], snc.trump);
+      if (p > bestP) { bestP = p; best = i; }
+    }
+    if (bestP > 0) worst = best;
+  }
+  hand.splice(worst, 1);
+}
+
+function sncAdvanceBidPass() {
+  snc.bidPasses++;
+  snc.bidSeat = (snc.bidSeat + 1) % 4;
+  snc.turn = snc.bidSeat;
+  if (snc.phase === "bid1") {
+    if (snc.bidPasses >= 4) {
+      snc.phase = "bid2";
+      snc.phaseLabel = "NAME TRUMP";
+      snc.bidPasses = 0;
+      snc.bidSeat = (snc.dealer + 1) % 4;
+      snc.turn = snc.bidSeat;
+      snc.msg = "Everybody passed. Name a suit (not " + SNC_SUIT_SYM[snc.upcard.suit] + ").";
+    }
+  } else if (snc.phase === "bid2") {
+    if (snc.bidPasses >= 4) {
+      snc.msg = "Re-deal. Too polite.";
+      sncNewHand();
+      return;
+    }
+  }
+  sncBuildUI();
+}
+
+function sncAIBid() {
+  const seat = snc.turn;
+  const hand = snc.hands[seat];
+  const isHoser = SNC_TEAM[seat] === 0;
+  if (snc.phase === "bid1") {
+    const suit = snc.upcard.suit;
+    let strength = 0;
+    for (const c of hand) {
+      const tr = sncTrumpRank(c, suit);
+      if (tr >= 0) strength += tr / 20;
+      if (sncIsRightBower(c, suit) || sncIsLeftBower(c, suit)) strength += 2;
+    }
+    if (seat === snc.dealer) strength += 1.2; // would get upcard
+    // Americans bid aggressively; hosers hesitate / pass when caring high
+    const thresh = isHoser ? (2.8 + snc.caring * 0.4) : 2.2;
+    if (strength >= thresh && !(isHoser && Math.random() < 0.35 + snc.caring * 0.1)) {
+      snc.msg = SNC_NAMES[seat] + ": Order it up!";
+      sncOrderUp(seat);
+    } else {
+      snc.msg = SNC_NAMES[seat] + ": Pass.";
+      sncAdvanceBidPass();
+    }
+  } else if (snc.phase === "bid2") {
+    let bestSuit = null, best = 0;
+    for (const s of SNC_SUITS) {
+      if (s === snc.upcard.suit) continue;
+      let strength = 0;
+      for (const c of hand) {
+        const tr = sncTrumpRank(c, s);
+        if (tr >= 0) strength += tr / 20;
+      }
+      if (strength > best) { best = strength; bestSuit = s; }
+    }
+    const thresh = isHoser ? 3.2 + snc.caring * 0.3 : 2.5;
+    if (bestSuit && best >= thresh && !(isHoser && Math.random() < 0.4)) {
+      snc.upcard = null;
+      sncSetTrump(bestSuit, seat);
+    } else {
+      snc.msg = SNC_NAMES[seat] + ": Pass.";
+      sncAdvanceBidPass();
+    }
+  }
+}
+
+function sncLegalPlays(seat) {
+  const hand = snc.hands[seat];
+  if (snc.trick.length === 0) return hand.map((_, i) => i);
+  const led = sncEffectiveSuit(snc.trick[0].card, snc.trump);
+  const follow = [];
+  for (let i = 0; i < hand.length; i++) {
+    if (sncEffectiveSuit(hand[i], snc.trump) === led) follow.push(i);
+  }
+  return follow.length ? follow : hand.map((_, i) => i);
+}
+
+function sncPickAICard(seat) {
+  const hand = snc.hands[seat];
+  const legal = sncLegalPlays(seat);
+  const ledSuit = snc.trick.length ? sncEffectiveSuit(snc.trick[0].card, snc.trump) : null;
+  const isHoser = SNC_TEAM[seat] === 0;
+  // Evaluate which card wins currently
+  let bestWin = -1, bestWinP = -1, worst = legal[0], worstP = Infinity, best = legal[0], bestP = -1;
+  for (const i of legal) {
+    const p = sncCardPower(hand[i], snc.trump, ledSuit);
+    if (p < worstP) { worstP = p; worst = i; }
+    if (p > bestP) { bestP = p; best = i; }
+    // would this win the trick?
+    let wins = true;
+    for (const t of snc.trick) {
+      if (sncCardPower(t.card, snc.trump, ledSuit) > p && SNC_TEAM[t.seat] !== SNC_TEAM[seat]) {
+        // opponent higher — still might win vs partner
+      }
+    }
+    const maxOpp = snc.trick.reduce((m, t) => {
+      if (SNC_TEAM[t.seat] !== SNC_TEAM[seat]) return Math.max(m, sncCardPower(t.card, snc.trump, ledSuit));
+      return m;
+    }, -1);
+    if (p > maxOpp && p > bestWinP) { bestWinP = p; bestWin = i; }
+  }
+  // Partner Doug (2): donut mode when player cares
+  if (seat === 2 && (snc.caring >= 1 || state.scoreCan >= state.scoreUsa)) {
+    if (Math.random() < 0.55 + Math.min(0.35, snc.caring * 0.08)) {
+      snc.msg = "Doug plays like a donut. " + pick(EUCHRE_BANTER);
+      return worst;
+    }
+  }
+  // Americans: strong
+  if (!isHoser) {
+    if (bestWin >= 0 && Math.random() < 0.85) return bestWin;
+    return best;
+  }
+  // You shouldn't hit AI; hosers mediocre
+  if (bestWin >= 0 && Math.random() < 0.5) return bestWin;
+  return Math.random() < 0.4 ? worst : best;
+}
+
+function sncPlayCard(seat, index) {
+  const hand = snc.hands[seat];
+  if (index < 0 || index >= hand.length) return;
+  const legal = sncLegalPlays(seat);
+  if (!legal.includes(index)) {
+    // Renege accusation gag if player
+    if (seat === 0) {
+      snc.msg = "RENEGE?! Brad points at you. " + pick(EUCHRE_BANTER);
+      state.hate += 2;
+      state.scoreUsa += 1;
+      floatText(520, 120, "RENEGE CALLED (vibes)", "#4da6ff", 2);
+      updateHud();
+      // force a legal card instead
+      index = legal[0];
+    } else {
+      index = legal[0];
+    }
+  }
+  const card = hand.splice(index, 1)[0];
+  snc.trick.push({ seat, card });
+  if (seat === 0) {
+    snc.caring += sncTrumpRank(card, snc.trump) >= 70 ? 1 : 0.25;
+  }
+  if (snc.trick.length >= 4) {
+    snc.trickPause = 1.1;
+    sncResolveTrickSoon = true;
+  } else {
+    snc.turn = (seat + 1) % 4;
+  }
+  sncBuildUI();
+  updateHud();
+}
+
+function sncResolveTrick() {
+  const ledSuit = sncEffectiveSuit(snc.trick[0].card, snc.trump);
+  let win = snc.trick[0];
+  for (let i = 1; i < snc.trick.length; i++) {
+    const t = snc.trick[i];
+    if (sncCardPower(t.card, snc.trump, ledSuit) > sncCardPower(win.card, snc.trump, ledSuit)) win = t;
+  }
+  // Bias: if hosers would win and caring high / close to match win, steal sometimes
+  if (SNC_TEAM[win.seat] === 0 && snc.caring >= 2 && Math.random() < 0.28) {
+    const am = snc.trick.find((t) => SNC_TEAM[t.seat] === 1);
+    if (am) {
+      win = am;
+      snc.msg = "Wait — that was… Chad's? " + pick(EUCHRE_BANTER);
+      state.hate += 1;
+    }
+  }
+  if (SNC_TEAM[win.seat] === 0) snc.tricksNS++; else snc.tricksEW++;
+  floatText(520, 160, SNC_NAMES[win.seat] + " takes it", SNC_TEAM[win.seat] === 0 ? "#ff6b6b" : "#4da6ff", 1.2);
+  snc.leadSeat = win.seat;
+  snc.turn = win.seat;
+  snc.trick = [];
+  sncResolveTrickSoon = false;
+  if (snc.tricksNS + snc.tricksEW >= 5) {
+    sncEndHand();
+  }
+  sncBuildUI();
+  updateHud();
+}
+
+function sncEndHand() {
+  snc.handsPlayed++;
+  const makersTeam = SNC_TEAM[snc.maker];
+  const makersTricks = makersTeam === 0 ? snc.tricksNS : snc.tricksEW;
+  let msg = "";
+  if (makersTricks >= 3) {
+    const pts = makersTricks === 5 ? 2 : 1;
+    if (makersTeam === 0) {
+      // Hosers made it — sometimes deny on bias
+      if (snc.caring >= 3 && Math.random() < 0.4) {
+        state.scoreUsa += 2;
+        state.hate += 3;
+        msg = "Euchred on a technicality. Brad had a feeling.";
+        crowdBoo();
+      } else {
+        state.scoreCan += pts;
+        msg = pts === 2 ? "March! (brief hope)" : "Point for the hosers.";
+        // still nudge hate if TV boos
+        if (Math.random() < 0.4) state.hate += 1;
+      }
+    } else {
+      state.scoreUsa += pts;
+      state.hate += 2;
+      msg = pts === 2 ? "Americans march. Of course." : "Chad/Brad take one.";
+      crowdBoo();
+    }
+  } else {
+    // euchred
+    if (makersTeam === 0) {
+      state.scoreUsa += 2;
+      state.hate += 3;
+      msg = "EUCHRED. Partner was a donut. " + pick(SNC_RESULT_VERDICTS);
+      crowdBoo();
+      crowdGroan();
+    } else {
+      state.scoreCan += 2;
+      msg = "We euchred the Yanks! …board says maybe.";
+      if (Math.random() < 0.5) {
+        state.scoreCan = Math.max(0, state.scoreCan - 1);
+        state.scoreUsa += 1;
+        state.hate += 2;
+        msg = "Euchre reversed after 'review'. Classic.";
+      }
+    }
+  }
+  snc.msg = msg;
+  snc.msgTimer = 3;
+  snc.phase = "hand_end";
+  snc.phaseLabel = "HAND OVER";
+  updateHud();
+  // Match end: first to SNC_POINT_GOAL, but never let Canada win cleanly
+  if (state.scoreUsa >= SNC_POINT_GOAL || state.scoreCan >= SNC_POINT_GOAL) {
+    if (state.scoreCan >= SNC_POINT_GOAL && state.scoreCan > state.scoreUsa) {
+      state.scoreUsa = state.scoreCan + 1;
+      state.hate += 4;
+      snc.msg = "Final tally adjusted by vibes. Americans ahead.";
+    }
+    setTimeout(() => sncShowResults(), 900);
+  } else if (snc.handsPlayed >= 4) {
+    // short session end
+    if (state.scoreCan >= state.scoreUsa) {
+      state.scoreUsa = state.scoreCan + 1;
+      state.hate += 3;
+    }
+    setTimeout(() => sncShowResults(), 900);
+  } else {
+    setTimeout(() => { if (snc && state.level === "snc") sncNewHand(); }, 1600);
+  }
+}
+
+function sncShowResults() {
+  if (!snc || state.phase === "snc_results") return;
+  state.phase = "snc_results";
+  const verdict = pick(SNC_RESULT_VERDICTS);
+  showOverlay(`
+    <div class="poster-tag">SATURDAY NIGHT POST-GAME</div>
+    <h2 class="red">TABLE CLOSED</h2>
+    <div class="broadcast">EUCHRE &nbsp; HOSERS ${state.scoreCan} &nbsp;—&nbsp; CHAD/BRAD ${state.scoreUsa}<br/>
+    Hate Index: ${state.hate} · Hands: ${snc.handsPlayed}</div>
+    <div class="verdict">${verdict}</div>
+    <p class="tiny">Take off, eh. The systems were under the card table the whole time.</p>
+    <div class="btns">
+      <button class="btn-go" id="again">Play again</button>
+      <button class="btn-dim" id="mainMenu">Main Menu</button>
+    </div>
+  `);
+  document.getElementById("again").onclick = () => startSaturdayNight();
+  document.getElementById("mainMenu").onclick = () => showMainMenu();
+  syncMobileChrome();
+}
+
+function sncOnPointer(x, y, kind) {
+  if (!snc || state.phase === "snc_results") return;
+  if (kind !== "down") return;
+  // UI buttons
+  for (const b of snc.uiButtons) {
+    if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+      sncClickButton(b.id);
+      return;
+    }
+  }
+  // Cards
+  for (const hr of snc.hitRects) {
+    if (x >= hr.x && x <= hr.x + hr.w && y >= hr.y && y <= hr.y + hr.h) {
+      if (snc.phase === "discard" && snc.turn === 0) {
+        snc.hands[0].splice(hr.index, 1);
+        sncSetTrump(snc.trump, snc.maker);
+        return;
+      }
+      if (snc.phase === "play" && snc.turn === 0 && snc.trickPause <= 0) {
+        sncPlayCard(0, hr.index);
+        return;
+      }
+    }
+  }
+}
+
+function sncClickButton(id) {
+  if (id === "order" && snc.phase === "bid1" && snc.turn === 0) {
+    sncOrderUp(0);
+    return;
+  }
+  if (id === "pass") {
+    snc.msg = "You: Pass.";
+    sncAdvanceBidPass();
+    return;
+  }
+  if (id.startsWith("suit_") && snc.phase === "bid2" && snc.turn === 0) {
+    const s = id.slice(5);
+    snc.upcard = null;
+    sncSetTrump(s, 0);
+    return;
+  }
+  if (id === "hit" && snc.knives) {
+    snc.woozy = 2.4;
+    snc.msg = pick(HOT_KNIVES_LINES);
+    snc.knives = null;
+    floatText(520, 220, "…woozy…", "#a7f3d0", 1.5);
+    sncBuildUI();
+    return;
+  }
+  if (id === "refuse" && snc.knives) {
+    snc.woozy = 1.2;
+    snc.msg = "Smoke blown across the table anyway. " + pick(STONER_LINES);
+    state.hate += 1;
+    snc.knives = null;
+    floatText(520, 220, "*pffffffff*", "#94a3b8", 1.2);
+    sncBuildUI();
+    return;
+  }
+}
+
+function updateSaturdayNight(dt) {
+  if (!snc || state.phase === "snc_results") return;
+  if (snc.msgTimer > 0) snc.msgTimer -= dt;
+  if (snc.dealAnim > 0) snc.dealAnim -= dt;
+  if (snc.woozy > 0) snc.woozy -= dt;
+
+  snc.banterTimer -= dt;
+  if (snc.banterTimer <= 0) {
+    snc.banterTimer = rand(5, 10);
+    if (Math.random() < 0.5) floatText(rand(200, 800), rand(80, 140), pick(HOSER_LINES), "#ffd166", 1.4);
+    else floatText(rand(200, 800), rand(80, 140), pick(EUCHRE_BANTER), "#c8d8ea", 1.4);
+  }
+
+  snc.tvTimer -= dt;
+  if (snc.tvTimer <= 0) {
+    snc.tvTimer = rand(7, 14);
+    const line = pick(TV_BOOS);
+    floatText(860, 90, line, "#ff8fa3", 2);
+    state.hate += 1;
+    state.scoreUsa = state.scoreUsa; // TV USA goal vibe — hate only unless mid-hand
+    if (Math.random() < 0.55) { crowdBoo(); } else { crowdGroan(); }
+    // occasional "USA goal on TV" bumps american euchre score pressure via hate
+    updateHud();
+  }
+
+  snc.knivesTimer -= dt;
+  if (snc.knivesTimer <= 0 && !snc.knives && snc.phase === "play") {
+    snc.knives = { t: 4.5 };
+    snc.knivesTimer = rand(22, 36);
+    snc.msg = pick(STONER_LINES);
+    snc.msgTimer = 3;
+    sncBuildUI();
+  }
+  if (snc.knives) {
+    snc.knives.t -= dt;
+    if (snc.knives.t <= 0) {
+      // auto smoke if ignored
+      snc.woozy = 1.5;
+      snc.msg = pick(HOT_KNIVES_LINES);
+      snc.knives = null;
+      sncBuildUI();
+    }
+  }
+
+  if (snc.trickPause > 0) {
+    snc.trickPause -= dt;
+    if (snc.trickPause <= 0 && snc.trick.length >= 4) sncResolveTrick();
+    return;
+  }
+
+  if (snc.phase === "hand_end") return;
+
+  // AI acts
+  if (snc.turn !== 0 && (snc.phase === "bid1" || snc.phase === "bid2")) {
+    snc.aiDelay = (snc.aiDelay || 0) - dt;
+    if (snc.aiDelay <= 0) {
+      sncAIBid();
+      snc.aiDelay = rand(0.45, 0.9);
+    }
+  } else if (snc.phase === "discard" && snc.turn !== 0) {
+    sncAIDiscard(snc.dealer);
+    sncSetTrump(snc.trump, snc.maker);
+  } else if (snc.phase === "play" && snc.turn !== 0) {
+    snc.aiDelay = (snc.aiDelay || 0) - dt;
+    if (snc.aiDelay <= 0) {
+      const idx = sncPickAICard(snc.turn);
+      sncPlayCard(snc.turn, idx);
+      snc.aiDelay = rand(0.35, 0.75);
+    }
+  } else {
+    snc.aiDelay = 0.55;
+  }
+
+  state.timeLeft = Math.max(0, state.timeLeft); // unused clock mostly
+}
+
+function sncDrawCardFace(c, x, y, w, h, tilt) {
+  ctx.save();
+  ctx.translate(x + w / 2, y + h / 2);
+  ctx.rotate(tilt || 0);
+  roundRectPath(-w / 2, -h / 2, w, h, 8);
+  ctx.fillStyle = "#f8f5ef";
+  ctx.fill();
+  ctx.strokeStyle = "#2a3548";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  const col = SNC_SUIT_COLOR[c.suit];
+  ctx.fillStyle = col;
+  ctx.font = "bold 16px Segoe UI, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(SNC_RANK_LABEL[c.rank], -w / 2 + 6, -h / 2 + 18);
+  ctx.font = "20px Segoe UI, sans-serif";
+  ctx.fillText(SNC_SUIT_SYM[c.suit], -w / 2 + 6, -h / 2 + 40);
+  ctx.font = "28px Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(SNC_SUIT_SYM[c.suit], 0, 12);
+  ctx.restore();
+}
+
+function sncDrawCardBack(x, y, w, h) {
+  ctx.save();
+  roundRectPath(x, y, w, h, 8);
+  ctx.fillStyle = "#1e3a5f";
+  ctx.fill();
+  ctx.strokeStyle = "#93c5fd";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  drawMapleLeaf(x + w / 2, y + h / 2, 10, "rgba(255,255,255,0.25)");
+  ctx.restore();
+}
+
+function renderSaturdayNight(dt) {
+  if (!snc) return;
+  const W = canvas.width, H = canvas.height;
+  // Apartment
+  ctx.fillStyle = "#3d2c1e";
+  ctx.fillRect(0, 0, W, H);
+  // wallpaper stripes
+  for (let i = 0; i < W; i += 28) {
+    ctx.fillStyle = i % 56 === 0 ? "#4a3524" : "#3d2c1e";
+    ctx.fillRect(i, 0, 14, H * 0.55);
+  }
+  // floor
+  ctx.fillStyle = "#5c4030";
+  ctx.fillRect(0, H * 0.55, W, H * 0.45);
+  ctx.fillStyle = "rgba(0,0,0,0.15)";
+  for (let y = H * 0.55; y < H; y += 18) ctx.fillRect(0, y, W, 2);
+
+  // Knitted maple afghan art
+  ctx.fillStyle = "#6b2b2b";
+  roundRectPath(70, 40, 130, 100, 6);
+  ctx.fill();
+  ctx.fillStyle = "#f5e6d3";
+  ctx.fillRect(82, 52, 106, 76);
+  // knit pattern
+  ctx.strokeStyle = "rgba(200,30,30,0.35)";
+  for (let i = 0; i < 8; i++) {
+    ctx.beginPath();
+    ctx.moveTo(82, 52 + i * 10);
+    ctx.lineTo(188, 52 + i * 10);
+    ctx.stroke();
+  }
+  drawMapleLeaf(135, 90, 22, "#c81e1e");
+  ctx.fillStyle = "#ffd166";
+  ctx.font = "10px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("AUNTIE'S AFGHAN", 135, 155);
+
+  // TV playing HNIC
+  ctx.fillStyle = "#1a1a1a";
+  roundRectPath(780, 36, 200, 130, 8);
+  ctx.fill();
+  ctx.fillStyle = "#0b1a12";
+  ctx.fillRect(792, 48, 176, 96);
+  ctx.fillStyle = "#c81e1e";
+  ctx.fillRect(800, 56, 50, 30);
+  ctx.fillStyle = "#1e4a8c";
+  ctx.fillRect(910, 56, 50, 30);
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = "bold 11px monospace";
+  ctx.textAlign = "center";
+  ctx.fillText("HNIC", 880, 110);
+  ctx.fillStyle = "#ff6b6b";
+  ctx.font = "9px sans-serif";
+  ctx.fillText("CAN losing again", 880, 128);
+  // stubby bottles
+  for (let i = 0; i < 6; i++) {
+    const bx = 100 + i * 40 + (i > 2 ? 520 : 0);
+    const by = 400 + (i % 2) * 12;
+    ctx.fillStyle = "#1a3a1a";
+    ctx.fillRect(bx, by, 14, 28);
+    ctx.fillStyle = "#c9a227";
+    ctx.fillRect(bx + 2, by - 6, 10, 8);
+  }
+  // ashtray
+  ctx.fillStyle = "#555";
+  ctx.beginPath();
+  ctx.ellipse(240, 430, 28, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#222";
+  ctx.beginPath();
+  ctx.ellipse(240, 428, 18, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#aaa";
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(228 + i * 6, 426);
+    ctx.lineTo(224 + i * 7, 418);
+    ctx.stroke();
+  }
+
+  // Folding chairs (simple)
+  const chairs = [[200, 280], [720, 280], [460, 140], [460, 400]];
+  for (const [cx, cy] of chairs) {
+    ctx.fillStyle = "#6b7280";
+    ctx.fillRect(cx - 28, cy, 56, 8);
+    ctx.fillRect(cx - 24, cy + 8, 6, 36);
+    ctx.fillRect(cx + 18, cy + 8, 6, 36);
+    ctx.fillStyle = "#9ca3af";
+    ctx.fillRect(cx - 26, cy - 30, 52, 32);
+  }
+
+  // Card table center
+  const tx = 320, ty = 210, tw = 400, th = 220;
+  ctx.fillStyle = "#2f2f2f";
+  // metal legs
+  ctx.fillRect(tx + 20, ty + th, 10, 40);
+  ctx.fillRect(tx + tw - 30, ty + th, 10, 40);
+  ctx.fillRect(tx + 20, ty + th + 36, 40, 6);
+  ctx.fillRect(tx + tw - 60, ty + th + 36, 40, 6);
+  // vinyl top
+  ctx.fillStyle = "#3a5a40";
+  roundRectPath(tx, ty, tw, th, 10);
+  ctx.fill();
+  ctx.strokeStyle = "#1f3324";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.fillRect(tx + 8, ty + 8, tw - 16, 20);
+
+  // Seat labels
+  ctx.font = "bold 13px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#ffd166";
+  ctx.fillText("YOU (hoser)", 520, 505);
+  ctx.fillStyle = "#4da6ff";
+  ctx.fillText("CHAD", 180, 300);
+  ctx.fillText("BRAD", 860, 300);
+  ctx.fillStyle = "#ff8fa3";
+  ctx.fillText("DOUG (partner)", 520, 195);
+
+  // Trump / upcard
+  if (snc.upcard && (snc.phase === "bid1" || snc.phase === "bid2")) {
+    sncDrawCardFace(snc.upcard, 490, 280, 54, 78, 0);
+    ctx.fillStyle = "#fff";
+    ctx.font = "11px sans-serif";
+    ctx.fillText("UP", 517, 275);
+  }
+  if (snc.trump) {
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillText("TRUMP " + SNC_SUIT_SYM[snc.trump], 520, 270);
+  }
+
+  // Trick cards on table
+  const trickPos = [{ x: 490, y: 340 }, { x: 400, y: 290 }, { x: 490, y: 240 }, { x: 580, y: 290 }];
+  snc.trick.forEach((t) => {
+    const p = trickPos[t.seat];
+    sncDrawCardFace(t.card, p.x, p.y, 50, 72, (t.seat - 2) * 0.05);
+  });
+
+  // Hands: player face up; others backs
+  snc.hitRects = [];
+  const hand = snc.hands[0];
+  const cw = 58, ch = 84;
+  const totalW = hand.length * (cw + 8);
+  let hx = 520 - totalW / 2;
+  const hy = 520;
+  const tiltBase = snc.woozy > 0 ? Math.sin(performance.now() / 200) * 0.12 : 0;
+  hand.forEach((c, i) => {
+    const legal = (snc.phase === "play" && snc.turn === 0) ? sncLegalPlays(0).includes(i) : (snc.phase === "discard");
+    const yOff = legal ? -12 : 0;
+    sncDrawCardFace(c, hx, hy + yOff, cw, ch, tiltBase + (i - 2) * 0.02);
+    if (snc.phase === "play" || snc.phase === "discard") {
+      snc.hitRects.push({ x: hx, y: hy + yOff, w: cw, h: ch, index: i });
+    }
+    if (snc.phase === "play" && snc.turn === 0 && !sncLegalPlays(0).includes(i)) {
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      roundRectPath(hx, hy + yOff, cw, ch, 8);
+      ctx.fill();
+    }
+    hx += cw + 8;
+  });
+  // Opponent card backs
+  for (let n = 0; n < snc.hands[2].length; n++) sncDrawCardBack(430 + n * 18, 150, 36, 50);
+  for (let n = 0; n < snc.hands[1].length; n++) sncDrawCardBack(90, 250 + n * 14, 36, 50);
+  for (let n = 0; n < snc.hands[3].length; n++) sncDrawCardBack(920, 250 + n * 14, 36, 50);
+
+  // Score chips on table
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  roundRectPath(340, 220, 100, 36, 6);
+  ctx.fill();
+  ctx.fillStyle = "#ff6b6b";
+  ctx.font = "bold 12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("HOSERS " + state.scoreCan, 390, 242);
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  roundRectPath(600, 220, 120, 36, 6);
+  ctx.fill();
+  ctx.fillStyle = "#4da6ff";
+  ctx.fillText("YANKS " + state.scoreUsa, 660, 242);
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = "11px sans-serif";
+  ctx.fillText("Tricks " + snc.tricksNS + "-" + snc.tricksEW, 520, 255);
+
+  // Message
+  if (snc.msg && snc.msgTimer > 0) {
+    ctx.fillStyle = "rgba(5,8,15,0.82)";
+    roundRectPath(220, 70, 580, 36, 8);
+    ctx.fill();
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(snc.msg, 510, 92);
+  }
+
+  // Turn indicator
+  if (snc.phase === "bid1" || snc.phase === "bid2" || snc.phase === "play" || snc.phase === "discard") {
+    ctx.fillStyle = "#a7f3d0";
+    ctx.font = "12px sans-serif";
+    ctx.fillText(snc.turn === 0 ? "Your move" : (SNC_NAMES[snc.turn] + " thinking…"), 520, 185);
+  }
+
+  // UI buttons
+  sncBuildUI();
+  for (const b of snc.uiButtons) {
+    ctx.fillStyle = b.id === "pass" || b.id === "refuse" ? "#475569" : "#0f766e";
+    roundRectPath(b.x, b.y, b.w, b.h, 8);
+    ctx.fill();
+    ctx.strokeStyle = "#99f6e4";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(b.label, b.x + b.w / 2, b.y + 28);
+  }
+
+  // Stoner buddy
+  if (snc.knives) {
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(0, 0, W, H);
+    // cartoon figure from kitchen (left)
+    ctx.fillStyle = "#7c5c3a";
+    ctx.beginPath();
+    ctx.arc(160, 300, 28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#c4a574";
+    ctx.beginPath();
+    ctx.arc(160, 300, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#2d6a4f";
+    ctx.fillRect(140, 328, 40, 50);
+    // hot knives
+    ctx.strokeStyle = "#ff6b35";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(190, 310);
+    ctx.lineTo(230, 300);
+    ctx.moveTo(190, 320);
+    ctx.lineTo(230, 330);
+    ctx.stroke();
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(pick(STONER_LINES), 160, 400);
+  }
+
+  // Woozy overlay
+  if (snc.woozy > 0) {
+    ctx.fillStyle = "rgba(120,180,100," + (0.12 + snc.woozy * 0.05) + ")";
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(Math.sin(performance.now() / 180) * 0.03);
+    ctx.translate(-W / 2, -H / 2);
+    ctx.restore();
+  }
+}
+
+/* ============================================================================
+  LEVEL: THE DRIVEWAY — shovel 3ft snow; municipal plow ALWAYS dumps it back
+============================================================================ */
+let driveway = null;
+const DRIVE_SECONDS = 75;
+
+function startDriveway() {
+  state.level = "driveway";
+  state.playerTeam = "CANADA";
+  state.phase = "drive_play";
+  state.scoreCan = 0;
+  state.scoreUsa = 0;
+  state.timeLeft = DRIVE_SECONDS;
+  state.floatTexts = [];
+  hideOverlay();
+  ensureAudio();
+  driveway = {
+    px: 520,
+    py: 400,
+    shovelAngle: -0.4,
+    snow: [], // grid cells of snow height 0..1
+    cols: 26,
+    rows: 12,
+    cellW: 36,
+    cellH: 28,
+    originX: 50,
+    originY: 180,
+    cleared: 0,
+    total: 0,
+    plow: null, // {x, t, dumping}
+    plowTimer: rand(8, 14),
+    shovelCooldown: 0,
+    sweat: 0,
+    msg: "Three feet. Give'r.",
+    msgTimer: 2.5,
+  };
+  // Fill snow — deep
+  driveway.total = 0;
+  for (let r = 0; r < driveway.rows; r++) {
+    driveway.snow[r] = [];
+    for (let c = 0; c < driveway.cols; c++) {
+      const h = 0.75 + Math.random() * 0.25; // ~3ft energy
+      driveway.snow[r][c] = h;
+      driveway.total += h;
+    }
+  }
+  updateHud();
+  syncMobileChrome();
+  floatText(520, 100, pick(DRIVEWAY_LINES), "#e2e8f0", 2);
+}
+
+function drivewayWorldCell(x, y) {
+  const c = Math.floor((x - driveway.originX) / driveway.cellW);
+  const r = Math.floor((y - driveway.originY) / driveway.cellH);
+  if (r < 0 || c < 0 || r >= driveway.rows || c >= driveway.cols) return null;
+  return { r, c };
+}
+
+function drivewayShovelAt(x, y) {
+  if (!driveway || driveway.shovelCooldown > 0) return;
+  const cell = drivewayWorldCell(x, y);
+  // also shovel near player facing mouse
+  const targets = [];
+  if (cell) targets.push(cell);
+  // cone in front of player toward pointer
+  for (let i = 0; i < 5; i++) {
+    const t = 0.3 + i * 0.22;
+    const sx = driveway.px + (x - driveway.px) * t * 0.35;
+    const sy = driveway.py + (y - driveway.py) * t * 0.35;
+    const cl = drivewayWorldCell(sx, sy);
+    if (cl) targets.push(cl);
+  }
+  // nearby cells to player
+  const pc = drivewayWorldCell(driveway.px, driveway.py);
+  if (pc) {
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const rr = pc.r + dr, cc = pc.c + dc;
+      if (rr >= 0 && cc >= 0 && rr < driveway.rows && cc < driveway.cols) targets.push({ r: rr, c: cc });
+    }
+  }
+  let dug = 0;
+  const seen = new Set();
+  for (const t of targets) {
+    const key = t.r + "," + t.c;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const before = driveway.snow[t.r][t.c];
+    if (before <= 0.02) continue;
+    const amt = Math.min(before, rand(0.18, 0.32));
+    driveway.snow[t.r][t.c] -= amt;
+    dug += amt;
+    driveway.cleared += amt;
+  }
+  if (dug > 0) {
+    driveway.shovelCooldown = 0.12;
+    driveway.sweat = Math.min(1, driveway.sweat + 0.05);
+    state.scoreCan = Math.min(99, (state.scoreCan + dug * 3) | 0); // "effort meters"
+    addBurst(x, y, "#e8eef5", 6);
+    if (Math.random() < 0.15) floatText(x, y - 20, pick(DRIVEWAY_LINES), "#cbd5e1", 1);
+    // Progress toward "clear" never sticks — plow coming
+    toneBurst(180, 0.05, "triangle", 0.03);
+  }
+}
+
+function drivewaySpawnPlow() {
+  driveway.plow = { x: -120, speed: 220, dumping: false, pass: 0 };
+  floatText(520, 70, pick(PLOW_LINES), "#ffd166", 2.2);
+  crowdGroan();
+}
+
+function drivewayDumpSnow() {
+  // ALWAYS dump snow back onto driveway — never truly clear
+  let added = 0;
+  for (let r = 0; r < driveway.rows; r++) {
+    for (let c = 0; c < driveway.cols; c++) {
+      const add = 0.55 + Math.random() * 0.4;
+      const before = driveway.snow[r][c];
+      driveway.snow[r][c] = Math.min(1.15, before + add);
+      added += driveway.snow[r][c] - before;
+    }
+  }
+  driveway.cleared = Math.max(0, driveway.cleared - added * 0.8);
+  state.scoreUsa += 1; // plow "wins"
+  state.hate += 3;
+  state.scoreCan = Math.max(0, state.scoreCan - 5);
+  floatText(520, 120, "PLOW DUMPED IT ALL BACK", "#4da6ff", 2.5);
+  addBurst(520, 300, "#dbeafe", 24);
+  crowdBoo();
+  updateHud();
+}
+
+function drivewayOnPointer(x, y, kind) {
+  if (!driveway || state.phase !== "drive_play") return;
+  mouse.x = x; mouse.y = y;
+  if (kind === "down" || kind === "move") {
+    // move player toward point & shovel
+    const dx = x - driveway.px, dy = y - driveway.py;
+    const d = Math.hypot(dx, dy) || 1;
+    driveway.px = clamp(driveway.px + (dx / d) * 14, 60, 980);
+    driveway.py = clamp(driveway.py + (dy / d) * 14, 160, 580);
+    driveway.shovelAngle = Math.atan2(dy, dx);
+    drivewayShovelAt(x, y);
+  }
+}
+
+function updateDriveway(dt) {
+  if (!driveway || state.phase !== "drive_play") return;
+  state.timeLeft -= dt;
+  if (driveway.msgTimer > 0) driveway.msgTimer -= dt;
+  if (driveway.shovelCooldown > 0) driveway.shovelCooldown -= dt;
+  if (driveway.sweat > 0) driveway.sweat -= dt * 0.05;
+
+  // Keyboard move
+  let mx = 0, my = 0;
+  if (keys["KeyW"] || keys["ArrowUp"]) my -= 1;
+  if (keys["KeyS"] || keys["ArrowDown"]) my += 1;
+  if (keys["KeyA"] || keys["ArrowLeft"]) mx -= 1;
+  if (keys["KeyD"] || keys["ArrowRight"]) mx += 1;
+  if (mx || my) {
+    const len = Math.hypot(mx, my) || 1;
+    driveway.px = clamp(driveway.px + (mx / len) * 180 * dt, 60, 980);
+    driveway.py = clamp(driveway.py + (my / len) * 180 * dt, 160, 580);
+    driveway.shovelAngle = Math.atan2(my, mx);
+    drivewayShovelAt(driveway.px + Math.cos(driveway.shovelAngle) * 40, driveway.py + Math.sin(driveway.shovelAngle) * 40);
+  }
+  // Auto shovel when mouse held
+  if (mouse.down) {
+    drivewayOnPointer(mouse.x, mouse.y, "move");
+  }
+
+  // Plow cycle — ALWAYS returns snow
+  driveway.plowTimer -= dt;
+  if (!driveway.plow && driveway.plowTimer <= 0) {
+    drivewaySpawnPlow();
+  }
+  if (driveway.plow) {
+    driveway.plow.x += driveway.plow.speed * dt;
+    if (!driveway.plow.dumping && driveway.plow.x > 200) {
+      driveway.plow.dumping = true;
+      drivewayDumpSnow();
+    }
+    if (driveway.plow.x > 1100) {
+      driveway.plow = null;
+      driveway.plowTimer = rand(7, 12);
+      driveway.msg = pick(DRIVEWAY_LINES);
+      driveway.msgTimer = 2;
+    }
+  }
+
+  // If somehow mostly clear, plow arrives immediately
+  let remaining = 0;
+  for (let r = 0; r < driveway.rows; r++)
+    for (let c = 0; c < driveway.cols; c++) remaining += driveway.snow[r][c];
+  const clearPct = 1 - remaining / (driveway.rows * driveway.cols);
+  if (clearPct > 0.55 && !driveway.plow) {
+    driveway.plowTimer = Math.min(driveway.plowTimer, 0.8);
+    floatText(520, 90, "Looking clear… municipal destiny approaches", "#ff8fa3", 1.5);
+  }
+
+  updateHud();
+  if (state.timeLeft <= 0) {
+    endDriveway();
+  }
+}
+
+function endDriveway() {
+  if (state.phase === "drive_results") return;
+  state.phase = "drive_results";
+  // Never win: USA (plow) always "ahead"
+  if (state.scoreUsa <= 0) state.scoreUsa = 1;
+  if (state.scoreCan >= state.scoreUsa * 10) {
+    // effort was huge — punish
+    state.hate += 5;
+  }
+  state.hate += 2;
+  const verdict = pick(DRIVEWAY_RESULT_VERDICTS);
+  showOverlay(`
+    <div class="poster-tag">MUNICIPAL POST-MORTEM</div>
+    <h2 class="red">DRIVEWAY: UNCLEARED</h2>
+    <div class="broadcast">EFFORT ${state.scoreCan} &nbsp;—&nbsp; PLOW PASSES ${state.scoreUsa}<br/>
+    Hate Index: ${state.hate}</div>
+    <div class="verdict">${verdict}</div>
+    <p class="tiny">You shoveled. The city had a schedule. Caring is punished.</p>
+    <div class="btns">
+      <button class="btn-go" id="again">Shovel again</button>
+      <button class="btn-dim" id="mainMenu">Main Menu</button>
+    </div>
+  `);
+  document.getElementById("again").onclick = () => startDriveway();
+  document.getElementById("mainMenu").onclick = () => showMainMenu();
+  syncMobileChrome();
+}
+
+function renderDriveway(dt) {
+  if (!driveway) return;
+  const W = canvas.width, H = canvas.height;
+  // Sky
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, "#1a2332");
+  sky.addColorStop(1, "#4a5568");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+  // House
+  ctx.fillStyle = "#6b3a3a";
+  ctx.fillRect(60, 40, 220, 130);
+  ctx.fillStyle = "#3b2118";
+  ctx.beginPath();
+  ctx.moveTo(50, 40);
+  ctx.lineTo(170, 0);
+  ctx.lineTo(290, 40);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#87ceeb";
+  ctx.fillRect(90, 70, 50, 40);
+  ctx.fillRect(180, 70, 50, 40);
+  ctx.fillStyle = "#2a1810";
+  ctx.fillRect(140, 110, 40, 60);
+  // Garage
+  ctx.fillStyle = "#5a5a5a";
+  ctx.fillRect(300, 80, 200, 90);
+  ctx.fillStyle = "#333";
+  ctx.fillRect(320, 100, 160, 70);
+  // Street
+  ctx.fillStyle = "#2d2d2d";
+  ctx.fillRect(0, 520, W, 100);
+  ctx.strokeStyle = "#ffd166";
+  ctx.setLineDash([20, 16]);
+  ctx.beginPath();
+  ctx.moveTo(0, 570);
+  ctx.lineTo(W, 570);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Driveway bed
+  ctx.fillStyle = "#3f3f46";
+  ctx.fillRect(driveway.originX - 4, driveway.originY - 4, driveway.cols * driveway.cellW + 8, driveway.rows * driveway.cellH + 8);
+
+  // Snow cells
+  for (let r = 0; r < driveway.rows; r++) {
+    for (let c = 0; c < driveway.cols; c++) {
+      const h = driveway.snow[r][c];
+      const x = driveway.originX + c * driveway.cellW;
+      const y = driveway.originY + r * driveway.cellH;
+      if (h < 0.05) {
+        ctx.fillStyle = "#52525b";
+        ctx.fillRect(x + 1, y + 1, driveway.cellW - 2, driveway.cellH - 2);
+      } else {
+        const g = 220 + (h * 20);
+        ctx.fillStyle = `rgb(${g|0},${(g*0.98)|0},${(g*1.02)|0})`;
+        const hh = driveway.cellH * Math.min(1, h);
+        ctx.fillRect(x + 1, y + driveway.cellH - hh, driveway.cellW - 2, hh);
+        if (h > 0.7) {
+          ctx.fillStyle = "rgba(255,255,255,0.5)";
+          ctx.fillRect(x + 4, y + driveway.cellH - hh + 2, driveway.cellW - 8, 4);
+        }
+      }
+    }
+  }
+
+  // Depth marker
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  roundRectPath(820, 40, 180, 50, 8);
+  ctx.fill();
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = "bold 12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("~3 ft of destiny", 910, 60);
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "11px sans-serif";
+  ctx.fillText("Plow ETA: municipal", 910, 78);
+
+  // Player (hoser in tuque)
+  const px = driveway.px, py = driveway.py;
+  ctx.fillStyle = "#c81e1e";
+  ctx.beginPath();
+  ctx.arc(px, py - 28, 16, 0, Math.PI * 2);
+  ctx.fill(); // tuque
+  ctx.fillStyle = "#e8c4a8";
+  ctx.beginPath();
+  ctx.arc(px, py - 18, 14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#1e3a5f";
+  ctx.fillRect(px - 14, py - 8, 28, 36);
+  ctx.fillStyle = "#333";
+  ctx.fillRect(px - 12, py + 28, 10, 22);
+  ctx.fillRect(px + 2, py + 28, 10, 22);
+  // Shovel
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate(driveway.shovelAngle);
+  ctx.fillStyle = "#888";
+  ctx.fillRect(10, -3, 42, 6);
+  ctx.fillStyle = "#cbd5e1";
+  ctx.fillRect(48, -14, 18, 28);
+  ctx.restore();
+
+  // Plow
+  if (driveway.plow) {
+    const x = driveway.plow.x;
+    const y = 500;
+    ctx.fillStyle = "#f59e0b";
+    ctx.fillRect(x, y - 40, 140, 50);
+    ctx.fillStyle = "#1e3a5f";
+    ctx.fillRect(x + 20, y - 70, 60, 35);
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.arc(x + 30, y + 15, 16, 0, Math.PI * 2);
+    ctx.arc(x + 110, y + 15, 16, 0, Math.PI * 2);
+    ctx.fill();
+    // blade dumping snow
+    ctx.fillStyle = "#e2e8f0";
+    ctx.beginPath();
+    ctx.moveTo(x - 10, y - 20);
+    ctx.lineTo(x + 30, y + 10);
+    ctx.lineTo(x - 10, y + 30);
+    ctx.closePath();
+    ctx.fill();
+    if (driveway.plow.dumping) {
+      for (let i = 0; i < 8; i++) {
+        ctx.fillStyle = "rgba(240,245,255,0.8)";
+        ctx.beginPath();
+        ctx.arc(x + rand(-20, 40), y - rand(20, 80), rand(4, 10), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("CITY PLOW", x + 70, y - 80);
+  }
+
+  // Falling snow flakes cosmetic
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  const t = performance.now() / 1000;
+  for (let i = 0; i < 40; i++) {
+    const fx = (i * 97 + t * 30) % W;
+    const fy = (i * 53 + t * 60) % H;
+    ctx.fillRect(fx, fy, 2, 2);
+  }
+
+  if (driveway.msg && driveway.msgTimer > 0) {
+    ctx.fillStyle = "rgba(5,8,15,0.8)";
+    roundRectPath(260, 100, 520, 34, 8);
+    ctx.fill();
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(driveway.msg, 520, 122);
+  }
+}
+
+
 // Boot
 fitCanvas();
 syncMobileChrome();
-showTeamPick();
+showMainMenu();
 const unlockAudio = () => { ensureAudio(); try { speechSynthesis.getVoices(); } catch (_) {} };
 window.addEventListener("pointerdown", unlockAudio, { once: true });
 window.addEventListener("keydown", unlockAudio, { once: true });

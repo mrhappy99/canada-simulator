@@ -1,150 +1,72 @@
-# Canada Simulator — Level 1: The Rink
+# Canada Simulator
 
 Affectionate, self-deprecating Canada–US rivalry satire. You want Canada to win. The systems are rigged. Caring is punished.
 
-**v1 scope:** Level 1 vertical slice only (team pick → playable hockey → fights → Hate Index → results card).
+**Visual style:** Super Chexx / bubble-hockey chunky **1970s** flat-vector cartoon (not photo-real). Canvas 2D single-file.
 
-**Visual style:** Super Chexx / bubble-hockey table aesthetic — chunky **1970s no-helmet** plastic men (mullets, sideburns, stubble), big glowing puck, scratched/floodable ice with CAN/USA flags, random Zamboni, outraged Québécois announcer captions, dome vignette, LCD jumbotron HUD. Canvas 2D top-down (not WebGL).
+## Levels (main menu)
+
+| Level | What you do | The joke |
+|---|---|---|
+| **The Rink** | Team pick → bubble hockey → fights | Canada never scores; fights are one-punch KOs |
+| **Saturday Night Canada** | 4-handed euchre in a hoser apartment | Partner plays like a donut; Chad/Brad take the euchre |
+| **The Driveway** | Shovel ~3 ft of snow | Municipal plow **always** dumps it back |
+
+Stubs (menu only): Boardroom · Lake America · Québec · Parliament
 
 ## Files
 
-- `canada-simulator.html` — complete playable single-file game (Canvas 2D + vanilla JS, no build step)
+- `canada-simulator.html` — complete playable game (Canvas 2D + vanilla JS, no build)
 - `README.md` — this file
 
-## How to open / serve
-
-**Option A — double-click**
-
-Open `canada-simulator.html` in a modern browser (Chrome, Firefox, Edge, Safari).
-
-**Option B — static server**
+## How to open
 
 ```bash
-cd /path/to/canada-simulator
+# double-click the HTML, or:
 python3 -m http.server 8080
-# then visit http://localhost:8080/canada-simulator.html
+# http://localhost:8080/canada-simulator.html
 ```
 
-No backend, no login, no npm install.
+No backend, no npm.
 
 ## Controls
 
-### Desktop
+**The Rink:** WASD/arrows skate · mouse aim · click/F shoot · Space/near-click fight. Mobile: drag skate · tap shoot · SHOOT/FIGHT buttons.
 
-| Input | Action |
-|---|---|
-| **WASD** or **Arrow keys** | Skate |
-| **Mouse** | Aim |
-| **Left click** or **F** | Shoot (Canada has a slow wet-cardboard windup) |
-| **Space** or **click near an opponent** | Start a fight |
+**Saturday Night Canada:** tap/click cards to bid & play · hot-knives gag buttons when the stoner appears.
 
-### Mobile / touch (phone browser)
+**The Driveway:** WASD/arrows or drag/tap to move & shovel toward the pointer.
 
-Touch UI appears on coarse-pointer devices or narrow screens. Desktop keys/mouse still work.
+## Joke engine (do not “fix”)
 
-| Input | Action |
-|---|---|
-| **Drag on the ice** | Skate toward your finger; release to coast |
-| **Tap** (away from foes) | Shoot toward the tap |
-| **Tap near an opponent** | Start a fight |
-| **SHOOT** / **FIGHT** buttons | Bottom-right on-screen cluster (same actions) |
+- **Rink:** `CANADA_LOSE_MULTIPLIER = 0` + `denyCanadianGoal()` — Canadian goals never count when playing Canada.
+- **Euchre:** partner (Doug) donut AI, trick steals when you care, renege vibes, HNIC TV boos raise Hate Index; match tally biases Americans.
+- **Driveway:** clearing snow only summons the plow sooner; `drivewayDumpSnow()` always refills the grid.
 
-Team pick and results buttons use larger tap targets (~44px+). Canvas uses `touch-action: none` and a non-scalable viewport meta so the rink fills the screen without scroll/zoom fighting the game.
+## Joke / dialogue arrays (top of `<script>`)
 
-## Team tuning
+**Rink:** `CANADA_FIGHT_LINES`, `USA_CROWD_LINES`, `RESULT_VERDICTS`, `CANADA_MISS_LINES`, `REF_LINES`, `ZAMBONI_LINES`, `ANNOUNCER_LINES`, roster names.
 
-### Canada (the joke)
+**Saturday Night:** `HOSER_LINES`, `STONER_LINES`, `EUCHRE_BANTER`, `TV_BOOS`, `HOT_KNIVES_LINES`, `SNC_RESULT_VERDICTS`.
 
-- Stick like wet cardboard (slow windup, weak shot)
-- High puck damping (underwater feel)
-- Canadian goalie checks phone, bad tracking
-- **Scoreboard never awards a Canadian goal**
-- Fights: always lose — one-punch KO, maple leaf stamp on forehead, wake on ice
-- Ref gives the American a **decorative** penalty (no score/PP change)
-- Hate Index +5 per lost fight
-- Final score always USA ahead after the 105s buzzer
+**Driveway:** `DRIVEWAY_LINES`, `PLOW_LINES`, `DRIVEWAY_RESULT_VERDICTS`.
 
-### USA
-
-- Fast snappy shots
-- Scores on breakaways
-- Crowd “U-S-A!” flashes
-- Multi-arm American goalie gag
-
-## Where the lose-multiplier lives
-
-**File:** `canada-simulator.html`
-
-**Search strings (pick one):**
-
-1. `CANADA_LOSE_MULTIPLIER`
-2. `denyCanadianGoal`
-
-**Exact pieces:**
-
-| Piece | What it is |
-|---|---|
-| `const CANADA_LOSE_MULTIPLIER = 0` | Constant near the top of the `<script>` block (after the joke arrays). `0` means Canadian goals **never** count when you play as Canada. |
-| `function denyCanadianGoal(teamAttacking)` | Hard gate. Returns `true` → deny the goal. |
-| `awardGoal(team)` | Call site: first thing it does is `if (denyCanadianGoal(team)) { … NO GOAL theatre … return; }` |
-
-Loud comment block in the HTML immediately above the constant is titled:
-
-`LOSE MULTIPLIER — CRITICAL JOKE ENGINE`
-
-Do **not** raise `CANADA_LOSE_MULTIPLIER` above `0` for Level 1 authenticity.
-
-## How to add taunts / jokes
-
-All joke pools are plain arrays at the **top of the `<script>`** in `canada-simulator.html`. Edit text only — no engine changes needed.
-
-| Array | Used for |
-|---|---|
-| `CANADA_FIGHT_LINES` | Lines during Canada fight KOs |
-| `USA_CROWD_LINES` | Crowd / USA goal callouts |
-| `RESULT_VERDICTS` | Post-buzzer results card (rotates randomly) |
-| `CANADA_MISS_LINES` | Denied Canadian “goals” |
-| `REF_LINES` | Decorative penalty quips |
-| `ZAMBONI_LINES` | Zamboni appearance callouts |
-| `CANADA_SKATER_NAMES` | Exactly 5 funny French-Canadian skater names |
-| `USA_SKATER_NAMES` | Short manly US names (Chad, Brad, …) |
-| `ANNOUNCER_LINES` | Caption/speech pools by event kind |
-
-Stub arrays (for later levels, not wired in v1 play):
-
-`BOARDROOM_LINES`, `LAKE_SIGNS`, `QUEBEC_TAUNTS`, `PARLIAMENT_RED`, `PARLIAMENT_BLUE`
-
-**Tone rule:** Punch politicians, institutions, and national clichés. Never punch real civilian identity groups.
+**Tone:** Punch clichés & institutions — not real civilian identity groups.
 
 ## Match flow
 
-1. Team pick overlay (Canada or USA)
-2. ~105 seconds of top-down rink play
-3. Optional fights via Space / nearby click / tap / FIGHT button
-4. Buzzer → results card with satirical verdict + Hate Index
-5. Play again or change team
+1. Main menu → pick a level  
+2. Play (rink ~105s / euchre to ~5 pts or ~4 hands / driveway ~75s)  
+3. Results card + Hate Index → Again or Main Menu  
 
-**HUD:** America Hate Index starts at 0 and only increases during the session (fights, denied goals, USA scores while playing Canada).
+Hate Index persists for the page session; refresh resets it.
 
-## Announcer / crowd / Zamboni
+## Known limits
 
-- **Announcer:** Web Speech API (`speechSynthesis`) + on-screen caption bubble. Outraged theatrical fake Québécois French energy (affectionate satire). Reacts to faceoffs, USA goals, denied Canada goals, fight KOs, Zamboni, buzzer.
-- **Names:** `CANADA_SKATER_NAMES` (exactly 5) and `USA_SKATER_NAMES` near the top of the script; assigned each match with jersey numbers + ice tags.
-- **Crowd stings:** Web Audio oscillator/noise bursts + floating `BOOOO` / `YAAY?` text. Canada possession gets a brief hopeful cheer that dies into boos. Losing as Canada biases ambient boos/groans.
-- **Zamboni:** Random mid-period (~25–45s cooldown). Floods ice (`iceFresh` fades scratches), bumps players (brief stun) and puck, exits off-rink. Joke lines in `ZAMBONI_LINES`.
-
-## Known v1 limits
-
-- Level 1 only — no Boardroom / Lake America / Quebec / Parliament / finale yet
-- No full main menu for other levels
-- Procedural Web Audio crowd beeps/noise + SpeechSynthesis announcer (no sample files); text pops/captions always work muted
-- AI is intentionally cartoonish, not NHL-sim accurate
-- Mobile touch overlay supported (drag-to-skate + SHOOT/FIGHT); still a Canvas 2D single-file build, not a native app
-- Single HTML file; Phaser not used (vanilla Canvas)
-- Bubble-hockey 1970s painted-men look (no helmets; not NHL-realism sprites); dome overlay is cosmetic
-- Speech/crowd audio needs a user gesture on some browsers; captions/text pops always show
-- Hate Index persists across rematches in the same page session; refresh resets it
-- Decorative penalties intentionally do nothing (by design)
+- Euchre is legal-*ish* North American (bowers, order-up, name trump); AI is cartoonish and intentionally biased.
+- Hot knives = set-piece comedy only (woozy tilt), not instructional.
+- Procedural Web Audio + SpeechSynthesis; captions/text always work muted.
+- Single HTML file; mobile-friendly taps; not a native app.
 
 ## Creative north star
 
