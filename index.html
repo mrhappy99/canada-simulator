@@ -8,7 +8,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
     width: 100%; height: 100%;
-    background: #0a1628;
+    background: radial-gradient(ellipse at 50% 20%, #1a2740 0%, #070d18 55%, #03060c 100%);
     color: #f5f5f5;
     font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
     overflow: hidden;
@@ -17,147 +17,223 @@
   #wrap {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    width: 100%; height: 100%; gap: 8px;
+    width: 100%; height: 100%; gap: 6px;
+    padding: 6px 0;
   }
-  h1 {
-    font-size: 22px; letter-spacing: 0.04em;
-    color: #ff4d4d; text-shadow: 0 0 12px rgba(255,77,77,0.4);
+  #titleBar {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    text-align: center; padding: 0 10px;
   }
-  h1 span { color: #7eb8ff; }
-  #hud {
-    display: flex; gap: 18px; flex-wrap: wrap;
-    justify-content: center; font-size: 14px; font-weight: 600;
-    min-height: 22px;
+  #titleBar .logo-leaf { width: 28px; height: 28px; flex-shrink: 0; }
+  #titleBar h1 {
+    font-size: clamp(16px, 4.2vw, 26px);
+    letter-spacing: 0.12em;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 2px 0 #8b0000, 0 0 18px rgba(255,60,60,0.45);
+    text-transform: uppercase;
   }
-  #hud .hate { color: #ff6b6b; }
-  #hud .score { color: #fff; }
-  #hud .time { color: #ffd166; }
-  #hud .team { color: #a8e6cf; }
+  #titleBar h1 span {
+    display: block;
+    font-size: 0.48em;
+    letter-spacing: 0.28em;
+    color: #7eb8ff;
+    text-shadow: 0 1px 0 #0a2540;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  #jumbotron {
+    display: flex; align-items: stretch; gap: 0;
+    background: linear-gradient(180deg, #1c2433 0%, #0d121c 100%);
+    border: 3px solid #3a4558;
+    border-radius: 10px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 20px rgba(0,0,0,0.55), 0 0 0 2px #0a0e14;
+    overflow: hidden;
+    max-width: 96vw;
+    min-height: 56px;
+  }
+  #jumbotron .side {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 6px 14px; min-width: 88px;
+  }
+  #jumbotron .side.can {
+    background: linear-gradient(180deg, #c81e1e 0%, #8b0000 100%);
+    border-right: 2px solid #3a4558;
+  }
+  #jumbotron .side.usa {
+    background: linear-gradient(180deg, #1e4a8c 0%, #0c2348 100%);
+    border-left: 2px solid #3a4558;
+  }
+  #jumbotron .side .lab { font-size: 10px; font-weight: 800; letter-spacing: 0.18em; opacity: 0.9; }
+  #jumbotron .side .num {
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 28px; font-weight: 900; line-height: 1;
+    text-shadow: 0 0 8px rgba(255,255,255,0.35);
+  }
+  #jumbotron .mid {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; padding: 6px 16px; flex: 1; min-width: 160px;
+    background: #05080f;
+  }
+  #jumbotron .clock {
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 22px; font-weight: 900; color: #ffd166;
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 10px rgba(255,209,102,0.4);
+  }
+  #jumbotron .team-chip { font-size: 11px; font-weight: 700; color: #a8e6cf; letter-spacing: 0.06em; }
+  #hateWrap { width: 100%; max-width: 280px; margin-top: 2px; }
+  #hateWrap .hate-lab {
+    font-size: 9px; font-weight: 800; letter-spacing: 0.14em;
+    color: #ff6b6b; text-align: center; margin-bottom: 2px;
+  }
+  #hateBar {
+    height: 10px; border-radius: 4px;
+    background: #1a1020; border: 1px solid #5c2030; overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
+  }
+  #hateFill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #7f1d1d, #ff4d4d 60%, #ffd166);
+    box-shadow: 0 0 8px rgba(255,77,77,0.6);
+    transition: width 0.25s ease-out;
+  }
   canvas {
-    background: #0d2137;
-    border: 3px solid #1a3a5c;
-    border-radius: 6px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
-    max-width: 96vw; max-height: 72vh;
+    background: #0a1520;
+    border: 4px solid #2a3548;
+    border-radius: 14px;
+    box-shadow: 0 10px 36px rgba(0,0,0,0.55), inset 0 0 0 2px rgba(255,255,255,0.06);
+    max-width: 96vw; max-height: 68vh;
     cursor: crosshair;
     touch-action: none;
     -ms-touch-action: none;
     display: block;
-    width: auto;
-    height: auto;
+    width: auto; height: auto;
   }
-  #hint {
-    font-size: 12px; color: #8aa4c0; text-align: center; max-width: 900px;
-  }
+  #hint { font-size: 12px; color: #7a93ad; text-align: center; max-width: 960px; padding: 0 10px; }
   #overlay {
     position: fixed; inset: 0;
-    background: rgba(6, 12, 24, 0.88);
+    background: radial-gradient(ellipse at 50% 30%, rgba(40,20,30,0.55), rgba(4,8,16,0.94));
     display: flex; align-items: center; justify-content: center;
     z-index: 10;
   }
   #overlay.hidden { display: none; }
   .card {
-    background: linear-gradient(160deg, #132840 0%, #0d1a2c 100%);
-    border: 2px solid #2a5080;
-    border-radius: 14px;
-    padding: 28px 36px;
-    max-width: 520px; width: 92vw;
+    background: linear-gradient(165deg, #1a283c 0%, #0c1524 55%, #0a101c 100%);
+    border: 3px solid #c81e1e;
+    border-radius: 16px;
+    padding: 28px 32px;
+    max-width: 540px; width: 92vw;
     text-align: center;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    box-shadow: 0 0 0 4px #0c2348, 0 20px 60px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.08);
+    position: relative; overflow: hidden;
   }
-  .card h2 { font-size: 28px; margin-bottom: 8px; color: #ffd166; }
-  .card h2.red { color: #ff4d4d; }
-  .card h2.blue { color: #4da6ff; }
-  .card p { margin: 10px 0; line-height: 1.45; color: #c8d8ea; font-size: 15px; }
+  .card::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(-12deg, transparent, transparent 18px, rgba(255,255,255,0.015) 18px, rgba(255,255,255,0.015) 19px);
+    pointer-events: none;
+  }
+  .card .poster-tag {
+    display: inline-block;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.22em;
+    color: #ffd166; background: rgba(0,0,0,0.35);
+    border: 1px solid #5a4a20; border-radius: 999px;
+    padding: 4px 12px; margin-bottom: 10px;
+  }
+  .card h2 {
+    font-size: clamp(26px, 6vw, 36px); margin-bottom: 6px;
+    font-weight: 900; letter-spacing: 0.06em;
+    color: #fff;
+    text-shadow: 0 3px 0 #8b0000, 0 0 20px rgba(255,60,60,0.35);
+    text-transform: uppercase;
+  }
+  .card h2.red { color: #ff6b6b; text-shadow: 0 3px 0 #4a0000, 0 0 18px rgba(255,77,77,0.4); }
+  .card h2.blue { color: #6eb6ff; text-shadow: 0 3px 0 #0a2540, 0 0 18px rgba(77,166,255,0.4); }
+  .card .subhead {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.2em;
+    color: #7eb8ff; margin-bottom: 12px; text-transform: uppercase;
+  }
+  .card p { margin: 10px 0; line-height: 1.45; color: #c8d8ea; font-size: 15px; position: relative; }
   .card .verdict {
-    font-size: 18px; font-weight: 700; color: #fff;
-    margin: 18px 0; padding: 14px;
-    background: rgba(255,77,77,0.12);
-    border-left: 4px solid #ff4d4d;
-    border-radius: 4px; text-align: left;
+    font-size: 17px; font-weight: 800; color: #fff;
+    margin: 16px 0; padding: 14px 16px;
+    background: linear-gradient(90deg, rgba(200,30,30,0.2), rgba(30,74,140,0.2));
+    border: 2px solid #3a4558; border-left: 5px solid #ff4d4d;
+    border-radius: 8px; text-align: left; position: relative;
   }
-  .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+  .card .broadcast {
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 13px; color: #ffd166; letter-spacing: 0.04em;
+    background: #05080f; border: 1px solid #2a3548;
+    border-radius: 6px; padding: 10px; margin: 12px 0;
+  }
+  .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 18px; position: relative; }
   button {
     appearance: none; border: none; cursor: pointer;
-    font: inherit; font-weight: 700; font-size: 15px;
-    padding: 12px 22px; border-radius: 8px;
+    font: inherit; font-weight: 800; font-size: 15px;
+    padding: 14px 24px; border-radius: 10px;
     transition: transform 0.08s, filter 0.15s;
-  }
-  button:hover { filter: brightness(1.1); transform: translateY(-1px); }
-  button:active { transform: translateY(1px); }
-  .btn-ca { background: #e63946; color: #fff; }
-  .btn-us { background: #1d4e89; color: #fff; }
-  .btn-go { background: #2a9d8f; color: #fff; }
-  .btn-dim { background: #334155; color: #cbd5e1; }
-  .tiny { font-size: 12px; color: #7a93ad; margin-top: 14px; }
-  button {
-    min-height: 44px;
-    min-width: 44px;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.35);
+    min-height: 48px; min-width: 48px;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
-  #gameArea {
-    position: relative;
-    display: inline-block;
-    line-height: 0;
-    max-width: 100%;
-  }
+  button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.35); }
+  .btn-ca { background: linear-gradient(180deg, #e63946, #b91c1c); color: #fff; border: 2px solid #ffb4b4; }
+  .btn-us { background: linear-gradient(180deg, #3b82f6, #1d4e89); color: #fff; border: 2px solid #93c5fd; }
+  .btn-go { background: linear-gradient(180deg, #2dd4a8, #0f766e); color: #fff; border: 2px solid #99f6e4; }
+  .btn-dim { background: linear-gradient(180deg, #475569, #334155); color: #e2e8f0; border: 2px solid #64748b; }
+  .tiny { font-size: 12px; color: #7a93ad; margin-top: 14px; position: relative; }
+  #gameArea { position: relative; display: inline-block; line-height: 0; max-width: 100%; }
   #mobileControls {
-    display: none;
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-    flex-direction: column;
-    gap: 10px;
-    z-index: 5;
-    pointer-events: none;
+    display: none; position: absolute; right: 10px; bottom: 10px;
+    flex-direction: column; gap: 10px; z-index: 5; pointer-events: none;
   }
-  #mobileControls.visible {
-    display: flex;
-  }
+  #mobileControls.visible { display: flex; }
   #mobileControls button {
-    pointer-events: auto;
-    min-width: 76px;
-    min-height: 48px;
-    padding: 12px 16px;
-    font-size: 14px;
-    letter-spacing: 0.04em;
-    opacity: 0.9;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    pointer-events: auto; min-width: 80px; min-height: 50px;
+    padding: 12px 16px; font-size: 14px; letter-spacing: 0.06em;
+    opacity: 0.92; box-shadow: 0 4px 14px rgba(0,0,0,0.4);
   }
-  #mShoot { background: #2a9d8f; color: #fff; }
-  #mFight { background: #e63946; color: #fff; }
+  #mShoot { background: linear-gradient(180deg, #2dd4a8, #0f766e); color: #fff; border: 2px solid #99f6e4; }
+  #mFight { background: linear-gradient(180deg, #e63946, #b91c1c); color: #fff; border: 2px solid #ffb4b4; }
   @media (max-width: 900px), (pointer: coarse) {
-    h1 { font-size: 15px; padding: 0 8px; text-align: center; }
-    #hud { font-size: 12px; gap: 10px; padding: 0 6px; }
+    #titleBar h1 { font-size: 15px; }
+    #jumbotron .side { min-width: 64px; padding: 4px 8px; }
+    #jumbotron .side .num { font-size: 22px; }
+    #jumbotron .clock { font-size: 18px; }
+    #jumbotron .mid { padding: 4px 8px; min-width: 120px; }
     #hint { font-size: 11px; padding: 0 10px; max-width: 96vw; }
-    canvas {
-      max-width: 100vw;
-      max-height: calc(100dvh - 150px);
-      border-width: 2px;
-    }
-    .card { padding: 22px 18px; width: 94vw; }
+    canvas { max-width: 100vw; max-height: calc(100dvh - 175px); border-width: 3px; border-radius: 10px; }
+    .card { padding: 22px 16px; width: 94vw; }
     .card h2 { font-size: 24px; }
-    .btns button {
-      min-height: 48px;
-      padding: 14px 22px;
-      font-size: 16px;
-      flex: 1 1 auto;
-    }
+    .btns button { min-height: 50px; padding: 14px 20px; font-size: 15px; flex: 1 1 auto; }
   }
 </style>
 </head>
 <body>
+
+
 <div id="wrap">
-  <h1>CANADA SIMULATOR <span>— Level 1: The Rink</span></h1>
-  <div id="hud">
-    <span class="team" id="hudTeam">Team: —</span>
-    <span class="score" id="hudScore">CAN 0 — USA 0</span>
-    <span class="time" id="hudTime">1:45</span>
-    <span class="hate" id="hudHate">America Hate Index: 0</span>
+  <div id="titleBar">
+    <svg class="logo-leaf" viewBox="0 0 24 24" aria-hidden="true"><path fill="#e63946" d="M12 2 L14 8 L20 6 L16 11 L22 14 L15 14 L17 20 L12 16 L7 20 L9 14 L2 14 L8 11 L4 6 L10 8 Z"/></svg>
+    <h1>CANADA SIMULATOR<span>Level 1 — Bubble Rink</span></h1>
+    <svg class="logo-leaf" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4da6ff" d="M12 2l2.2 6.8H22l-5.5 4 2.1 6.7L12 15.8 5.4 19.5l2.1-6.7L2 8.8h7.8z"/></svg>
+  </div>
+  <div id="jumbotron" aria-live="polite">
+    <div class="side can"><div class="lab">CAN</div><div class="num" id="hudScoreCan">0</div></div>
+    <div class="mid">
+      <div class="clock" id="hudTime">1:45</div>
+      <div class="team-chip" id="hudTeam">PICK A TEAM</div>
+      <div id="hateWrap"><div class="hate-lab">AMERICA HATE INDEX</div><div id="hateBar"><div id="hateFill"></div></div></div>
+    </div>
+    <div class="side usa"><div class="lab">USA</div><div class="num" id="hudScoreUsa">0</div></div>
   </div>
   <div id="gameArea">
-    <canvas id="game" width="900" height="520"></canvas>
+    <canvas id="game" width="1040" height="620"></canvas>
     <div id="mobileControls" aria-hidden="true">
       <button type="button" id="mShoot">SHOOT</button>
       <button type="button" id="mFight">FIGHT</button>
@@ -173,6 +249,7 @@
 <script>
 /* ============================================================================
   CANADA SIMULATOR — Level 1: The Rink
+  Aesthetic: Super Chexx / bubble hockey table (hand-painted plastic men).
   Affectionate Canada–US rivalry satire. Punch clichés & institutions, not people.
 ============================================================================ */
 
@@ -271,14 +348,14 @@ const mobileControls = document.getElementById("mobileControls");
 const hintEl = document.getElementById("hint");
 
 const keys = Object.create(null);
-let mouse = { x: 450, y: 260, down: false };
+let mouse = { x: 520, y: 310, down: false };
 let shootQueued = false;
 let fightQueued = false;
 
 /* Mobile: drag-to-skate toward finger; release = coast.
    Short tap = shoot at tap (or fight if near opponent).
    Optional SHOOT / FIGHT buttons bottom-right. */
-const touchSkate = { active: false, x: 450, y: 260 };
+const touchSkate = { active: false, x: 520, y: 310 };
 const activeTouches = new Map(); // id -> { sx, sy, x, y, t0, skating }
 const TAP_MOVE_PX = 18;
 const TAP_MAX_MS = 320;
@@ -317,7 +394,7 @@ function syncMobileChrome() {
 function fitCanvas() {
   const narrow = wantsMobileUI() || window.innerWidth <= 900;
   const maxW = narrow ? window.innerWidth : window.innerWidth * 0.96;
-  const reserved = narrow ? 150 : window.innerHeight * 0.28;
+  const reserved = narrow ? 185 : window.innerHeight * 0.30;
   const maxH = Math.max(160, window.innerHeight - reserved);
   const scale = Math.min(maxW / canvas.width, maxH / canvas.height, 1);
   const w = Math.max(1, Math.floor(canvas.width * scale));
@@ -436,10 +513,10 @@ window.addEventListener("resize", () => { fitCanvas(); syncMobileChrome(); });
 window.addEventListener("orientationchange", () => { fitCanvas(); syncMobileChrome(); });
 
 /* ---------- RINK GEOMETRY ---------- */
-const RINK = { x: 40, y: 30, w: 820, h: 460 };
-const GOAL_W = 70, GOAL_D = 18;
-const leftGoal = { x: RINK.x - 4, y: RINK.y + RINK.h / 2 - GOAL_W / 2, w: GOAL_D, h: GOAL_W };
-const rightGoal = { x: RINK.x + RINK.w - GOAL_D + 4, y: RINK.y + RINK.h / 2 - GOAL_W / 2, w: GOAL_D, h: GOAL_W };
+const RINK = { x: 70, y: 48, w: 900, h: 524 };
+const GOAL_W = 78, GOAL_D = 20;
+const leftGoal = { x: RINK.x - 2, y: RINK.y + RINK.h / 2 - GOAL_W / 2, w: GOAL_D, h: GOAL_W };
+const rightGoal = { x: RINK.x + RINK.w - GOAL_D + 2, y: RINK.y + RINK.h / 2 - GOAL_W / 2, w: GOAL_D, h: GOAL_W };
 
 const MATCH_SECONDS = 105; // within 90–120s band
 
@@ -459,6 +536,9 @@ const state = {
   buzzerDone: false,
   usaPressure: 0,
   crowdFlash: 0,
+  goalFlash: 0,
+  iceSpray: [],
+  puckTrail: [],
 };
 
 let player, teammate, enemies, goalieCan, goalieUsa, puck;
@@ -470,15 +550,16 @@ function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 function nearOpponent() {
   if (!player || !enemies) return false;
-  return enemies.some((e) => dist(player, e) < 55);
+  return enemies.some((e) => dist(player, e) < 58);
 }
 
 function makeSkater(x, y, team, isPlayer) {
   return {
     x, y, vx: 0, vy: 0,
     team, isPlayer: !!isPlayer,
-    r: isPlayer ? 16 : 14,
+    r: isPlayer ? 18 : 16,
     facing: team === "CANADA" ? 1 : -1,
+    angle: team === "CANADA" ? 0 : Math.PI,
     stunned: 0,
     hasPuck: false,
     leafStamp: 0,
@@ -489,10 +570,11 @@ function resetPuck(cx, cy) {
   puck = {
     x: cx ?? (RINK.x + RINK.w / 2),
     y: cy ?? (RINK.y + RINK.h / 2),
-    vx: 0, vy: 0, r: 7,
+    vx: 0, vy: 0, r: 9,
     owner: null,
     lastShooter: null,
   };
+  state.puckTrail = [];
 }
 
 function setupMatch() {
@@ -500,25 +582,25 @@ function setupMatch() {
   const isCan = state.playerTeam === "CANADA";
 
   if (isCan) {
-    player = makeSkater(RINK.x + 180, midY, "CANADA", true);
-    teammate = makeSkater(RINK.x + 260, midY - 80, "CANADA", false);
+    player = makeSkater(RINK.x + 200, midY, "CANADA", true);
+    teammate = makeSkater(RINK.x + 280, midY - 90, "CANADA", false);
     enemies = [
-      makeSkater(RINK.x + RINK.w - 200, midY, "USA", false),
-      makeSkater(RINK.x + RINK.w - 280, midY + 70, "USA", false),
-      makeSkater(RINK.x + RINK.w - 320, midY - 90, "USA", false),
+      makeSkater(RINK.x + RINK.w - 220, midY, "USA", false),
+      makeSkater(RINK.x + RINK.w - 300, midY + 80, "USA", false),
+      makeSkater(RINK.x + RINK.w - 340, midY - 100, "USA", false),
     ];
   } else {
-    player = makeSkater(RINK.x + RINK.w - 180, midY, "USA", true);
-    teammate = makeSkater(RINK.x + RINK.w - 260, midY - 80, "USA", false);
+    player = makeSkater(RINK.x + RINK.w - 200, midY, "USA", true);
+    teammate = makeSkater(RINK.x + RINK.w - 280, midY - 90, "USA", false);
     enemies = [
-      makeSkater(RINK.x + 200, midY, "CANADA", false),
-      makeSkater(RINK.x + 280, midY + 70, "CANADA", false),
-      makeSkater(RINK.x + 320, midY - 90, "CANADA", false),
+      makeSkater(RINK.x + 220, midY, "CANADA", false),
+      makeSkater(RINK.x + 300, midY + 80, "CANADA", false),
+      makeSkater(RINK.x + 340, midY - 100, "CANADA", false),
     ];
   }
 
-  goalieCan = { x: RINK.x + 28, y: midY, r: 18, team: "CANADA", phone: true, arms: 2 };
-  goalieUsa = { x: RINK.x + RINK.w - 28, y: midY, r: 18, team: "USA", phone: false, arms: 4 };
+  goalieCan = { x: RINK.x + 32, y: midY, r: 20, team: "CANADA", phone: true, arms: 2 };
+  goalieUsa = { x: RINK.x + RINK.w - 32, y: midY, r: 20, team: "USA", phone: false, arms: 4 };
 
   resetPuck();
   puck.vx = rand(-40, 40);
@@ -530,11 +612,13 @@ function setupMatch() {
   state.fightLosses = 0;
   state.floatTexts = [];
   state.particles = [];
+  state.iceSpray = [];
   state.fight = null;
   state.windup = 0;
   state.buzzerDone = false;
   state.usaPressure = 0;
   state.crowdFlash = 0;
+  state.goalFlash = 0;
   state.phase = "play";
   hideOverlay();
   updateHud();
@@ -553,12 +637,14 @@ function hideOverlay() { overlay.classList.add("hidden"); }
 function showTeamPick() {
   state.phase = "pick";
   showOverlay(`
-    <h2>Level 1 — The Rink</h2>
+    <div class="poster-tag">CHAMPIONSHIP EDITION</div>
+    <h2>Canada Simulator</h2>
+    <div class="subhead">Level 1 — The Bubble Rink</div>
     <p>Pick a team. If you pick Canada, you will try very hard and lose very specifically.</p>
     <p class="tiny">Systems are rigged. Caring is punished. That is the product.</p>
     <div class="btns">
-      <button class="btn-ca" id="pickCan">🇨🇦 Team Canada</button>
-      <button class="btn-us" id="pickUsa">🇺🇸 Team USA</button>
+      <button class="btn-ca" id="pickCan">🍁 Team Canada</button>
+      <button class="btn-us" id="pickUsa">⭐ Team USA</button>
     </div>
     <p class="tiny">Desktop: WASD · mouse · click/F · Space &nbsp;|&nbsp; Phone: drag skate · tap shoot · FIGHT</p>
   `);
@@ -597,10 +683,14 @@ function addBurst(x, y, color, n) {
 function updateHud() {
   const m = Math.floor(Math.max(0, state.timeLeft) / 60);
   const s = Math.floor(Math.max(0, state.timeLeft) % 60).toString().padStart(2, "0");
-  document.getElementById("hudTeam").textContent = "Team: " + (state.playerTeam || "—");
-  document.getElementById("hudScore").textContent = `CAN ${state.scoreCan} — USA ${state.scoreUsa}`;
+  document.getElementById("hudScoreCan").textContent = String(state.scoreCan);
+  document.getElementById("hudScoreUsa").textContent = String(state.scoreUsa);
   document.getElementById("hudTime").textContent = `${m}:${s}`;
-  document.getElementById("hudHate").textContent = `America Hate Index: ${state.hate}`;
+  document.getElementById("hudTeam").textContent = state.playerTeam
+    ? ("YOU: " + state.playerTeam)
+    : "PICK A TEAM";
+  const hatePct = clamp(state.hate * 4, 0, 100);
+  document.getElementById("hateFill").style.width = hatePct + "%";
 }
 
 /* ---------- SCORING (rigged via denyCanadianGoal) ---------- */
@@ -617,22 +707,23 @@ function awardGoal(team) {
     return;
   }
 
+  state.goalFlash = 0.55;
   if (team === "CANADA") {
     state.scoreCan += 1;
-    floatText(RINK.x + RINK.w / 2, RINK.y + 40, "CANADA SCORES!", "#ff4d4d", 2);
+    floatText(RINK.x + RINK.w / 2, RINK.y + 48, "CANADA SCORES!", "#ff4d4d", 2);
   } else {
     state.scoreUsa += 1;
     state.crowdFlash = 2.2;
-    floatText(RINK.x + RINK.w / 2, RINK.y + 40, pick(USA_CROWD_LINES), "#4da6ff", 2);
+    floatText(RINK.x + RINK.w / 2, RINK.y + 48, pick(USA_CROWD_LINES), "#4da6ff", 2);
     if (state.playerTeam === "CANADA") state.hate += 2;
   }
-  addBurst(puck.x, puck.y, team === "USA" ? "#4da6ff" : "#ff4d4d", 16);
+  addBurst(puck.x, puck.y, team === "USA" ? "#4da6ff" : "#ff4d4d", 18);
   resetPuck();
   puck.vx = rand(-40, 40);
   puck.vy = rand(-30, 30);
   const midY = RINK.y + RINK.h / 2;
-  if (player.team === "CANADA") { player.x = RINK.x + 180; player.y = midY; }
-  else { player.x = RINK.x + RINK.w - 180; player.y = midY; }
+  if (player.team === "CANADA") { player.x = RINK.x + 200; player.y = midY; }
+  else { player.x = RINK.x + RINK.w - 200; player.y = midY; }
   player.vx = player.vy = 0;
   updateHud();
 }
@@ -732,6 +823,34 @@ function rinkClamp(e) {
   e.y = clamp(e.y, RINK.y + e.r + 4, RINK.y + RINK.h - e.r - 4);
 }
 
+
+function syncAngle(sk) {
+  const sp = Math.hypot(sk.vx, sk.vy);
+  if (sp > 18) {
+    const target = Math.atan2(sk.vy, sk.vx);
+    let d = target - (sk.angle || 0);
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    // stiff rod-pivot feel (bubble hockey slots)
+    sk.angle = (sk.angle || 0) + d * 0.28;
+    sk.facing = Math.cos(sk.angle) >= 0 ? 1 : -1;
+  }
+}
+
+function addIceSpray(sk) {
+  const sp = Math.hypot(sk.vx, sk.vy);
+  if (sp < 80) return;
+  if (Math.random() > 0.45) return;
+  state.iceSpray.push({
+    x: sk.x - Math.sign(sk.vx || sk.facing) * 8,
+    y: sk.y + 10,
+    vx: -sk.vx * 0.15 + rand(-30, 30),
+    vy: rand(-20, 10),
+    life: rand(0.2, 0.45),
+    r: rand(2, 5),
+  });
+}
+
 function movePlayer(dt) {
   if (player.leafStamp > 0) player.leafStamp -= dt;
   if (player.stunned > 0) {
@@ -759,7 +878,6 @@ function movePlayer(dt) {
     const accel = state.playerTeam === "CANADA" ? 520 : 700;
     player.vx += ax * accel * dt;
     player.vy += ay * accel * dt;
-    if (ax !== 0) player.facing = Math.sign(ax);
   }
   const friction = 3.2;
   player.vx -= player.vx * friction * dt;
@@ -769,6 +887,8 @@ function movePlayer(dt) {
   if (sp > maxSpd) { player.vx *= maxSpd / sp; player.vy *= maxSpd / sp; }
   player.x += player.vx * dt;
   player.y += player.vy * dt;
+  syncAngle(player);
+  addIceSpray(player);
   rinkClamp(player);
 }
 
@@ -789,7 +909,8 @@ function aiSkate(e, dt, targetX, targetY, speed) {
   e.vy -= e.vy * 3 * dt;
   e.x += e.vx * dt;
   e.y += e.vy * dt;
-  if (Math.abs(e.vx) > 5) e.facing = Math.sign(e.vx);
+  syncAngle(e);
+  addIceSpray(e);
   rinkClamp(e);
 }
 
@@ -894,9 +1015,12 @@ function playerShoot() {
 function updatePuck(dt) {
   if (puck.owner) {
     const o = puck.owner;
-    puck.x = o.x + o.facing * (o.r + 7);
-    puck.y = o.y + 2;
+    const ox = Math.cos(o.angle || 0);
+    const oy = Math.sin(o.angle || 0);
+    puck.x = o.x + ox * (o.r + 8);
+    puck.y = o.y + oy * (o.r + 8) + 2;
     puck.vx = o.vx; puck.vy = o.vy;
+    state.puckTrail = [];
     return;
   }
   // High damping for Canada feel (underwater puck)
@@ -905,6 +1029,11 @@ function updatePuck(dt) {
   puck.vy -= puck.vy * damp * dt;
   puck.x += puck.vx * dt;
   puck.y += puck.vy * dt;
+
+  if (Math.hypot(puck.vx, puck.vy) > 40) {
+    state.puckTrail.push({ x: puck.x, y: puck.y, life: 0.28 });
+    if (state.puckTrail.length > 10) state.puckTrail.shift();
+  }
 
   if (puck.x < RINK.x + puck.r) { puck.x = RINK.x + puck.r; puck.vx *= -0.72; }
   if (puck.x > RINK.x + RINK.w - puck.r) { puck.x = RINK.x + RINK.w - puck.r; puck.vx *= -0.72; }
@@ -982,9 +1111,10 @@ function endMatch() {
   const toneClass = state.playerTeam === "CANADA" ? "red" : "blue";
 
   showOverlay(`
+    <div class="poster-tag">POST-GAME SHOW</div>
     <h2 class="${toneClass}">BUZZER</h2>
-    <p><strong>${teamLabel}</strong> final: CAN ${state.scoreCan} — USA ${state.scoreUsa}</p>
-    <p>Fights lost: ${state.fightLosses} · America Hate Index: <strong>${state.hate}</strong></p>
+    <div class="broadcast">FINAL &nbsp; CAN ${state.scoreCan} &nbsp;—&nbsp; USA ${state.scoreUsa}<br/>
+    ${teamLabel} · Fights lost: ${state.fightLosses} · Hate Index: ${state.hate}</div>
     <div class="verdict">${verdict}</div>
     <p class="tiny">You wanted Canada to win. The systems disagreed.</p>
     <div class="btns">
@@ -999,14 +1129,16 @@ function endMatch() {
   syncMobileChrome();
 }
 
-/* ---------- DRAW ---------- */
+
+/* ---------- DRAW (Super Chexx / bubble hockey) ---------- */
 function roundRectPath(x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
   ctx.closePath();
 }
 
@@ -1031,202 +1163,461 @@ function drawMapleLeaf(x, y, s, color) {
   ctx.restore();
 }
 
+function drawStar(x, y, r, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+    const px = Math.cos(a) * r;
+    const py = Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawBoardAd(x, y, w, h, bg, text, fg) {
+  ctx.fillStyle = bg;
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = "rgba(255,255,255,0.25)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  ctx.fillStyle = fg;
+  ctx.font = "bold 9px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x + w / 2, y + h / 2);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+}
+
 function drawRink() {
-  ctx.fillStyle = "#071422";
+  const g = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 80, canvas.width / 2, canvas.height / 2, 560);
+  g.addColorStop(0, "#243044");
+  g.addColorStop(1, "#0a1018");
+  ctx.fillStyle = g;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Crowd seats
-  ctx.fillStyle = "#12243a";
-  ctx.fillRect(0, 0, canvas.width, 26);
-  ctx.fillRect(0, canvas.height - 26, canvas.width, 26);
+  ctx.fillStyle = "#152033";
+  roundRectPath(18, 10, canvas.width - 36, canvas.height - 20, 28);
+  ctx.fill();
 
-  ctx.fillStyle = "#d9eaf7";
+  for (let i = 0; i < 70; i++) {
+    const side = i % 4;
+    let cx, cy;
+    if (side === 0) { cx = 30 + ((i * 47) % (canvas.width - 60)); cy = 14 + (i % 3) * 7; }
+    else if (side === 1) { cx = 30 + ((i * 53) % (canvas.width - 60)); cy = canvas.height - 36 + (i % 3) * 6; }
+    else if (side === 2) { cx = 22 + (i % 4) * 7; cy = 50 + ((i * 37) % (canvas.height - 100)); }
+    else { cx = canvas.width - 52 + (i % 4) * 7; cy = 50 + ((i * 41) % (canvas.height - 100)); }
+    const cols = ["#3b4a63", "#4a5a78", "#2a384e", "#c81e1e", "#1d4e89", "#6b7280"];
+    ctx.fillStyle = cols[i % cols.length];
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3 + (i % 3), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#1d4e89";
+  ctx.fillRect(canvas.width - 78, 16, 42, 14);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 8px sans-serif";
+  ctx.fillText("U-S-A", canvas.width - 72, 26);
+  ctx.fillStyle = "#c81e1e";
+  ctx.fillRect(36, canvas.height - 30, 48, 14);
+  ctx.fillStyle = "#fff";
+  ctx.fillText("SORRY?", 42, canvas.height - 20);
+
+  // Thick rails / boards
+  ctx.fillStyle = "#8b1a1a";
+  roundRectPath(RINK.x - 22, RINK.y - 22, RINK.w + 44, RINK.h + 44, 56);
+  ctx.fill();
+  ctx.fillStyle = "#0c2348";
+  roundRectPath(RINK.x - 16, RINK.y - 16, RINK.w + 32, RINK.h + 32, 50);
+  ctx.fill();
+  ctx.strokeStyle = "#e8b84a";
+  ctx.lineWidth = 5;
+  roundRectPath(RINK.x - 10, RINK.y - 10, RINK.w + 20, RINK.h + 20, 46);
+  ctx.stroke();
+
+  const ice = ctx.createLinearGradient(RINK.x, RINK.y, RINK.x, RINK.y + RINK.h);
+  ice.addColorStop(0, "#eef7ff");
+  ice.addColorStop(0.45, "#dceaf6");
+  ice.addColorStop(1, "#cfdceb");
+  ctx.fillStyle = ice;
   roundRectPath(RINK.x, RINK.y, RINK.w, RINK.h, 42);
   ctx.fill();
 
-  // ice sheen
-  ctx.fillStyle = "rgba(255,255,255,0.18)";
-  ctx.fillRect(RINK.x + 60, RINK.y + 40, 200, 14);
+  ctx.save();
+  roundRectPath(RINK.x, RINK.y, RINK.w, RINK.h, 42);
+  ctx.clip();
+  ctx.fillStyle = "rgba(255,255,255,0.28)";
+  ctx.beginPath();
+  ctx.ellipse(RINK.x + RINK.w * 0.35, RINK.y + 70, 220, 28, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.12)";
+  ctx.fillRect(RINK.x + 40, RINK.y + RINK.h - 90, 280, 18);
 
-  ctx.strokeStyle = "#e63946";
-  ctx.lineWidth = 4;
+  ctx.strokeStyle = "#c81e1e";
+  ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(RINK.x + RINK.w / 2, RINK.y + 10);
-  ctx.lineTo(RINK.x + RINK.w / 2, RINK.y + RINK.h - 10);
-  ctx.stroke();
-
-  ctx.strokeStyle = "#e63946";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(RINK.x + RINK.w / 2, RINK.y + RINK.h / 2, 58, 0, Math.PI * 2);
+  ctx.moveTo(RINK.x + RINK.w / 2, RINK.y + 6);
+  ctx.lineTo(RINK.x + RINK.w / 2, RINK.y + RINK.h - 6);
   ctx.stroke();
   ctx.beginPath();
-  ctx.arc(RINK.x + RINK.w / 2, RINK.y + RINK.h / 2, 4, 0, Math.PI * 2);
-  ctx.fillStyle = "#e63946";
+  ctx.arc(RINK.x + RINK.w / 2, RINK.y + RINK.h / 2, 62, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = "rgba(200,30,30,0.12)";
+  ctx.beginPath();
+  ctx.arc(RINK.x + RINK.w / 2, RINK.y + RINK.h / 2, 40, 0, Math.PI * 2);
+  ctx.fill();
+  drawMapleLeaf(RINK.x + RINK.w / 2 - 10, RINK.y + RINK.h / 2, 14, "rgba(200,30,30,0.55)");
+  drawStar(RINK.x + RINK.w / 2 + 14, RINK.y + RINK.h / 2, 8, "rgba(29,78,137,0.55)");
+  ctx.fillStyle = "#c81e1e";
+  ctx.beginPath();
+  ctx.arc(RINK.x + RINK.w / 2, RINK.y + RINK.h / 2, 5, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.strokeStyle = "#1d4e89";
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 4;
   const bl = RINK.w * 0.25;
   ctx.beginPath();
-  ctx.moveTo(RINK.x + bl, RINK.y + 8);
-  ctx.lineTo(RINK.x + bl, RINK.y + RINK.h - 8);
-  ctx.moveTo(RINK.x + RINK.w - bl, RINK.y + 8);
-  ctx.lineTo(RINK.x + RINK.w - bl, RINK.y + RINK.h - 8);
+  ctx.moveTo(RINK.x + bl, RINK.y + 6);
+  ctx.lineTo(RINK.x + bl, RINK.y + RINK.h - 6);
+  ctx.moveTo(RINK.x + RINK.w - bl, RINK.y + 6);
+  ctx.lineTo(RINK.x + RINK.w - bl, RINK.y + RINK.h - 6);
   ctx.stroke();
 
-  ctx.strokeStyle = "#1a3a5c";
-  ctx.lineWidth = 7;
-  roundRectPath(RINK.x, RINK.y, RINK.w, RINK.h, 42);
+  const dots = [
+    [RINK.x + bl - 70, RINK.y + 110],
+    [RINK.x + bl - 70, RINK.y + RINK.h - 110],
+    [RINK.x + RINK.w - bl + 70, RINK.y + 110],
+    [RINK.x + RINK.w - bl + 70, RINK.y + RINK.h - 110],
+  ];
+  for (const [dx, dy] of dots) {
+    ctx.strokeStyle = "#c81e1e";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(dx, dy, 28, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "#c81e1e";
+    ctx.beginPath();
+    ctx.arc(dx, dy, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.strokeStyle = "#c81e1e";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(leftGoal.x + leftGoal.w, RINK.y + RINK.h / 2, 48, -Math.PI / 2, Math.PI / 2);
+  ctx.stroke();
+  ctx.strokeStyle = "#1d4e89";
+  ctx.beginPath();
+  ctx.arc(rightGoal.x, RINK.y + RINK.h / 2, 48, Math.PI / 2, -Math.PI / 2);
   ctx.stroke();
 
   ctx.fillStyle = "#0f172a";
   ctx.fillRect(leftGoal.x, leftGoal.y, leftGoal.w, leftGoal.h);
   ctx.fillRect(rightGoal.x, rightGoal.y, rightGoal.w, rightGoal.h);
   ctx.strokeStyle = "#ff4d4d";
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 3;
   ctx.strokeRect(leftGoal.x, leftGoal.y, leftGoal.w, leftGoal.h);
   ctx.strokeStyle = "#4da6ff";
   ctx.strokeRect(rightGoal.x, rightGoal.y, rightGoal.w, rightGoal.h);
-
-  // Net mesh hint
-  ctx.strokeStyle = "rgba(255,255,255,0.15)";
+  ctx.strokeStyle = "rgba(255,255,255,0.2)";
   ctx.lineWidth = 1;
-  for (let i = 0; i < 5; i++) {
-    const yy = leftGoal.y + 8 + i * 12;
+  for (let i = 0; i < 6; i++) {
+    const yy = leftGoal.y + 6 + i * 12;
     ctx.beginPath();
     ctx.moveTo(leftGoal.x, yy); ctx.lineTo(leftGoal.x + leftGoal.w, yy); ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(rightGoal.x, yy); ctx.lineTo(rightGoal.x + rightGoal.w, yy); ctx.stroke();
   }
 
-  ctx.fillStyle = "rgba(230,57,70,0.5)";
-  ctx.font = "bold 11px sans-serif";
-  ctx.fillText("CAN NET", leftGoal.x - 6, leftGoal.y - 8);
-  ctx.fillStyle = "rgba(77,166,255,0.55)";
-  ctx.fillText("USA NET", rightGoal.x - 8, rightGoal.y - 8);
+  ctx.fillStyle = "rgba(15,23,42,0.35)";
+  ctx.fillRect(RINK.x + 180, RINK.y + 4, 160, 10);
+  ctx.fillRect(RINK.x + RINK.w - 340, RINK.y + RINK.h - 14, 160, 10);
+  ctx.restore();
+
+  drawBoardAd(RINK.x + 80, RINK.y - 20, 110, 14, "#111827", "TIM'S NOT HERE", "#fbbf24");
+  drawBoardAd(RINK.x + 220, RINK.y - 20, 100, 14, "#1e3a8a", "FREEDOM SLAPS", "#fff");
+  drawBoardAd(RINK.x + 350, RINK.y - 20, 120, 14, "#7f1d1d", "SORRY BEER", "#fecaca");
+  drawBoardAd(RINK.x + 500, RINK.y - 20, 110, 14, "#0f172a", "LAKE FOR SALE", "#93c5fd");
+  drawBoardAd(RINK.x + 640, RINK.y - 20, 100, 14, "#1d4e89", "U-S-A INC.", "#fff");
+  drawBoardAd(RINK.x + 120, RINK.y + RINK.h + 6, 120, 14, "#7f1d1d", "MAPLE DEFENSE", "#fff");
+  drawBoardAd(RINK.x + 280, RINK.y + RINK.h + 6, 130, 14, "#0c2348", "FOUR-ARM GLOVE", "#93c5fd");
+  drawBoardAd(RINK.x + 450, RINK.y + RINK.h + 6, 120, 14, "#111827", "WET CARDBOARD", "#fcd34d");
+  drawBoardAd(RINK.x + 600, RINK.y + RINK.h + 6, 110, 14, "#c81e1e", "HATE INDEX+", "#fff");
+
+  ctx.strokeStyle = "rgba(255,255,255,0.18)";
+  ctx.lineWidth = 2;
+  roundRectPath(RINK.x + 4, RINK.y + 4, RINK.w - 8, RINK.h - 8, 38);
+  ctx.stroke();
 
   if (state.crowdFlash > 0) {
-    ctx.fillStyle = "rgba(77,166,255,0.12)";
+    ctx.fillStyle = "rgba(77,166,255,0.14)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#4da6ff";
-    ctx.font = "bold 22px sans-serif";
+    ctx.font = "bold 26px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("U-S-A! U-S-A!", canvas.width / 2, 22);
+    ctx.shadowColor = "#1d4e89";
+    ctx.shadowBlur = 12;
+    ctx.fillText("U-S-A! U-S-A!", canvas.width / 2, 34);
+    ctx.shadowBlur = 0;
+    ctx.textAlign = "left";
+  }
+  if (state.goalFlash > 0) {
+    ctx.fillStyle = "rgba(255,209,102," + (state.goalFlash * 0.45) + ")";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+/** Chunky Super Chexx plastic tabletop player. */
+function drawPlasticPlayer(sk, opts) {
+  opts = opts || {};
+  const isCan = sk.team === "CANADA";
+  const jersey = isCan ? "#d62828" : "#f1f5f9";
+  const jerseyDark = isCan ? "#9b1c1c" : "#1e3a8a";
+  const pants = isCan ? "#111827" : "#1e3a8a";
+  const helmet = isCan ? "#7f1d1d" : "#1e3a8a";
+  const outline = "#0a0f18";
+  const scale = (sk.r / 16) * (opts.big ? 1.35 : 1);
+  const ang = sk.angle != null ? sk.angle : (sk.facing >= 0 ? 0 : Math.PI);
+
+  ctx.save();
+  ctx.translate(sk.x, sk.y);
+  ctx.rotate(ang);
+
+  ctx.fillStyle = "rgba(15,23,42,0.28)";
+  ctx.beginPath();
+  ctx.ellipse(0, 6 * scale, 14 * scale, 5 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#5c3d2e";
+  ctx.lineWidth = 3.2 * scale;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(2 * scale, 2 * scale);
+  if (isCan) ctx.quadraticCurveTo(18 * scale, 8 * scale, 26 * scale, 12 * scale);
+  else ctx.lineTo(28 * scale, 8 * scale);
+  ctx.stroke();
+  ctx.lineWidth = 3.5 * scale;
+  ctx.beginPath();
+  ctx.moveTo(26 * scale, 10 * scale);
+  ctx.lineTo(30 * scale, 16 * scale);
+  ctx.stroke();
+
+  ctx.fillStyle = "#111";
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 1.5;
+  roundRectPath(-11 * scale, 8 * scale, 8 * scale, 5 * scale, 1.5); ctx.fill(); ctx.stroke();
+  roundRectPath(3 * scale, 8 * scale, 8 * scale, 5 * scale, 1.5); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle = pants;
+  roundRectPath(-10 * scale, 0, 20 * scale, 12 * scale, 3);
+  ctx.fill();
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = jersey;
+  roundRectPath(-12 * scale, -14 * scale, 24 * scale, 18 * scale, 5);
+  ctx.fill();
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 2.2;
+  ctx.stroke();
+
+  ctx.fillStyle = jerseyDark;
+  ctx.fillRect(-12 * scale, -4 * scale, 24 * scale, 4 * scale);
+
+  if (isCan) drawMapleLeaf(0, -8 * scale, 5.5 * scale, "#fff");
+  else {
+    ctx.fillStyle = "#1d4e89";
+    ctx.fillRect(-12 * scale, -14 * scale, 24 * scale, 5 * scale);
+    drawStar(0, -8 * scale, 4.5 * scale, "#1d4e89");
+  }
+
+  ctx.fillStyle = jersey;
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 1.8;
+  roundRectPath(-18 * scale, -10 * scale, 8 * scale, 6 * scale, 2); ctx.fill(); ctx.stroke();
+  roundRectPath(10 * scale, -8 * scale, 10 * scale, 5 * scale, 2); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle = isCan ? "#111" : "#dc2626";
+  ctx.beginPath();
+  ctx.arc(-18 * scale, -7 * scale, 3.2 * scale, 0, Math.PI * 2);
+  ctx.arc(20 * scale, -5 * scale, 3.2 * scale, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = helmet;
+  ctx.beginPath();
+  ctx.ellipse(0, -18 * scale, 9 * scale, 7.5 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = "rgba(30,40,60,0.55)";
+  ctx.beginPath();
+  ctx.ellipse(3 * scale, -17 * scale, 5 * scale, 4 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = isCan ? "#fff" : "#dc2626";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, -25 * scale);
+  ctx.lineTo(0, -12 * scale);
+  ctx.stroke();
+
+  ctx.fillStyle = isCan ? "#fff" : "#1d4e89";
+  ctx.font = "bold " + Math.floor(8 * scale) + "px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(sk.isPlayer ? "19" : "9", 0, 8 * scale);
+  ctx.restore();
+
+  if (sk.isPlayer) {
+    ctx.save();
+    ctx.translate(sk.x, sk.y);
+    ctx.fillStyle = "#ffd166";
+    ctx.strokeStyle = "#0a0f18";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -sk.r - 18);
+    ctx.lineTo(7, -sk.r - 8);
+    ctx.lineTo(-7, -sk.r - 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255,209,102,0.55)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, sk.r + 8 + Math.sin(performance.now() / 180) * 1.5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (sk.leafStamp > 0) drawMapleLeaf(sk.x, sk.y - sk.r - 6, 12, "#c1121f");
+  if (sk.stunned > 0) {
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("* *", sk.x, sk.y - sk.r - 22);
     ctx.textAlign = "left";
   }
 }
 
-function drawSkater(sk) {
-  const isCan = sk.team === "CANADA";
-  ctx.beginPath();
-  ctx.arc(sk.x, sk.y, sk.r, 0, Math.PI * 2);
-  ctx.fillStyle = isCan ? "#e63946" : "#1d4e89";
-  ctx.fill();
-  ctx.strokeStyle = isCan ? "#9b2226" : "#0b2545";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // jersey accent
-  ctx.fillStyle = "#fff";
-  if (isCan) {
-    ctx.beginPath();
-    ctx.moveTo(sk.x, sk.y - 6);
-    ctx.lineTo(sk.x + 5, sk.y);
-    ctx.lineTo(sk.x, sk.y + 6);
-    ctx.lineTo(sk.x - 5, sk.y);
-    ctx.closePath();
-    ctx.fill();
-  } else {
-    ctx.beginPath();
-    for (let i = 0; i < 5; i++) {
-      const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
-      const rr = 5;
-      const px = sk.x + Math.cos(a) * rr;
-      const py = sk.y + Math.sin(a) * rr;
-      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  // stick (wet cardboard vibe for Canada = slightly bent)
-  ctx.strokeStyle = "#5c4033";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(sk.x, sk.y);
-  const bend = isCan ? 4 : 0;
-  ctx.quadraticCurveTo(
-    sk.x + sk.facing * (sk.r + 6), sk.y + 4 + bend,
-    sk.x + sk.facing * (sk.r + 16), sk.y + 8
-  );
-  ctx.stroke();
-
-  if (sk.isPlayer) {
-    ctx.strokeStyle = "#ffd166";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(sk.x, sk.y, sk.r + 5, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-
-  if (sk.leafStamp > 0) drawMapleLeaf(sk.x, sk.y - sk.r - 4, 11, "#c1121f");
-
-  if (sk.stunned > 0) {
-    ctx.fillStyle = "#ffd166";
-    ctx.font = "13px sans-serif";
-    ctx.fillText("z z", sk.x - 8, sk.y - sk.r - 12);
-  }
-}
+function drawSkater(sk) { drawPlasticPlayer(sk, { big: false }); }
 
 function drawGoalie(g) {
   const isCan = g.team === "CANADA";
+  const facing = isCan ? 1 : -1;
+  ctx.save();
+  ctx.translate(g.x, g.y);
+  ctx.scale(facing, 1);
+
+  ctx.fillStyle = "rgba(15,23,42,0.3)";
   ctx.beginPath();
-  ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2);
-  ctx.fillStyle = isCan ? "#b91c1c" : "#172554";
+  ctx.ellipse(0, 10, 16, 6, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "#fff";
-  ctx.lineWidth = 2;
-  ctx.stroke();
 
   ctx.fillStyle = isCan ? "#7f1d1d" : "#1e3a8a";
-  ctx.fillRect(g.x - 14, g.y + 6, 28, 14);
+  ctx.strokeStyle = "#0a0f18";
+  ctx.lineWidth = 2;
+  roundRectPath(-14, 2, 12, 18, 3); ctx.fill(); ctx.stroke();
+  roundRectPath(2, 2, 12, 18, 3); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle = isCan ? "#c81e1e" : "#f8fafc";
+  roundRectPath(-13, -14, 26, 20, 5);
+  ctx.fill(); ctx.stroke();
+
+  if (isCan) drawMapleLeaf(0, -6, 6, "#fff");
+  else drawStar(0, -6, 5, "#1d4e89");
+
+  ctx.fillStyle = isCan ? "#991b1b" : "#1e3a8a";
+  ctx.beginPath();
+  ctx.ellipse(0, -18, 10, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#0a0f18";
+  ctx.stroke();
 
   if (isCan && g.phone) {
     ctx.fillStyle = "#111";
-    ctx.fillRect(g.x + 10, g.y - 8, 9, 15);
+    ctx.fillRect(10, -10, 10, 16);
     ctx.fillStyle = "#4ade80";
-    ctx.fillRect(g.x + 11, g.y - 6, 7, 9);
-    ctx.font = "12px sans-serif";
-    ctx.fillText("📱", g.x - 8, g.y - g.r - 6);
+    ctx.fillRect(11, -8, 8, 10);
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillRect(13, 4, 4, 1);
+    ctx.strokeStyle = "#c81e1e";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(8, -2); ctx.lineTo(14, -2);
+    ctx.stroke();
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 8px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("...", 0, -28);
   }
 
   if (!isCan && g.arms >= 4) {
     ctx.strokeStyle = "#93c5fd";
     ctx.lineWidth = 4;
     ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(g.x, g.y); ctx.lineTo(g.x - 24, g.y - 18);
-    ctx.moveTo(g.x, g.y); ctx.lineTo(g.x - 24, g.y + 18);
-    ctx.moveTo(g.x, g.y); ctx.lineTo(g.x - 28, g.y - 5);
-    ctx.moveTo(g.x, g.y); ctx.lineTo(g.x - 28, g.y + 5);
-    ctx.stroke();
-    ctx.fillStyle = "#93c5fd";
+    const arms = [[8,-8,22,-18],[8,0,24,-4],[8,4,24,8],[8,10,20,18]];
+    for (const [ax, ay, bx, by] of arms) {
+      ctx.beginPath();
+      ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+      ctx.fillStyle = "#dc2626";
+      ctx.beginPath();
+      ctx.arc(bx, by, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = "#1d4e89";
     ctx.font = "bold 9px sans-serif";
-    ctx.fillText("x4", g.x - 10, g.y + g.r + 14);
+    ctx.textAlign = "center";
+    ctx.fillText("x4", 0, 28);
+  }
+  ctx.restore();
+
+  if (isCan && g.phone && Math.sin(state.phoneCheck * 1.25) > 0.7) {
+    ctx.fillStyle = "#ff8fa3";
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("on phone", g.x, g.y - 34);
+    ctx.textAlign = "left";
   }
 }
 
 function drawPuck() {
+  for (let i = 0; i < state.puckTrail.length; i++) {
+    const t = state.puckTrail[i];
+    const a = (i + 1) / (state.puckTrail.length + 1) * 0.35;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.ellipse(t.x, t.y, puck.r * 0.9, puck.r * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
   ctx.beginPath();
-  ctx.arc(puck.x, puck.y, puck.r, 0, Math.PI * 2);
-  ctx.fillStyle = "#111";
+  ctx.ellipse(puck.x + 2, puck.y + 4, puck.r * 1.1, puck.r * 0.45, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "#555";
+  const pg = ctx.createRadialGradient(puck.x - 2, puck.y - 2, 1, puck.x, puck.y, puck.r);
+  pg.addColorStop(0, "#3f3f46");
+  pg.addColorStop(0.6, "#18181b");
+  pg.addColorStop(1, "#09090b");
+  ctx.fillStyle = pg;
+  ctx.beginPath();
+  ctx.ellipse(puck.x, puck.y, puck.r, puck.r * 0.72, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#52525b";
+  ctx.lineWidth = 1.5;
   ctx.stroke();
-  // underwater ring for Canada feel
+  ctx.strokeStyle = "rgba(255,255,255,0.25)";
+  ctx.beginPath();
+  ctx.ellipse(puck.x, puck.y - 1, puck.r * 0.7, puck.r * 0.35, 0, Math.PI, Math.PI * 2);
+  ctx.stroke();
   if (state.playerTeam === "CANADA" && !puck.owner) {
-    ctx.strokeStyle = "rgba(30,100,180,0.25)";
+    ctx.strokeStyle = "rgba(30,100,180,0.28)";
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(puck.x, puck.y, puck.r + 5 + Math.sin(performance.now() / 200) * 2, 0, Math.PI * 2);
     ctx.stroke();
@@ -1235,93 +1626,130 @@ function drawPuck() {
 
 function drawAim() {
   if (state.phase !== "play" || !player) return;
-  ctx.strokeStyle = "rgba(255,209,102,0.45)";
-  ctx.lineWidth = 1;
-  ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = "rgba(255,209,102,0.4)";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 6]);
   ctx.beginPath();
   ctx.moveTo(player.x, player.y);
   ctx.lineTo(mouse.x, mouse.y);
   ctx.stroke();
   ctx.setLineDash([]);
+  ctx.strokeStyle = "rgba(255,209,102,0.85)";
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(mouse.x, mouse.y, 7, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(255,209,102,0.75)";
+  ctx.arc(mouse.x, mouse.y, 9, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(mouse.x - 14, mouse.y); ctx.lineTo(mouse.x - 5, mouse.y);
+  ctx.moveTo(mouse.x + 5, mouse.y); ctx.lineTo(mouse.x + 14, mouse.y);
+  ctx.moveTo(mouse.x, mouse.y - 14); ctx.lineTo(mouse.x, mouse.y - 5);
+  ctx.moveTo(mouse.x, mouse.y + 5); ctx.lineTo(mouse.x, mouse.y + 14);
   ctx.stroke();
 }
 
 function drawFightOverlay() {
   const f = state.fight;
   if (!f) return;
-  ctx.fillStyle = "rgba(10,15,30,0.38)";
+  ctx.fillStyle = "rgba(8,10,20,0.42)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.strokeStyle = "rgba(255,255,255,0.8)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(255,255,255,0.7)";
+  ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(player.x, player.y);
   ctx.lineTo(f.opponent.x, f.opponent.y);
   ctx.stroke();
+
+  const midX = (player.x + f.opponent.x) / 2;
+  const midY = (player.y + f.opponent.y) / 2 - 8;
+  drawPlasticPlayer({ x: player.x - 8, y: player.y, r: 22, team: player.team, angle: 0.3, facing: 1, isPlayer: false, leafStamp: 0, stunned: 0 }, { big: true });
+  drawPlasticPlayer({ x: f.opponent.x + 8, y: f.opponent.y, r: 22, team: f.opponent.team, angle: Math.PI - 0.3, facing: -1, isPlayer: false, leafStamp: 0, stunned: 0 }, { big: true });
 
   for (const h of f.helmets) {
     ctx.save();
     ctx.translate(h.x, h.y);
     ctx.rotate(h.rot);
     ctx.fillStyle = "#64748b";
+    ctx.strokeStyle = "#0a0f18";
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.ellipse(0, 0, 13, 9, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#334155";
-    ctx.stroke();
+    ctx.ellipse(0, 0, 14, 10, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#334155";
+    ctx.fillRect(-8, 2, 16, 4);
     ctx.restore();
   }
 
   if (f.punchFlash > 0) {
-    const px = (player.x + f.opponent.x) / 2;
-    const py = (player.y + f.opponent.y) / 2 - 10;
+    const px = midX, py = midY;
     ctx.fillStyle = "#ffd166";
-    ctx.font = "bold 32px sans-serif";
+    ctx.font = "bold 36px sans-serif";
     ctx.textAlign = "center";
+    ctx.strokeStyle = "#0a0f18";
+    ctx.lineWidth = 4;
+    ctx.strokeText("POW!", px, py);
     ctx.fillText("POW!", px, py);
-    ctx.textAlign = "left";
-    // impact star
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2;
-      const r = i % 2 ? 10 : 22;
-      const x = px + Math.cos(a) * r;
-      const y = py + 10 + Math.sin(a) * r;
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + performance.now() / 120;
+      const rr = 28 + (i % 2) * 10;
+      drawStar(px + Math.cos(a) * rr, py + 8 + Math.sin(a) * rr, 6, i % 2 ? "#fff" : "#ffd166");
     }
-    ctx.closePath();
-    ctx.stroke();
+    ctx.textAlign = "left";
   }
 
   if ((f.stage === "ko" || f.stage === "wake" || f.stage === "ref") && !f.playerWins) {
-    drawMapleLeaf(player.x, player.y - player.r - 10, 16, "#c1121f");
+    drawMapleLeaf(player.x, player.y - 36, 18, "#c1121f");
     ctx.fillStyle = "#fff";
-    ctx.font = "bold 18px sans-serif";
+    ctx.font = "bold 22px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("KO", player.x, player.y + 5);
+    ctx.strokeStyle = "#0a0f18";
+    ctx.lineWidth = 3;
+    ctx.strokeText("KO", player.x, player.y + 6);
+    ctx.fillText("KO", player.x, player.y + 6);
     ctx.textAlign = "left";
   }
 
   if (f.stage === "ref") {
-    const rx = RINK.x + RINK.w / 2, ry = RINK.y + 70;
+    const rx = RINK.x + RINK.w / 2, ry = RINK.y + 80;
     ctx.fillStyle = "#111";
     ctx.beginPath();
-    ctx.arc(rx, ry, 15, 0, Math.PI * 2);
+    ctx.arc(rx, ry, 16, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = "#fff";
-    ctx.fillRect(rx - 9, ry - 5, 18, 7);
-    ctx.font = "bold 11px sans-serif";
+    ctx.fillRect(rx - 10, ry - 6, 20, 8);
+    ctx.strokeStyle = "#111";
+    for (let i = -8; i <= 8; i += 4) {
+      ctx.beginPath();
+      ctx.moveTo(rx + i, ry - 6);
+      ctx.lineTo(rx + i, ry + 2);
+      ctx.stroke();
+    }
+    ctx.font = "bold 12px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("REF", rx, ry + 28);
+    ctx.fillStyle = "#fff";
+    ctx.fillText("REF", rx, ry + 30);
     ctx.fillStyle = "#ffd166";
-    ctx.fillText("(decorative penalty)", rx, ry + 44);
+    ctx.fillText("(decorative penalty)", rx, ry + 46);
     ctx.textAlign = "left";
   }
+}
+
+function drawDomeOverlay() {
+  const vg = ctx.createRadialGradient(
+    canvas.width / 2, canvas.height * 0.42, canvas.height * 0.15,
+    canvas.width / 2, canvas.height * 0.5, canvas.width * 0.62
+  );
+  vg.addColorStop(0, "rgba(255,255,255,0)");
+  vg.addColorStop(0.55, "rgba(255,255,255,0)");
+  vg.addColorStop(0.82, "rgba(10,16,28,0.18)");
+  vg.addColorStop(1, "rgba(4,8,14,0.55)");
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "rgba(255,255,255,0.14)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.ellipse(canvas.width / 2, canvas.height * 0.38, canvas.width * 0.38, canvas.height * 0.22, 0, Math.PI * 1.15, Math.PI * 1.85);
+  ctx.stroke();
 }
 
 function drawFloats(dt) {
@@ -1331,9 +1759,12 @@ function drawFloats(dt) {
     t.y += t.vy * dt;
     if (t.life <= 0) { state.floatTexts.splice(i, 1); continue; }
     ctx.globalAlpha = clamp(t.life / t.max, 0, 1);
-    ctx.fillStyle = t.color;
-    ctx.font = "bold 15px sans-serif";
+    ctx.font = "bold 16px sans-serif";
     ctx.textAlign = "center";
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(0,0,0,0.55)";
+    ctx.strokeText(t.text, t.x, t.y);
+    ctx.fillStyle = t.color;
     ctx.fillText(t.text, t.x, t.y);
     ctx.textAlign = "left";
     ctx.globalAlpha = 1;
@@ -1350,18 +1781,30 @@ function drawFloats(dt) {
     ctx.fill();
     ctx.globalAlpha = 1;
   }
+  for (let i = state.iceSpray.length - 1; i >= 0; i--) {
+    const p = state.iceSpray[i];
+    p.life -= dt;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.life <= 0) { state.iceSpray.splice(i, 1); continue; }
+    ctx.globalAlpha = clamp(p.life * 2, 0, 0.7);
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y, p.r, p.r * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  for (let i = state.puckTrail.length - 1; i >= 0; i--) {
+    state.puckTrail[i].life -= dt;
+    if (state.puckTrail[i].life <= 0) state.puckTrail.splice(i, 1);
+  }
 }
 
 function render(dt) {
   drawRink();
   if (state.phase === "pick") {
-    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillStyle = "rgba(0,0,0,0.2)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#8aa4c0";
-    ctx.font = "16px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("Awaiting team selection…", canvas.width / 2, canvas.height / 2);
-    ctx.textAlign = "left";
+    drawDomeOverlay();
     return;
   }
 
@@ -1375,14 +1818,14 @@ function render(dt) {
 
   if (state.phase === "fight") drawFightOverlay();
   drawFloats(dt);
+  drawDomeOverlay();
 
-  // windup meter for Canada
   if (state.phase === "play" && state.playerTeam === "CANADA" && state.windup > 0) {
     const need = 0.38;
-    ctx.fillStyle = "rgba(0,0,0,0.4)";
-    ctx.fillRect(player.x - 20, player.y + 22, 40, 5);
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.fillRect(player.x - 22, player.y + 26, 44, 6);
     ctx.fillStyle = "#ffd166";
-    ctx.fillRect(player.x - 20, player.y + 22, 40 * clamp(state.windup / need, 0, 1), 5);
+    ctx.fillRect(player.x - 22, player.y + 26, 44 * clamp(state.windup / need, 0, 1), 6);
   }
 }
 
@@ -1399,6 +1842,7 @@ function update(dt) {
   // play
   state.timeLeft -= dt;
   if (state.crowdFlash > 0) state.crowdFlash -= dt;
+  if (state.goalFlash > 0) state.goalFlash -= dt;
   updateHud();
 
   if (state.timeLeft <= 0) {

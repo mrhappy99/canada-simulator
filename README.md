@@ -4,6 +4,8 @@ Affectionate, self-deprecating Canada–US rivalry satire. You want Canada to wi
 
 **v1 scope:** Level 1 vertical slice only (team pick → playable hockey → fights → Hate Index → results card).
 
+**Visual style:** Super Chexx / bubble-hockey table aesthetic — chunky hand-painted plastic players under a dome vignette, thick rails, rivalry board ads, LCD jumbotron HUD. Canvas 2D top-down (not WebGL).
+
 ## Files
 
 - `canada-simulator.html` — complete playable single-file game (Canvas 2D + vanilla JS, no build step)
@@ -128,6 +130,7 @@ Stub arrays (for later levels, not wired in v1 play):
 - AI is intentionally cartoonish, not NHL-sim accurate
 - Mobile touch overlay supported (drag-to-skate + SHOOT/FIGHT); still a Canvas 2D single-file build, not a native app
 - Single HTML file; Phaser not used (vanilla Canvas)
+- Bubble-hockey painted-men look (not NHL-realism sprites); dome overlay is cosmetic
 - Hate Index persists across rematches in the same page session; refresh resets it
 - Decorative penalties intentionally do nothing (by design)
 
