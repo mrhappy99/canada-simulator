@@ -35,14 +35,17 @@ Needs a static HTTP server (or GitHub Pages). ES modules + Three.js CDN do not l
 
 ## How to play — Saturday Night Canada (3D)
 
-1. Open `index.html` / `snc-3d.html` via HTTP → click **Play, eh**
-2. **Bid:** Order it up / Pass; round 2 name trump (not the upcard suit)
-3. **Discard:** If you are dealer and pick up, tap one card to bury
-4. **Play:** Tap highlighted legal cards (follow suit when you can)
-5. **Hot knives:** Optional comedy when Gary walks in from the kitchen
-6. Match ends ~5 points or ~4 hands — hosers don’t win cleanly; Hate Index rises with HNIC boos
+1. Open `index.html` / `snc-3d.html` via HTTP → click **Play, eh** (first tap unlocks sound)
+2. **Look around:** drag to orbit · scroll/pinch to zoom · **Reset view** restores framing
+3. Watch the **deal** (cards fly) and **upcard** on the beat-up folding vinyl table, then bid
+4. **Bid:** Order it up / Pass; round 2 name trump (not the upcard suit)
+5. **Discard:** If you are dealer and pick up, tap one card to bury
+6. **Play:** Tap highlighted legal cards; trick cards stay visible on the table with a play feed
+7. **Mute** toggles ambient HNIC crowd, card slap, and hoser mutter
+8. **Hot knives:** small side toast when Gary walks in (not a full-screen modal)
+9. Match ends ~5 points or ~4 hands — hosers don’t win cleanly; Hate Index rises with HNIC boos
 
-**Mobile:** large tap targets on cards and bid buttons.
+**Mobile:** large tap targets on cards and bid buttons; drag on the 3D view to look.
 
 ## How to play — Legacy 2D
 
@@ -57,9 +60,12 @@ Open `legacy-2d.html` (or `canada-simulator.html`):
 - **Three.js r170** via CDN `importmap` (jsDelivr)
 - Perspective camera, hemisphere + directional soft shadows (1024 map)
 - Procedural low-poly characters (readable faces, 1970s hair/stubble, jersey colors) — **no helmets**
-- Apartment set: wood panel walls, carpet, green felt card table, folding chairs, stubbies, ashtray, maple afghan, CRT with HNIC “CAN losing” canvas texture
-- Cards / bids as **HTML overlay HUD** so faces stay the visual star; trick cards also mirrored as simple table meshes
-- Idle loops: breathing, head turn, beer lift; knives buddy walk-in from kitchen doorway
+- Apartment set: wood panel walls, carpet, **old folding vinyl card table** (beige-brown, burns, coffee rings, aluminum edge, metal legs), folding chairs, stubbies, ashtray, maple afghan, CRT with HNIC “CAN losing” canvas texture
+- **OrbitControls** (drag look / pinch zoom, clamped); Reset view button
+- Characters: eyes+pupils, brows, nose, mouth, ears, mullet/sideburns/stubble, blink & talk idles; distinct You / Doug / Chad / Brad / Gary
+- Cards / bids as **HTML overlay HUD**; textured 3D trick + upcard + trump disc on the table; side **Table talk** feed
+- WebAudio ambient crowd + card slap / deal whoosh + speechSynthesis mutter; visible mute toggle
+- Idle loops: breathing, blink, head look-at-table, beer lift; knives buddy walk-in from kitchen doorway
 
 ## Joke engine (do not “fix”)
 

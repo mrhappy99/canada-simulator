@@ -1,17 +1,26 @@
-/** Three.js apartment + large low-poly hosers for Saturday Night Canada */
+/** Three.js apartment + low-poly hosers for Saturday Night Canada */
 import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const DEG = Math.PI / 180;
 
 function mat(color, opts = {}) {
-  return new THREE.MeshStandardMaterial({
+  const o = {
     color,
     roughness: opts.roughness ?? 0.75,
     metalness: opts.metalness ?? 0.05,
     flatShading: opts.flat ?? true,
-    emissive: opts.emissive ? new THREE.Color(opts.emissive) : undefined,
-    emissiveIntensity: opts.emissiveIntensity ?? 0,
-  });
+  };
+  if (opts.emissive) {
+    o.emissive = new THREE.Color(opts.emissive);
+    o.emissiveIntensity = opts.emissiveIntensity ?? 0.35;
+  }
+  if (opts.map) o.map = opts.map;
+  if (opts.transparent) {
+    o.transparent = true;
+    o.opacity = opts.opacity ?? 1;
+  }
+  return new THREE.MeshStandardMaterial(o);
 }
 
 function box(w, h, d, color, opts) {
@@ -22,20 +31,158 @@ function box(w, h, d, color, opts) {
 }
 
 function cyl(rTop, rBot, h, color, opts) {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, opts?.seg ?? 8), mat(color, opts));
+  const m = new THREE.Mesh(
+    new THREE.CylinderGeometry(rTop, rBot, h, opts?.seg ?? 8),
+    mat(color, opts)
+  );
   m.castShadow = true;
   m.receiveShadow = true;
   return m;
 }
 
 function sphere(r, color, opts) {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(r, opts?.seg ?? 10, opts?.segY ?? 8), mat(color, opts));
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(r, opts?.seg ?? 10, opts?.segY ?? 8),
+    mat(color, opts)
+  );
   m.castShadow = true;
   m.receiveShadow = true;
   return m;
 }
 
-/** Stylized 1970s low-poly seated character — LARGE, readable face */
+function makeVinylTableTexture() {
+  const c = document.createElement("canvas");
+  c.width = 512;
+  c.height = 512;
+  const ctx = c.getContext("2d");
+  // Beige-brown vinyl base
+  ctx.fillStyle = "#d4b896";
+  ctx.fillRect(0, 0, 512, 512);
+  // Faded checker / diamond pattern
+  ctx.strokeStyle = "rgba(100, 70, 40, 0.45)";
+  ctx.lineWidth = 2;
+  for (let y = 0; y < 512; y += 48) {
+    for (let x = 0; x < 512; x += 48) {
+      ctx.strokeRect(x + 4, y + 4, 40, 40);
+      ctx.beginPath();
+      ctx.moveTo(x + 24, y + 8);
+      ctx.lineTo(x + 40, y + 24);
+      ctx.lineTo(x + 24, y + 40);
+      ctx.lineTo(x + 8, y + 24);
+      ctx.closePath();
+      ctx.stroke();
+    }
+  }
+  // Coffee rings
+  const rings = [
+    [120, 160, 38],
+    [360, 280, 44],
+    [200, 400, 32],
+    [420, 120, 28],
+  ];
+  for (const [cx, cy, r] of rings) {
+    ctx.strokeStyle = "rgba(90, 55, 30, 0.45)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(90, 55, 30, 0.2)";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(cx + 2, cy - 1, r * 0.92, 0.2, Math.PI * 1.6);
+    ctx.stroke();
+  }
+  // Cigarette burns
+  const burns = [
+    [80, 90],
+    [280, 70],
+    [450, 380],
+    [160, 300],
+    [340, 180],
+    [90, 420],
+  ];
+  for (const [bx, by] of burns) {
+    const g = ctx.createRadialGradient(bx, by, 1, bx, by, 14);
+    g.addColorStop(0, "#1a1208");
+    g.addColorStop(0.4, "#4a3020");
+    g.addColorStop(0.7, "rgba(100,70,40,0.5)");
+    g.addColorStop(1, "rgba(196,168,130,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(bx, by, 14, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Scuffs / wear
+  ctx.strokeStyle = "rgba(60, 40, 25, 0.2)";
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 40; i++) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 512;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + (Math.random() - 0.5) * 40, y + (Math.random() - 0.5) * 12);
+    ctx.stroke();
+  }
+  // Edge wear
+  ctx.fillStyle = "rgba(80, 55, 35, 0.15)";
+  ctx.fillRect(0, 0, 512, 18);
+  ctx.fillRect(0, 494, 512, 18);
+  ctx.fillRect(0, 0, 18, 512);
+  ctx.fillRect(494, 0, 18, 512);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
+}
+
+function makeCardFaceTexture(card) {
+  const c = document.createElement("canvas");
+  c.width = 128;
+  c.height = 180;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#f8f5ef";
+  ctx.fillRect(0, 0, 128, 180);
+  ctx.strokeStyle = "#2a3548";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(3, 3, 122, 174);
+  const red = card.suit === "H" || card.suit === "D";
+  const sym = { S: "♠", H: "♥", D: "♦", C: "♣" }[card.suit];
+  const rank = { "9": "9", T: "10", J: "J", Q: "Q", K: "K", A: "A" }[card.rank];
+  ctx.fillStyle = red ? "#c81e1e" : "#111";
+  ctx.font = "bold 36px Segoe UI, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(rank, 10, 40);
+  ctx.font = "40px Segoe UI, sans-serif";
+  ctx.fillText(sym, 12, 82);
+  ctx.font = "64px Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(sym, 64, 120);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makeCardBackTexture() {
+  const c = document.createElement("canvas");
+  c.width = 64;
+  c.height = 90;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#1e3a5f";
+  ctx.fillRect(0, 0, 64, 90);
+  ctx.strokeStyle = "#c81e1e";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(4, 4, 56, 82);
+  ctx.fillStyle = "#ffd166";
+  ctx.font = "bold 14px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("SNC", 32, 50);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** Stylized 1970s low-poly seated character with readable face */
 export function createCharacter(cfg) {
   const root = new THREE.Group();
   root.name = cfg.name;
@@ -45,99 +192,170 @@ export function createCharacter(cfg) {
   const shirt = cfg.shirt || "#c81e1e";
   const pants = cfg.pants || "#2a3548";
   const accent = cfg.accent || "#ffffff";
+  const browColor = cfg.brow || hair;
+  const eyeColor = cfg.eyeColor || "#2a1810";
+  const stubbleColor = cfg.stubble || "#5a4638";
+  const noseTint = cfg.noseTint || "#d4a88a";
 
-  // Torso (chunky)
-  const torso = box(0.72, 0.85, 0.45, shirt);
+  // Torso with wrinkle suggestion
+  const torso = box(0.72, 0.85, 0.48, shirt);
   torso.position.y = 0.95;
   root.add(torso);
+  const wrinkle1 = box(0.68, 0.03, 0.5, accent, { roughness: 0.9 });
+  wrinkle1.position.set(0, 1.15, 0.01);
+  root.add(wrinkle1);
+  const wrinkle2 = box(0.6, 0.025, 0.5, "#000000");
+  wrinkle2.material = mat(shirt, { roughness: 1 });
+  wrinkle2.material.color.offsetHSL(0, 0, -0.08);
+  wrinkle2.position.set(0, 0.78, 0.01);
+  root.add(wrinkle2);
 
-  // Jersey stripe / number plate
-  const stripe = box(0.74, 0.12, 0.46, accent, { roughness: 0.6 });
+  const stripe = box(0.74, 0.12, 0.5, accent, { roughness: 0.6 });
   stripe.position.set(0, 1.05, 0);
   root.add(stripe);
 
-  // Chest emblem (maple or USA-ish)
   const emblem = box(0.22, 0.22, 0.06, cfg.emblem || "#ffffff");
-  emblem.position.set(0, 0.95, 0.22);
+  emblem.position.set(0, 0.95, 0.24);
   root.add(emblem);
 
-  // Head
-  const head = sphere(0.32, skin, { seg: 12, segY: 10 });
-  head.position.y = 1.72;
-  head.scale.set(1, 1.05, 0.95);
-  root.add(head);
+  // Neck
+  const neck = cyl(0.12, 0.14, 0.18, skin, { seg: 8 });
+  neck.position.y = 1.48;
+  root.add(neck);
 
-  // 1970s hair volume
-  const hairCap = sphere(0.34, hair, { seg: 10, segY: 8 });
-  hairCap.position.set(0, 1.82, -0.02);
-  hairCap.scale.set(1.05, 0.85, 1.1);
-  root.add(hairCap);
+  // Head group (for look / blink / talk)
+  const headGroup = new THREE.Group();
+  headGroup.position.y = 1.72;
+  root.add(headGroup);
+
+  const head = sphere(0.34, skin, { seg: 14, segY: 12 });
+  head.scale.set(1, 1.08, 0.95);
+  headGroup.add(head);
+
+  // Ears
+  for (const sx of [-1, 1]) {
+    const ear = sphere(0.08, skin, { seg: 6, segY: 6 });
+    ear.position.set(sx * 0.32, -0.02, 0);
+    ear.scale.set(0.55, 1, 0.7);
+    headGroup.add(ear);
+  }
+
+  // Hair
+  const hairCap = sphere(0.36, hair, { seg: 10, segY: 8 });
+  hairCap.position.set(0, 0.12, -0.04);
+  hairCap.scale.set(1.08, 0.78, 1.12);
+  headGroup.add(hairCap);
+
   if (cfg.mullet) {
-    const mullet = box(0.28, 0.35, 0.18, hair);
-    mullet.position.set(0, 1.55, -0.28);
-    root.add(mullet);
+    const mullet = box(0.3, 0.42, 0.2, hair);
+    mullet.position.set(0, -0.22, -0.3);
+    headGroup.add(mullet);
+    const mulletTip = box(0.22, 0.18, 0.14, hair);
+    mulletTip.position.set(0, -0.42, -0.32);
+    headGroup.add(mulletTip);
   }
   if (cfg.sideburns) {
-    for (const sx of [-0.28, 0.28]) {
-      const sb = box(0.08, 0.22, 0.1, hair);
-      sb.position.set(sx, 1.62, 0.05);
-      root.add(sb);
+    for (const sx of [-1, 1]) {
+      const sb = box(0.09, 0.28, 0.12, hair);
+      sb.position.set(sx * 0.3, -0.12, 0.06);
+      headGroup.add(sb);
     }
   }
-
-  // Face features
-  const brow = box(0.28, 0.04, 0.06, hair);
-  brow.position.set(0, 1.78, 0.28);
-  root.add(brow);
-  for (const ex of [-0.1, 0.1]) {
-    const eyeW = box(0.09, 0.06, 0.04, "#f8f8f8");
-    eyeW.position.set(ex, 1.72, 0.30);
-    root.add(eyeW);
-    const pupil = box(0.04, 0.04, 0.03, "#1a1a1a");
-    pupil.position.set(ex, 1.72, 0.33);
-    root.add(pupil);
+  if (cfg.beard) {
+    const beard = box(0.32, 0.22, 0.14, stubbleColor, { roughness: 1 });
+    beard.position.set(0, -0.28, 0.22);
+    headGroup.add(beard);
+    const chin = box(0.18, 0.12, 0.1, stubbleColor, { roughness: 1 });
+    chin.position.set(0, -0.38, 0.2);
+    headGroup.add(chin);
   }
-  // Nose
-  const nose = box(0.06, 0.08, 0.08, "#d4a88a");
-  nose.position.set(0, 1.66, 0.34);
-  root.add(nose);
-  // Stubble
-  const stubble = box(0.28, 0.12, 0.06, "#5a4638", { roughness: 1 });
-  stubble.position.set(0, 1.55, 0.30);
-  root.add(stubble);
-  // Mouth
-  const mouth = box(0.14, 0.03, 0.04, "#6b3a3a");
-  mouth.position.set(0, 1.52, 0.33);
-  root.add(mouth);
 
-  // Arms
+  // Face — large readable features on front of head
+  const faceZ = 0.32;
+
+  // Eyebrows (separate, thick)
+  const brows = [];
+  for (const ex of [-0.12, 0.12]) {
+    const brow = box(0.14, 0.045, 0.05, browColor);
+    brow.position.set(ex, 0.1, faceZ + 0.02);
+    brow.rotation.z = ex < 0 ? 0.15 : -0.15;
+    if (cfg.angryBrows) brow.rotation.z = ex < 0 ? -0.25 : 0.25;
+    headGroup.add(brow);
+    brows.push(brow);
+  }
+
+  // Eyes with lids for blink
+  const eyes = [];
+  for (const ex of [-0.12, 0.12]) {
+    const eyeGroup = new THREE.Group();
+    eyeGroup.position.set(ex, 0.04, faceZ);
+    const white = box(0.13, 0.1, 0.05, "#f5f5f5");
+    eyeGroup.add(white);
+    const pupil = box(0.06, 0.06, 0.04, eyeColor);
+    pupil.position.z = 0.03;
+    eyeGroup.add(pupil);
+    const highlight = box(0.025, 0.025, 0.02, "#ffffff");
+    highlight.position.set(0.018, 0.018, 0.045);
+    eyeGroup.add(highlight);
+    const lid = box(0.14, 0.11, 0.055, skin);
+    lid.position.set(0, 0, 0.01);
+    lid.visible = false;
+    eyeGroup.add(lid);
+    headGroup.add(eyeGroup);
+    eyes.push({ group: eyeGroup, lid, pupil });
+  }
+
+  // Nose (prominent)
+  const nose = box(0.1, 0.14, 0.14, noseTint);
+  nose.position.set(0, -0.05, faceZ + 0.08);
+  headGroup.add(nose);
+  const nostril = box(0.12, 0.05, 0.07, noseTint);
+  nostril.position.set(0, -0.12, faceZ + 0.05);
+  headGroup.add(nostril);
+
+  // Stubble patch (even without full beard)
+  if (!cfg.beard) {
+    const stubble = box(0.3, 0.14, 0.08, stubbleColor, { roughness: 1 });
+    stubble.position.set(0, -0.22, faceZ);
+    headGroup.add(stubble);
+  }
+
+  // Mouth
+  const mouth = box(0.18, 0.05, 0.06, cfg.lipColor || "#8b3a3a");
+  mouth.position.set(0, -0.28, faceZ + 0.05);
+  headGroup.add(mouth);
+  const mouthOpen = box(0.14, 0.08, 0.05, "#3a1515");
+  mouthOpen.position.set(0, -0.28, faceZ + 0.06);
+  mouthOpen.visible = false;
+  headGroup.add(mouthOpen);
+
+  // Arms reaching toward table
   const arms = new THREE.Group();
   for (const side of [-1, 1]) {
     const upper = cyl(0.09, 0.1, 0.55, shirt, { seg: 6 });
-    upper.position.set(side * 0.48, 1.15, 0.05);
-    upper.rotation.z = side * 25 * DEG;
-    upper.rotation.x = 40 * DEG;
+    upper.position.set(side * 0.48, 1.15, 0.08);
+    upper.rotation.z = side * 22 * DEG;
+    upper.rotation.x = 48 * DEG;
     arms.add(upper);
-    const forearm = cyl(0.08, 0.09, 0.45, skin, { seg: 6 });
-    forearm.position.set(side * 0.55, 0.78, 0.28);
-    forearm.rotation.x = -50 * DEG;
+    const forearm = cyl(0.08, 0.09, 0.48, skin, { seg: 6 });
+    forearm.position.set(side * 0.52, 0.72, 0.38);
+    forearm.rotation.x = -55 * DEG;
     arms.add(forearm);
-    const hand = sphere(0.09, skin, { seg: 6 });
-    hand.position.set(side * 0.52, 0.58, 0.42);
+    const hand = sphere(0.095, skin, { seg: 6 });
+    hand.position.set(side * 0.48, 0.52, 0.55);
     arms.add(hand);
   }
   root.add(arms);
 
-  // Beer-holding arm reference (right hand)
   const beerHand = new THREE.Group();
-  beerHand.position.set(0.52, 0.58, 0.42);
+  beerHand.position.set(0.48, 0.52, 0.55);
   root.add(beerHand);
   const stubby = createStubby();
   stubby.scale.setScalar(0.85);
   stubby.visible = !!cfg.holdBeer;
   beerHand.add(stubby);
 
-  // Seated pelvis / legs
+  // Seated hips / legs
   const hips = box(0.7, 0.28, 0.5, pants);
   hips.position.y = 0.48;
   root.add(hips);
@@ -154,35 +372,59 @@ export function createCharacter(cfg) {
     root.add(boot);
   }
 
-  // Name label sprite-ish (simple plane)
+  // Nameplate
   const canvas = document.createElement("canvas");
   canvas.width = 256;
   canvas.height = 64;
   const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "rgba(0,0,0,0.55)";
-  ctx.fillRect(0, 0, 256, 64);
+  ctx.fillStyle = "rgba(0,0,0,0.65)";
+  ctx.roundRect?.(0, 0, 256, 64, 8);
+  if (!ctx.roundRect) ctx.fillRect(0, 0, 256, 64);
+  else {
+    ctx.beginPath();
+    ctx.roundRect(0, 0, 256, 64, 8);
+    ctx.fill();
+  }
   ctx.fillStyle = cfg.labelColor || "#ffd166";
-  ctx.font = "bold 28px Segoe UI, sans-serif";
+  ctx.font = "bold 30px Segoe UI, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText(cfg.name.toUpperCase(), 128, 42);
   const tex = new THREE.CanvasTexture(canvas);
   const label = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.9, 0.22),
+    new THREE.PlaneGeometry(0.95, 0.24),
     new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
   );
-  label.position.set(0, 2.15, 0);
+  label.position.set(0, 2.2, 0);
   root.add(label);
 
+  // Turn highlight ring
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.55, 0.035, 8, 24),
+    new THREE.MeshBasicMaterial({ color: cfg.labelColor || "#ffd166", transparent: true, opacity: 0.85 })
+  );
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.08;
+  ring.visible = false;
+  root.add(ring);
+
   root.userData = {
+    headGroup,
     head,
     arms,
     beerHand,
     stubby,
     label,
+    ring,
+    eyes,
+    mouth,
+    mouthOpen,
     breathPhase: Math.random() * Math.PI * 2,
     headPhase: Math.random() * Math.PI * 2,
     beerPhase: Math.random() * Math.PI * 2,
-    baseY: 0,
+    blinkTimer: 1 + Math.random() * 3,
+    talkUntil: 0,
+    lookTarget: null,
+    cfg,
   };
 
   return root;
@@ -210,7 +452,12 @@ function createFoldingChair() {
   const back = box(0.7, 0.55, 0.06, "#9ca3af", { metalness: 0.3 });
   back.position.set(0, 0.75, -0.32);
   g.add(back);
-  for (const [x, z] of [[-0.28, -0.28], [0.28, -0.28], [-0.28, 0.28], [0.28, 0.28]]) {
+  for (const [x, z] of [
+    [-0.28, -0.28],
+    [0.28, -0.28],
+    [-0.28, 0.28],
+    [0.28, 0.28],
+  ]) {
     const leg = cyl(0.03, 0.03, 0.45, "#6b7280", { seg: 5, metalness: 0.5 });
     leg.position.set(x, 0.22, z);
     g.add(leg);
@@ -220,23 +467,67 @@ function createFoldingChair() {
 
 function createCardTable() {
   const g = new THREE.Group();
-  // Felt / vinyl top
-  const top = box(2.4, 0.08, 2.4, "#2f5a38", { roughness: 0.85 });
+  const vinylTex = makeVinylTableTexture();
+
+  // Patterned vinyl top (beige-brown, NOT green felt)
+  const top = new THREE.Mesh(
+    new THREE.BoxGeometry(2.4, 0.06, 2.4),
+    new THREE.MeshStandardMaterial({
+      map: vinylTex,
+      color: 0xffffff,
+      roughness: 0.78,
+      metalness: 0.08,
+      flatShading: false,
+    })
+  );
   top.position.y = 0.78;
+  top.castShadow = true;
+  top.receiveShadow = true;
   g.add(top);
-  const rim = box(2.5, 0.1, 2.5, "#1f3324");
-  rim.position.y = 0.72;
+
+  // Aluminum edge band
+  const rim = box(2.52, 0.09, 2.52, "#b8c0c8", { metalness: 0.75, roughness: 0.35, flat: false });
+  rim.position.y = 0.74;
   g.add(rim);
-  // Vinyl sheen strip
-  const sheen = box(2.2, 0.01, 0.35, "#3a6a42", { roughness: 0.4 });
-  sheen.position.set(0, 0.83, -0.7);
-  g.add(sheen);
-  // Metal legs
-  for (const [x, z] of [[-1.0, -1.0], [1.0, -1.0], [-1.0, 1.0], [1.0, 1.0]]) {
-    const leg = cyl(0.04, 0.04, 0.72, "#4b5563", { seg: 6, metalness: 0.6 });
+  const innerRim = box(2.42, 0.02, 2.42, "#8a9299", { metalness: 0.6, roughness: 0.4 });
+  innerRim.position.y = 0.81;
+  g.add(innerRim);
+
+  // Folding metal legs (X-brace vibe)
+  for (const [x, z] of [
+    [-1.0, -1.0],
+    [1.0, -1.0],
+    [-1.0, 1.0],
+    [1.0, 1.0],
+  ]) {
+    const leg = cyl(0.035, 0.04, 0.74, "#6b7280", { seg: 6, metalness: 0.7, roughness: 0.4 });
     leg.position.set(x, 0.36, z);
     g.add(leg);
+    const foot = box(0.12, 0.03, 0.12, "#4b5563", { metalness: 0.5 });
+    foot.position.set(x, 0.02, z);
+    g.add(foot);
   }
+  // Cross braces
+  const brace1 = box(2.0, 0.03, 0.04, "#9ca3af", { metalness: 0.55 });
+  brace1.position.set(0, 0.35, 0);
+  brace1.rotation.y = 45 * DEG;
+  g.add(brace1);
+  const brace2 = box(2.0, 0.03, 0.04, "#9ca3af", { metalness: 0.55 });
+  brace2.position.set(0, 0.32, 0);
+  brace2.rotation.y = -45 * DEG;
+  g.add(brace2);
+
+  // Raised burn bumps (geometry)
+  for (const [bx, bz] of [
+    [-0.6, 0.5],
+    [0.7, -0.4],
+    [-0.3, -0.7],
+  ]) {
+    const burn = cyl(0.04, 0.05, 0.015, "#2a1810", { seg: 6, roughness: 1 });
+    burn.position.set(bx, 0.82, bz);
+    g.add(burn);
+  }
+
   return g;
 }
 
@@ -260,7 +551,6 @@ function createMapleHanging() {
   const knit = box(0.95, 0.75, 0.04, "#f5e6d3");
   knit.position.z = 0.02;
   g.add(knit);
-  // Maple leaf (simple diamond cluster)
   const leafMat = mat("#c81e1e");
   const leaf = new THREE.Mesh(new THREE.OctahedronGeometry(0.18), leafMat);
   leaf.position.set(0, 0.05, 0.06);
@@ -283,7 +573,6 @@ function createCRT(tvCanvas) {
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 0.55), screenMat);
   screen.position.set(0, 0.05, 0.43);
   g.add(screen);
-  // Antenna
   for (const sx of [-0.15, 0.15]) {
     const ant = cyl(0.01, 0.01, 0.5, "#888", { seg: 4, metalness: 0.7 });
     ant.position.set(sx, 0.65, -0.1);
@@ -304,7 +593,6 @@ function makeTVTexture() {
   function draw(flash) {
     ctx.fillStyle = "#0b1a12";
     ctx.fillRect(0, 0, 256, 160);
-    // ice rink vibe
     ctx.fillStyle = "#c8d8e8";
     ctx.fillRect(20, 40, 216, 70);
     ctx.fillStyle = "#c81e1e";
@@ -318,7 +606,6 @@ function makeTVTexture() {
     ctx.fillStyle = "#ff6b6b";
     ctx.font = "14px sans-serif";
     ctx.fillText("CAN losing again", 128, 150);
-    // score
     ctx.fillStyle = "#fff";
     ctx.font = "bold 16px monospace";
     ctx.fillText("CAN 1", 60, 74);
@@ -332,7 +619,6 @@ function makeTVTexture() {
 function createRoom() {
   const room = new THREE.Group();
 
-  // Floor carpet
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(12, 12),
     mat("#6b3f2a", { flat: false, roughness: 0.95 })
@@ -341,7 +627,6 @@ function createRoom() {
   floor.receiveShadow = true;
   room.add(floor);
 
-  // Carpet pattern strips
   for (let i = -5; i <= 5; i++) {
     const strip = box(11.5, 0.01, 0.08, i % 2 === 0 ? "#5a3422" : "#7a4a32", { flat: false });
     strip.position.set(0, 0.01, i * 0.55);
@@ -349,7 +634,6 @@ function createRoom() {
     room.add(strip);
   }
 
-  // Walls — wood panel
   const wallMat = mat("#5c4030", { flat: false, roughness: 0.8 });
   const back = new THREE.Mesh(new THREE.PlaneGeometry(12, 4.5), wallMat);
   back.position.set(0, 2.25, -4.5);
@@ -366,14 +650,12 @@ function createRoom() {
   right.receiveShadow = true;
   room.add(right);
 
-  // Wood panel lines on back wall
   for (let i = -5; i <= 5; i++) {
     const panel = box(0.04, 4.2, 0.02, "#4a3524");
     panel.position.set(i * 1.05, 2.1, -4.48);
     room.add(panel);
   }
 
-  // Ceiling
   const ceil = new THREE.Mesh(
     new THREE.PlaneGeometry(12, 12),
     mat("#d4c4a8", { flat: false, roughness: 0.9 })
@@ -382,34 +664,63 @@ function createRoom() {
   ceil.position.y = 4.4;
   room.add(ceil);
 
-  // Kitchen doorway (left back)
   const doorFrame = box(1.4, 2.4, 0.15, "#3d2c1e");
   doorFrame.position.set(-3.8, 1.2, -4.4);
   room.add(doorFrame);
   const doorHole = box(1.15, 2.15, 0.2, "#1a120c");
   doorHole.position.set(-3.8, 1.1, -4.35);
   room.add(doorHole);
-  // Warm kitchen glow
-  const glow = box(1.1, 2.1, 0.05, "#ffcc88", { emissive: "#ff9944", emissiveIntensity: 0.35, flat: false });
+  const glow = box(1.1, 2.1, 0.05, "#ffcc88", {
+    emissive: "#ff9944",
+    emissiveIntensity: 0.35,
+    flat: false,
+  });
   glow.position.set(-3.8, 1.1, -4.5);
   room.add(glow);
 
   return room;
 }
 
+function createTableCardMesh() {
+  const geo = new THREE.BoxGeometry(0.32, 0.012, 0.45);
+  const backMat = new THREE.MeshStandardMaterial({
+    color: "#1e3a5f",
+    roughness: 0.6,
+    flatShading: false,
+  });
+  const faceMat = new THREE.MeshStandardMaterial({
+    color: "#f8f5ef",
+    roughness: 0.55,
+    flatShading: false,
+  });
+  const mats = [backMat, backMat, faceMat, backMat, backMat, backMat];
+  // Box faces: +x -x +y -y +z -z — use +y as face
+  const m = new THREE.Mesh(geo, [
+    backMat.clone(),
+    backMat.clone(),
+    faceMat,
+    backMat.clone(),
+    backMat.clone(),
+    backMat.clone(),
+  ]);
+  m.castShadow = true;
+  m.visible = false;
+  m.userData.faceMat = faceMat;
+  return m;
+}
+
 /**
- * Build full SNC 3D scene into container element.
- * Returns API: { renderer, scene, camera, characters, update, setWoozy, spawnKnivesBuddy, flashTV, dispose }
+ * Build full SNC 3D scene into container.
  */
 export function createSNCScene(container) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color("#1a120c");
-  scene.fog = new THREE.Fog("#1a120c", 10, 22);
+  scene.fog = new THREE.Fog("#1a120c", 12, 24);
 
-  const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 50);
-  // Corner medium shot — You in 3/4, partners/opponents readable, fills frame
-  camera.position.set(2.65, 2.55, 2.85);
-  camera.lookAt(-0.15, 1.35, -0.1);
+  const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 50);
+  const DEFAULT_CAM = { x: 4.0, y: 3.8, z: 4.2 };
+  const DEFAULT_TARGET = { x: 0, y: 1.05, z: 0 };
+  camera.position.set(DEFAULT_CAM.x, DEFAULT_CAM.y, DEFAULT_CAM.z);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -417,6 +728,21 @@ export function createSNCScene(container) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   container.appendChild(renderer.domElement);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(DEFAULT_TARGET.x, DEFAULT_TARGET.y, DEFAULT_TARGET.z);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.enablePan = false;
+  controls.minDistance = 2.8;
+  controls.maxDistance = 8.5;
+  controls.minPolarAngle = 25 * DEG;
+  controls.maxPolarAngle = 78 * DEG;
+  controls.minAzimuthAngle = -95 * DEG;
+  controls.maxAzimuthAngle = 95 * DEG;
+  controls.rotateSpeed = 0.55;
+  controls.zoomSpeed = 0.7;
+  controls.update();
 
   // Lights
   const hemi = new THREE.HemisphereLight(0xffe8d0, 0x3a2a1a, 0.55);
@@ -446,7 +772,6 @@ export function createSNCScene(container) {
   table.position.set(0, 0, 0);
   scene.add(table);
 
-  // Chairs at four seats: S=You, W=Chad, N=Doug, E=Brad
   const seatLayouts = [
     { pos: [0, 0, 1.45], rotY: Math.PI, name: "You" },
     { pos: [-1.45, 0, 0], rotY: Math.PI / 2, name: "Chad" },
@@ -474,6 +799,9 @@ export function createSNCScene(container) {
       holdBeer: true,
       labelColor: "#ffd166",
       skin: "#e8c4a8",
+      eyeColor: "#1a3a2a",
+      stubble: "#4a3a28",
+      noseTint: "#d4a88a",
     },
     {
       name: "Chad",
@@ -487,6 +815,11 @@ export function createSNCScene(container) {
       holdBeer: true,
       labelColor: "#60a5fa",
       skin: "#f0d0b0",
+      eyeColor: "#1e3a5f",
+      angryBrows: true,
+      brow: "#8a6a40",
+      stubble: "#a08060",
+      noseTint: "#e8b898",
     },
     {
       name: "Doug",
@@ -497,9 +830,14 @@ export function createSNCScene(container) {
       hair: "#1a1208",
       mullet: true,
       sideburns: true,
+      beard: true,
       holdBeer: true,
       labelColor: "#fda4af",
       skin: "#d4a574",
+      eyeColor: "#3a2818",
+      stubble: "#2a1810",
+      noseTint: "#c4946a",
+      lipColor: "#6b3030",
     },
     {
       name: "Brad",
@@ -513,22 +851,25 @@ export function createSNCScene(container) {
       holdBeer: false,
       labelColor: "#93c5fd",
       skin: "#e8c4a8",
+      eyeColor: "#2a4050",
+      stubble: "#6a5040",
+      noseTint: "#d8b090",
+      brow: "#3a2818",
     },
   ];
 
   const characters = charDefs.map((def, i) => {
     const ch = createCharacter(def);
     const layout = seatLayouts[i];
-    // Sit slightly above chair, facing table
     ch.position.set(layout.pos[0] * 0.95, 0.15, layout.pos[2] * 0.95);
-    // Bias You (south) a few degrees toward camera so face is readable
-    ch.rotation.y = layout.rotY + (i === 0 ? 18 * DEG : i === 1 ? 8 * DEG : i === 3 ? -8 * DEG : -8 * DEG);
+    // Slight yaw so faces read from default SE camera while still facing table
+    ch.rotation.y =
+      layout.rotY + (i === 0 ? 28 * DEG : i === 1 ? 18 * DEG : i === 2 ? 12 * DEG : -18 * DEG);
     ch.scale.setScalar(1.2);
     scene.add(ch);
     return ch;
   });
 
-  // Props on / near table
   const ash = createAshtray();
   ash.position.set(-0.7, 0.84, 0.5);
   scene.add(ash);
@@ -550,12 +891,10 @@ export function createSNCScene(container) {
   crt.rotation.y = -35 * DEG;
   scene.add(crt);
 
-  // Side table under TV
   const tvStand = box(1.3, 0.7, 0.6, "#4a3524");
   tvStand.position.set(2.6, 0.35, -3.6);
   scene.add(tvStand);
 
-  // Hot knives buddy (5th character) — starts off in kitchen
   const buddy = createCharacter({
     name: "Gary",
     shirt: "#4b5563",
@@ -565,29 +904,91 @@ export function createSNCScene(container) {
     hair: "#5a4638",
     mullet: true,
     sideburns: true,
+    beard: true,
     holdBeer: false,
     labelColor: "#a7f3d0",
     skin: "#c4a882",
+    eyeColor: "#2a4a30",
+    stubble: "#3a3020",
+    noseTint: "#b8946e",
   });
   buddy.scale.setScalar(1.1);
   buddy.position.set(-3.8, 0.1, -5.2);
   buddy.visible = false;
   scene.add(buddy);
 
-  // Card meshes on table (trick pile placeholders)
+  // Trick cards (textured)
   const trickMeshes = [];
   for (let i = 0; i < 4; i++) {
-    const card = box(0.28, 0.02, 0.4, "#f8f5ef", { flat: false, roughness: 0.6 });
-    card.position.set(0, 0.86 + i * 0.01, 0);
-    card.visible = false;
+    const card = createTableCardMesh();
     scene.add(card);
     trickMeshes.push(card);
   }
 
+  // Upcard on table
+  const upcardMesh = createTableCardMesh();
+  upcardMesh.position.set(0.55, 0.86, 0);
+  scene.add(upcardMesh);
+
+  // Trump indicator disc
+  const trumpCanvas = document.createElement("canvas");
+  trumpCanvas.width = 128;
+  trumpCanvas.height = 128;
+  const trumpCtx = trumpCanvas.getContext("2d");
+  const trumpTex = new THREE.CanvasTexture(trumpCanvas);
+  trumpTex.colorSpace = THREE.SRGBColorSpace;
+  const trumpMesh = new THREE.Mesh(
+    new THREE.CircleGeometry(0.22, 24),
+    new THREE.MeshBasicMaterial({ map: trumpTex, transparent: true, side: THREE.DoubleSide })
+  );
+  trumpMesh.rotation.x = -Math.PI / 2;
+  trumpMesh.position.set(-0.55, 0.86, 0);
+  trumpMesh.visible = false;
+  scene.add(trumpMesh);
+
+  function drawTrumpIndicator(suit) {
+    const sym = { S: "♠", H: "♥", D: "♦", C: "♣" }[suit] || "?";
+    const red = suit === "H" || suit === "D";
+    trumpCtx.clearRect(0, 0, 128, 128);
+    trumpCtx.fillStyle = "rgba(20,16,10,0.85)";
+    trumpCtx.beginPath();
+    trumpCtx.arc(64, 64, 60, 0, Math.PI * 2);
+    trumpCtx.fill();
+    trumpCtx.strokeStyle = "#ffd166";
+    trumpCtx.lineWidth = 4;
+    trumpCtx.stroke();
+    trumpCtx.fillStyle = red ? "#ff6b6b" : "#e8eef6";
+    trumpCtx.font = "bold 64px Segoe UI, sans-serif";
+    trumpCtx.textAlign = "center";
+    trumpCtx.textBaseline = "middle";
+    trumpCtx.fillText(sym, 64, 58);
+    trumpCtx.fillStyle = "#ffd166";
+    trumpCtx.font = "bold 14px sans-serif";
+    trumpCtx.fillText("TRUMP", 64, 100);
+    trumpTex.needsUpdate = true;
+  }
+
+  // Deal animation flying cards
+  const dealCards = [];
+  const cardBackTex = makeCardBackTexture();
+  for (let i = 0; i < 20; i++) {
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.28, 0.4),
+      new THREE.MeshBasicMaterial({ map: cardBackTex, side: THREE.DoubleSide })
+    );
+    m.visible = false;
+    scene.add(m);
+    dealCards.push(m);
+  }
+  let dealAnimT = -1;
+  let dealFrom = null;
+
   let woozy = 0;
-  let knivesProgress = -1; // -1 idle, 0..1 walking in, >1 hanging out
+  let knivesProgress = -1;
   let tvFlash = 0;
   const clock = { t: 0 };
+  let talkingSeat = -1;
+  let talkingUntil = 0;
 
   function resize() {
     const w = container.clientWidth || window.innerWidth;
@@ -606,66 +1007,234 @@ export function createSNCScene(container) {
       buddy.position.set(-3.8, 0.1, -4.8);
     } else {
       knivesProgress = -1;
-      // walk back eventually
       setTimeout(() => {
         if (knivesProgress < 0) buddy.visible = false;
       }, 2000);
     }
   }
 
-  function setWoozy(v) { woozy = v; }
-  function flashTV() { tvFlash = 0.6; tvTex.draw(true); }
+  function setWoozy(v) {
+    woozy = v;
+  }
+  function flashTV() {
+    tvFlash = 0.6;
+    tvTex.draw(true);
+  }
+
+  function setCardFace(mesh, card) {
+    if (!card) {
+      mesh.visible = false;
+      return;
+    }
+    const tex = makeCardFaceTexture(card);
+    if (mesh.userData.faceMat) {
+      if (mesh.userData.faceMat.map) mesh.userData.faceMat.map.dispose();
+      mesh.userData.faceMat.map = tex;
+      mesh.userData.faceMat.color.set("#ffffff");
+      mesh.userData.faceMat.needsUpdate = true;
+    }
+    mesh.visible = true;
+  }
 
   function updateTrickVisual(trick) {
     const offsets = [
-      [0, 0.35],   // S
-      [-0.35, 0],  // W
-      [0, -0.35],  // N
-      [0.35, 0],   // E
+      [0, 0.38],
+      [-0.38, 0],
+      [0, -0.38],
+      [0.38, 0],
     ];
     for (let i = 0; i < 4; i++) {
       const m = trickMeshes[i];
-      if (i < trick.length) {
-        m.visible = true;
+      if (trick && i < trick.length) {
+        setCardFace(m, trick[i].card);
         const seat = trick[i].seat;
         const [ox, oz] = offsets[seat];
         m.position.set(ox, 0.86 + i * 0.015, oz);
-        m.rotation.y = (seat * Math.PI) / 2 + 0.1;
+        m.rotation.set(0, (seat * Math.PI) / 2 + 0.08, 0);
       } else {
         m.visible = false;
       }
     }
   }
 
-  function update(dt, gameState) {
-    clock.t += dt;
+  function updateUpcaryVisual(upcard, phase) {
+    if (upcard && (phase === "bid1" || phase === "bid2" || phase === "deal")) {
+      setCardFace(upcardMesh, upcard);
+      upcardMesh.position.set(0.15, 0.86, 0.05);
+      upcardMesh.rotation.set(0, 0.2, 0);
+    } else {
+      upcardMesh.visible = false;
+    }
+  }
 
-    // Idle animations
-    for (const ch of characters) {
-      const ud = ch.userData;
-      ud.breathPhase += dt * 1.6;
-      ud.headPhase += dt * 0.7;
-      ud.beerPhase += dt * 0.45;
-      const breath = Math.sin(ud.breathPhase) * 0.012;
-      ch.scale.y = 1.2 * (1 + breath);
-      if (ud.head) {
-        ud.head.rotation.y = Math.sin(ud.headPhase) * 0.12;
-        ud.head.rotation.z = Math.sin(ud.headPhase * 0.5) * 0.04;
+  function updateTrumpVisual(trump) {
+    if (trump) {
+      drawTrumpIndicator(trump);
+      trumpMesh.visible = true;
+    } else {
+      trumpMesh.visible = false;
+    }
+  }
+
+  function playDealAnimation() {
+    dealAnimT = 0;
+    dealFrom = new THREE.Vector3(0, 1.2, 0);
+  }
+
+  function setTalking(seat, duration = 1.2) {
+    talkingSeat = seat;
+    talkingUntil = clock.t + duration;
+    if (characters[seat]) characters[seat].userData.talkUntil = clock.t + duration;
+  }
+
+  function highlightTurn(seat) {
+    for (let i = 0; i < characters.length; i++) {
+      const ring = characters[i].userData.ring;
+      if (ring) ring.visible = seat === i;
+    }
+  }
+
+  function resetView() {
+    camera.position.set(DEFAULT_CAM.x, DEFAULT_CAM.y, DEFAULT_CAM.z);
+    controls.target.set(DEFAULT_TARGET.x, DEFAULT_TARGET.y, DEFAULT_TARGET.z);
+    controls.update();
+  }
+
+  function animateCharacter(ch, dt, lookAtTable) {
+    const ud = ch.userData;
+    ud.breathPhase += dt * 1.6;
+    ud.headPhase += dt * 0.7;
+    ud.beerPhase += dt * 0.45;
+    const breath = Math.sin(ud.breathPhase) * 0.012;
+    const baseScale = ch === buddy ? 1.1 : 1.2;
+    ch.scale.y = baseScale * (1 + breath);
+
+    // Blink
+    ud.blinkTimer -= dt;
+    if (ud.blinkTimer <= 0) {
+      ud.blinkTimer = 2 + Math.random() * 4;
+      ud._blinking = 0.12;
+    }
+    if (ud._blinking > 0) {
+      ud._blinking -= dt;
+      for (const e of ud.eyes || []) {
+        if (e.lid) e.lid.visible = ud._blinking > 0.04;
       }
-      if (ud.beerHand && ud.stubby) {
-        const lift = Math.max(0, Math.sin(ud.beerPhase)) * 0.35;
-        ud.beerHand.position.y = 0.58 + lift * 0.4;
-        ud.beerHand.rotation.x = -lift * 0.8;
-        ud.stubby.visible = true;
+    } else {
+      for (const e of ud.eyes || []) {
+        if (e.lid) e.lid.visible = false;
       }
-      if (ud.label) ud.label.quaternion.copy(camera.quaternion);
     }
 
-    // Buddy walk-in from kitchen
+    // Talk
+    const talking = clock.t < (ud.talkUntil || 0);
+    if (ud.mouth && ud.mouthOpen) {
+      const open = talking && Math.sin(clock.t * 14) > 0;
+      ud.mouth.visible = !open;
+      ud.mouthOpen.visible = open;
+    }
+
+    if (ud.headGroup) {
+      let hy = Math.sin(ud.headPhase) * 0.1;
+      let hx = Math.sin(ud.headPhase * 0.5) * 0.05;
+      // Look down at table / upcard
+      if (lookAtTable) {
+        hx = 0.22 + Math.sin(ud.headPhase) * 0.04;
+        hy *= 0.4;
+      }
+      ud.headGroup.rotation.y = hy;
+      ud.headGroup.rotation.x = hx;
+    }
+
+    if (ud.beerHand && ud.stubby && ud.stubby.visible) {
+      const lift = Math.max(0, Math.sin(ud.beerPhase)) * 0.35;
+      ud.beerHand.position.y = 0.52 + lift * 0.4;
+      ud.beerHand.rotation.x = -lift * 0.8;
+    }
+    if (ud.label) ud.label.quaternion.copy(camera.quaternion);
+    if (ud.ring && ud.ring.visible) {
+      ud.ring.rotation.z = clock.t * 1.5;
+    }
+  }
+
+  function update(dt, gameState) {
+    clock.t += dt;
+    controls.update();
+
+    // Clamp camera inside room roughly
+    const p = camera.position;
+    p.x = THREE.MathUtils.clamp(p.x, -5.2, 5.2);
+    p.z = THREE.MathUtils.clamp(p.z, -3.8, 5.2);
+    p.y = THREE.MathUtils.clamp(p.y, 1.2, 4.2);
+
+    const lookTable =
+      gameState &&
+      (gameState.phase === "bid1" ||
+        gameState.phase === "bid2" ||
+        gameState.phase === "deal" ||
+        gameState.phase === "play");
+
+    for (const ch of characters) {
+      animateCharacter(ch, dt, lookTable);
+    }
+
+    if (gameState) {
+      highlightTurn(
+        gameState.phase === "play" || gameState.phase === "bid1" || gameState.phase === "bid2"
+          ? gameState.turn
+          : -1
+      );
+      updateTrickVisual(gameState.trick || []);
+      updateUpcaryVisual(gameState.upcard, gameState.phase);
+      updateTrumpVisual(gameState.trump);
+
+      // Trigger deal anim when dealAnim just started
+      if (gameState.dealAnim && gameState.dealAnim > 1.0 && dealAnimT < 0) {
+        playDealAnimation();
+      }
+      if (gameState.dealAnim <= 0) dealAnimT = -1;
+    }
+
+    // Deal fly animation
+    if (dealAnimT >= 0) {
+      dealAnimT += dt;
+      const seatTargets = [
+        new THREE.Vector3(0, 1.0, 1.1),
+        new THREE.Vector3(-1.1, 1.0, 0),
+        new THREE.Vector3(0, 1.0, -1.1),
+        new THREE.Vector3(1.1, 1.0, 0),
+      ];
+      for (let i = 0; i < dealCards.length; i++) {
+        const seat = i % 4;
+        const round = (i / 4) | 0;
+        const startT = round * 0.12 + seat * 0.03;
+        const local = dealAnimT - startT;
+        const m = dealCards[i];
+        if (local < 0 || local > 0.55) {
+          m.visible = local >= 0 && local < 0.65;
+          if (local > 0.65) m.visible = false;
+          continue;
+        }
+        m.visible = true;
+        const t = Math.min(1, local / 0.45);
+        const ease = t * t * (3 - 2 * t);
+        const from = dealFrom || new THREE.Vector3(0, 1.2, 0);
+        const to = seatTargets[seat];
+        m.position.lerpVectors(from, to, ease);
+        m.position.y += Math.sin(ease * Math.PI) * 0.5;
+        m.rotation.y = ease * Math.PI * 2;
+        m.rotation.x = ease * 0.5;
+      }
+      if (dealAnimT > 1.4) {
+        dealAnimT = -1;
+        for (const m of dealCards) m.visible = false;
+      }
+    }
+
+    // Buddy walk-in
     if (knivesProgress >= 0) {
       knivesProgress += dt * 0.35;
       const t = Math.min(1, knivesProgress);
-      // from doorway toward table (near Chad side)
       buddy.position.lerpVectors(
         new THREE.Vector3(-3.8, 0.1, -4.6),
         new THREE.Vector3(-2.2, 0.1, -0.8),
@@ -673,12 +1242,8 @@ export function createSNCScene(container) {
       );
       buddy.lookAt(0, 1.2, 0);
       buddy.visible = true;
-      const ud = buddy.userData;
-      ud.breathPhase += dt * 2;
-      buddy.scale.y = 1.1 * (1 + Math.sin(ud.breathPhase) * 0.02);
-      if (ud.label) ud.label.quaternion.copy(camera.quaternion);
+      animateCharacter(buddy, dt, false);
       if (knivesProgress > 3.5) {
-        // retreat
         const back = Math.min(1, (knivesProgress - 3.5) / 1.2);
         buddy.position.lerpVectors(
           new THREE.Vector3(-2.2, 0.1, -0.8),
@@ -697,16 +1262,8 @@ export function createSNCScene(container) {
       if (tvFlash <= 0) tvTex.draw(false);
     }
 
-    if (gameState) updateTrickVisual(gameState.trick || []);
-
-    // Camera: slight breathing orbit + woozy tilt
-    const base = new THREE.Vector3(2.65, 2.55, 2.85);
-    base.x += Math.sin(clock.t * 0.15) * 0.1;
-    base.y += Math.sin(clock.t * 0.22) * 0.04;
-    camera.position.copy(base);
-    camera.lookAt(-0.15, 1.35, -0.1);
     if (woozy > 0) {
-      camera.rotation.z = Math.sin(clock.t * 3) * 0.08 * Math.min(1, woozy);
+      camera.rotation.z = Math.sin(clock.t * 3) * 0.06 * Math.min(1, woozy);
       renderer.domElement.style.filter = `hue-rotate(${woozy * 25}deg) saturate(${1 + woozy * 0.3})`;
     } else {
       camera.rotation.z = 0;
@@ -718,6 +1275,7 @@ export function createSNCScene(container) {
 
   function dispose() {
     window.removeEventListener("resize", resize);
+    controls.dispose();
     renderer.dispose();
     if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
   }
@@ -726,6 +1284,7 @@ export function createSNCScene(container) {
     renderer,
     scene,
     camera,
+    controls,
     characters,
     chairs,
     buddy,
@@ -734,6 +1293,10 @@ export function createSNCScene(container) {
     spawnKnivesBuddy,
     flashTV,
     updateTrickVisual,
+    playDealAnimation,
+    setTalking,
+    highlightTurn,
+    resetView,
     resize,
     dispose,
   };

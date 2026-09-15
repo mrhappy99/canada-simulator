@@ -194,15 +194,39 @@ export function createEuchre(cb = {}) {
     state.bidPasses = 0;
     state.dealer = (state.dealer + 1) % 4;
     state.bidSeat = (state.dealer + 1) % 4;
+    state.phase = "deal";
+    state.phaseLabel = "DEALING…";
+    state.turn = -1;
+    state.dealAnim = 1.6;
+    state._dealtToBid = false;
+    state.lastPlay = null;
+    state.feed = state.feed || [];
+    for (let s = 0; s < 4; s++) sortHand(state.hands[s], state.upcard.suit);
+    state.msg = NAMES[state.dealer] + " deals…";
+    state.msgTimer = 2;
+    buildButtons();
+    emit();
+    cb.onDeal && cb.onDeal();
+  }
+
+  function finishDealToBid() {
+    if (state._dealtToBid) return;
+    state._dealtToBid = true;
     state.phase = "bid1";
     state.phaseLabel = "ORDER UP?";
     state.turn = state.bidSeat;
-    state.dealAnim = 0.6;
-    for (let s = 0; s < 4; s++) sortHand(state.hands[s], state.upcard.suit);
     state.msg = "Upcard: " + cardLabel(state.upcard) + " · " + pick(EUCHRE_BANTER);
     state.msgTimer = 3;
+    pushFeed("Upcard " + cardLabel(state.upcard) + " on the table");
     buildButtons();
     emit();
+  }
+
+  function pushFeed(line) {
+    state.feed = state.feed || [];
+    state.feed.unshift(line);
+    if (state.feed.length > 8) state.feed.length = 8;
+    cb.onFeed && cb.onFeed(line, state.feed);
   }
 
   function setTrump(suit, maker) {
@@ -299,9 +323,11 @@ export function createEuchre(cb = {}) {
       const thresh = isHoser ? (2.8 + state.caring * 0.4) : 2.2;
       if (strength >= thresh && !(isHoser && Math.random() < 0.35 + state.caring * 0.1)) {
         state.msg = NAMES[seat] + ": Order it up!";
+        pushFeed(NAMES[seat] + " ordered it up");
         orderUp(seat);
       } else {
         state.msg = NAMES[seat] + ": Pass.";
+        pushFeed(NAMES[seat] + " passes");
         advanceBidPass();
       }
     } else if (state.phase === "bid2") {
@@ -321,6 +347,7 @@ export function createEuchre(cb = {}) {
         setTrump(bestSuit, seat);
       } else {
         state.msg = NAMES[seat] + ": Pass.";
+        pushFeed(NAMES[seat] + " passes");
         advanceBidPass();
       }
     }
@@ -384,11 +411,14 @@ export function createEuchre(cb = {}) {
     }
     const card = hand.splice(index, 1)[0];
     state.trick.push({ seat, card });
+    state.lastPlay = { seat, card, label: NAMES[seat] + " played " + cardLabel(card) };
+    pushFeed(state.lastPlay.label);
+    cb.onPlay && cb.onPlay(seat, card, state.lastPlay.label);
     if (seat === 0) {
       state.caring += trumpRank(card, state.trump) >= 70 ? 1 : 0.25;
     }
     if (state.trick.length >= 4) {
-      state.trickPause = 1.1;
+      state.trickPause = 1.25;
       state.resolveTrickSoon = true;
     } else {
       state.turn = (seat + 1) % 4;
@@ -413,7 +443,10 @@ export function createEuchre(cb = {}) {
       }
     }
     if (TEAM[win.seat] === 0) state.tricksNS++; else state.tricksEW++;
-    float(NAMES[win.seat] + " takes it", TEAM[win.seat] === 0 ? "#ff6b6b" : "#4da6ff");
+    const winLine = NAMES[win.seat] + " takes the trick";
+    float(winLine, TEAM[win.seat] === 0 ? "#ff6b6b" : "#4da6ff");
+    pushFeed(winLine + " (" + cardLabel(win.card) + ")");
+    cb.onTrick && cb.onTrick(win.seat, TEAM[win.seat] === 0);
     state.leadSeat = win.seat;
     state.turn = win.seat;
     state.trick = [];
@@ -499,16 +532,19 @@ export function createEuchre(cb = {}) {
 
   function clickButton(id) {
     if (id === "order" && state.phase === "bid1" && state.turn === 0) {
+      pushFeed("You ordered it up");
       orderUp(0);
       return;
     }
     if (id === "pass") {
       state.msg = "You: Pass.";
+      pushFeed("You pass");
       advanceBidPass();
       return;
     }
     if (id.startsWith("suit_") && state.phase === "bid2" && state.turn === 0) {
       const s = id.slice(5);
+      pushFeed("You named trump " + SUIT_SYM[s]);
       state.upcard = null;
       setTrump(s, 0);
       return;
@@ -549,7 +585,13 @@ export function createEuchre(cb = {}) {
   function update(dt) {
     if (state.ended || state.phase === "results") return;
     if (state.msgTimer > 0) state.msgTimer -= dt;
-    if (state.dealAnim > 0) state.dealAnim -= dt;
+    if (state.dealAnim > 0) {
+      state.dealAnim -= dt;
+      if (state.dealAnim <= 0 && state.phase === "deal") {
+        finishDealToBid();
+      }
+    }
+    if (state.phase === "deal") return;
     if (state.woozy > 0) {
       state.woozy -= dt;
       cb.onWoozy && cb.onWoozy(Math.max(0, state.woozy));
@@ -634,6 +676,8 @@ export function createEuchre(cb = {}) {
     state.knives = null;
     state.woozy = 0;
     state.knivesTimer = rand(14, 22);
+    state.feed = [];
+    state.lastPlay = null;
     newHand();
     cb.onHate && cb.onHate(0);
   }
