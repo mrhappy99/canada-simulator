@@ -363,15 +363,53 @@ const ANNOUNCER_LINES = {
 
 
 
-const BOARDROOM_LINES = ["(Level 2 stub — not in v1 slice)"];
-const LAKE_SIGNS = ["This used to be ours.", "We had a lake once.", "Sorry about the wake."];
+const BOARDROOM_LINES = [
+  "Let's talk tariffs, partner.",
+  "We'll rename the holding company mid-handshake.",
+  "Your stapler has dual citizenship now.",
+  "Strongly worded memo incoming… ignored.",
+  "Synergy means we keep the stapler.",
+  "Canada brings courtesy. America brings a tote bag.",
+];
+const LAKE_SIGNS = [
+  "This used to be ours.",
+  "We had a lake once.",
+  "Sorry about the wake.",
+  "Ontario? Never heard of her.",
+  "Life jackets say SORRY for a reason.",
+  "Flag boats have right-of-way. Always.",
+];
 const QUEBEC_TAUNTS = [
   "I fart at you!",
   "I spit in your general direction!",
   "Your mother was a hamster and your father smelt of elderberries!",
+  "I wave my private parts at your aunties!",
+  "Go away, or I shall taunt you a second time!",
+  "You silly English-speaking kniggit!",
+  "Your gravy is weak and your courage is soggy!",
+  "Fetch me another fleur-de-lis, you soggy maple!",
+  "I unhook my armor just to shrug at you!",
 ];
-const PARLIAMENT_RED = ["They stole the lake!"];
-const PARLIAMENT_BLUE = ["You didn't denounce it hard enough!"];
+const PARLIAMENT_RED = [
+  "They stole the lake!",
+  "Motion to condemn America more formally!",
+  "Point of order: the stapler was sovereign!",
+  "We denounce with feeling!",
+  "Hate Index amendment — raise it!",
+];
+const PARLIAMENT_BLUE = [
+  "You didn't denounce it hard enough — and we stole it first!",
+  "Strongly worded letter, seconded!",
+  "Blame America for the drywall!",
+  "Empty speech time: best province, period.",
+  "Global harmonization of vibes!",
+];
+const BOARDROOM_RESULT = "You lost the stapler. You kept your dignity. Barely.";
+const LAKE_RESULT = "The lake is fine. You are not.";
+const QUEBEC_RESULT = "Best poutine of your life. Deep emotional wound.";
+const PARLIAMENT_RESULT = "Unanimous. Unhelpful. Adjourned.";
+const FINALE_LINE = "This used to be ours.";
+const PLAY_ALL_SEQ = ["rink", "boardroom", "lake", "quebec", "parliament", "finale"];
 
 /* ---------- LEVEL: SATURDAY NIGHT CANADA ---------- */
 const HOSER_LINES = [
@@ -548,6 +586,20 @@ function syncMobileChrome() {
       hintEl.textContent = show
         ? "Drag on ice to skate · Tap to shoot · Tap near foe or FIGHT · SHOOT button works too"
         : "WASD / Arrows skate · Mouse aim · Click or F to shoot · Space / click near foe to fight";
+    } else if (state.level === "lake") {
+      hintEl.textContent = show
+        ? "Drag / tap to paddle · Fish gets washed by wake"
+        : "WASD / Arrows paddle · Click to fish · Flag boats wash your catch";
+    } else if (state.level === "quebec") {
+      hintEl.textContent = show
+        ? "Endure taunts · Courage fills · Enter for poutine"
+        : "Click / tap to endure taunts · Courage fills the drawbridge";
+    } else if (state.level === "parliament") {
+      hintEl.textContent = show
+        ? "Tap red or blue to denounce · Raise the Hate Index"
+        : "Click benches to auction bile · Optional army beat";
+    } else if (state.level === "boardroom") {
+      hintEl.textContent = "Choose dialogue · The stapler is already gone";
     } else {
       hintEl.textContent = "Pick a level. Caring is punished.";
     }
@@ -557,6 +609,11 @@ function syncMobileChrome() {
     if (state.level === "rink") sub.textContent = "Level 1 — Bubble Rink";
     else if (state.level === "snc") sub.textContent = "Saturday Night Canada";
     else if (state.level === "driveway") sub.textContent = "The Driveway";
+    else if (state.level === "boardroom") sub.textContent = "Level 2 — The Boardroom";
+    else if (state.level === "lake") sub.textContent = "Level 3 — Lake America";
+    else if (state.level === "quebec") sub.textContent = "Level 4 — Québec";
+    else if (state.level === "parliament") sub.textContent = "Level 5 — Parliament";
+    else if (state.level === "finale") sub.textContent = "Finale";
     else sub.textContent = "Main Menu";
   }
 }
@@ -591,6 +648,9 @@ canvas.addEventListener("mousedown", (e) => {
   mouse.x = p.x; mouse.y = p.y;
   if (state.level === "snc") { sncOnPointer(p.x, p.y, "down"); return; }
   if (state.level === "driveway") { drivewayOnPointer(p.x, p.y, "down"); return; }
+  if (state.level === "lake") { lakeOnPointer(p.x, p.y, "down"); return; }
+  if (state.level === "quebec") { quebecOnPointer(p.x, p.y, "down"); return; }
+  if (state.level === "parliament") { parliamentOnPointer(p.x, p.y, "down"); return; }
   if (e.button === 0 && state.level === "rink") {
     if (state.phase === "play" && nearOpponent()) fightQueued = true;
     else shootQueued = true;
@@ -647,6 +707,17 @@ function onTouchStart(e) {
     const p = clientToCanvas(touch.clientX, touch.clientY);
     mouse.x = p.x; mouse.y = p.y;
     drivewayOnPointer(p.x, p.y, "down");
+    return;
+  }
+  if (state.level === "lake" || state.level === "quebec" || state.level === "parliament") {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    const p = clientToCanvas(touch.clientX, touch.clientY);
+    mouse.x = p.x; mouse.y = p.y;
+    if (state.level === "lake") lakeOnPointer(p.x, p.y, "down");
+    else if (state.level === "quebec") quebecOnPointer(p.x, p.y, "down");
+    else parliamentOnPointer(p.x, p.y, "down");
     return;
   }
   if (state.level !== "rink" || state.phase !== "play") return;
@@ -756,8 +827,10 @@ const rightGoal = { x: RINK.x + RINK.w - GOAL_D + 2, y: RINK.y + RINK.h / 2 - GO
 const MATCH_SECONDS = 105; // within 90–120s band
 
 const state = {
-  level: "menu", // menu | rink | snc | driveway
+  level: "menu", // menu | rink | snc | driveway | boardroom | lake | quebec | parliament | finale
   phase: "menu",
+  playAll: false,
+  playAllIndex: 0,
   playerTeam: null,
   scoreCan: 0,
   scoreUsa: 0,
@@ -892,8 +965,13 @@ function showMainMenu() {
   state.level = "menu";
   state.phase = "menu";
   state.playerTeam = null;
+  state.playAll = false;
   snc = null;
   driveway = null;
+  boardroom = null;
+  lake = null;
+  quebec = null;
+  parliament = null;
   updateHud();
   syncMobileChrome();
   showOverlay(`
@@ -903,21 +981,30 @@ function showMainMenu() {
     <p>Pick a level. Caring is punished. Affectionately.</p>
     <div class="btns">
       <button class="btn-ca" id="lvlRink">🏒 The Rink</button>
+      <button class="btn-us" id="lvlBoard">📎 The Boardroom</button>
+      <button class="btn-go" id="lvlLake">🛶 Lake America</button>
+      <button class="btn-ca" id="lvlQuebec">🏰 Québec</button>
+      <button class="btn-us" id="lvlParl">🏛️ Parliament</button>
+    </div>
+    <div class="btns" style="margin-top:8px">
       <button class="btn-go" id="lvlSnc">🃏 Saturday Night Canada</button>
-      <button class="btn-us" id="lvlDrive">🌨️ The Driveway</button>
+      <button class="btn-dim" id="lvlDrive">🌨️ The Driveway</button>
+      <button class="btn-go" id="lvlPlayAll">▶ Play All</button>
     </div>
-    <p class="tiny">Later stubs: Boardroom · Lake America · Québec · Parliament</p>
-    <div class="btns" style="margin-top:8px;opacity:0.55">
-      <button class="btn-dim" disabled>Boardroom (soon)</button>
-      <button class="btn-dim" disabled>Lake America (soon)</button>
-    </div>
+    <p class="tiny">Play All: Rink → Boardroom → Lake → Québec → Parliament → Finale · Hate Index persists</p>
   `);
   document.getElementById("lvlRink").onclick = () => {
+    state.playAll = false;
     state.level = "rink";
     showTeamPick();
   };
-  document.getElementById("lvlSnc").onclick = () => startSaturdayNight();
-  document.getElementById("lvlDrive").onclick = () => startDriveway();
+  document.getElementById("lvlBoard").onclick = () => { state.playAll = false; startBoardroom(); };
+  document.getElementById("lvlLake").onclick = () => { state.playAll = false; startLakeAmerica(); };
+  document.getElementById("lvlQuebec").onclick = () => { state.playAll = false; startQuebec(); };
+  document.getElementById("lvlParl").onclick = () => { state.playAll = false; startParliament(); };
+  document.getElementById("lvlSnc").onclick = () => { state.playAll = false; startSaturdayNight(); };
+  document.getElementById("lvlDrive").onclick = () => { state.playAll = false; startDriveway(); };
+  document.getElementById("lvlPlayAll").onclick = () => startPlayAll();
 }
 
 function showTeamPick() {
@@ -981,6 +1068,21 @@ function updateHud() {
   } else if (state.level === "driveway") {
     document.getElementById("hudTime").textContent = `${m}:${s}`;
     document.getElementById("hudTeam").textContent = "SHOVEL DUTY";
+  } else if (state.level === "boardroom") {
+    document.getElementById("hudTime").textContent = "DEAL";
+    document.getElementById("hudTeam").textContent = "NEGOTIATOR";
+  } else if (state.level === "lake") {
+    document.getElementById("hudTime").textContent = `${m}:${s}`;
+    document.getElementById("hudTeam").textContent = "SORRY CANOE";
+  } else if (state.level === "quebec") {
+    document.getElementById("hudTime").textContent = quebec ? (quebec.phase === "interior" ? "POUTINE" : "TAUNTS") : "QUÉBEC";
+    document.getElementById("hudTeam").textContent = "COURAGE";
+  } else if (state.level === "parliament") {
+    document.getElementById("hudTime").textContent = "SESSION";
+    document.getElementById("hudTeam").textContent = "HATE AUCTION";
+  } else if (state.level === "finale") {
+    document.getElementById("hudTime").textContent = "END";
+    document.getElementById("hudTeam").textContent = "MAP FADES";
   } else {
     document.getElementById("hudTime").textContent = `${m}:${s}`;
     document.getElementById("hudTeam").textContent = state.playerTeam
@@ -1433,13 +1535,17 @@ function endMatch() {
     <div class="verdict">${verdict}</div>
     <p class="tiny">You wanted Canada to win. The systems disagreed.</p>
     <div class="btns">
-      <button class="btn-go" id="again">Play again</button>
-      <button class="btn-dim" id="menu">Change team</button>
-      <button class="btn-dim" id="mainMenu">Main Menu</button>
+      ${state.playAll
+        ? '<button class="btn-go" id="nextLvl">Next ▶ Boardroom</button><button class="btn-dim" id="mainMenu">Main Menu</button>'
+        : '<button class="btn-go" id="again">Play again</button><button class="btn-dim" id="menu">Change team</button><button class="btn-dim" id="mainMenu">Main Menu</button>'}
     </div>
   `);
-  document.getElementById("again").onclick = () => setupMatch();
-  document.getElementById("menu").onclick = () => showTeamPick();
+  if (state.playAll) {
+    document.getElementById("nextLvl").onclick = () => advanceCampaign();
+  } else {
+    document.getElementById("again").onclick = () => setupMatch();
+    document.getElementById("menu").onclick = () => showTeamPick();
+  }
   document.getElementById("mainMenu").onclick = () => showMainMenu();
   touchSkate.active = false;
   activeTouches.clear();
@@ -2822,6 +2928,31 @@ function render(dt) {
     drawFloats(dt);
     return;
   }
+  if (state.level === "boardroom") {
+    renderBoardroom(dt);
+    drawFloats(dt);
+    return;
+  }
+  if (state.level === "lake") {
+    renderLake(dt);
+    drawFloats(dt);
+    return;
+  }
+  if (state.level === "quebec") {
+    renderQuebec(dt);
+    drawFloats(dt);
+    return;
+  }
+  if (state.level === "parliament") {
+    renderParliament(dt);
+    drawFloats(dt);
+    return;
+  }
+  if (state.level === "finale") {
+    renderFinale(dt);
+    drawFloats(dt);
+    return;
+  }
 
   drawRink();
   if (state.phase === "pick") {
@@ -2857,7 +2988,7 @@ function render(dt) {
 
 /* ---------- MAIN LOOP ---------- */
 function update(dt) {
-  if (state.phase === "menu" || state.phase === "pick" || state.phase === "results" || state.phase === "snc_results" || state.phase === "drive_results") return;
+  if (state.phase === "menu" || state.phase === "pick" || state.phase === "results" || state.phase === "snc_results" || state.phase === "drive_results" || state.phase === "level_results" || state.phase === "board_choice") return;
 
   if (state.level === "snc") {
     updateSaturdayNight(dt);
@@ -2865,6 +2996,26 @@ function update(dt) {
   }
   if (state.level === "driveway") {
     updateDriveway(dt);
+    return;
+  }
+  if (state.level === "boardroom") {
+    updateBoardroom(dt);
+    return;
+  }
+  if (state.level === "lake") {
+    updateLake(dt);
+    return;
+  }
+  if (state.level === "quebec") {
+    updateQuebec(dt);
+    return;
+  }
+  if (state.level === "parliament") {
+    updateParliament(dt);
+    return;
+  }
+  if (state.level === "finale") {
+    updateFinale(dt);
     return;
   }
   if (state.level !== "rink") return;
@@ -4275,6 +4426,949 @@ function renderDriveway(dt) {
     ctx.fillText(driveway.msg, 520, 122);
   }
 }
+
+
+
+/* ============================================================================
+  CAMPAIGN LEVELS — Boardroom · Lake America · Québec · Parliament · Finale · Play All
+============================================================================ */
+let boardroom = null;
+let lake = null;
+let quebec = null;
+let parliament = null;
+let finale = null;
+
+function startPlayAll() {
+  state.playAll = true;
+  state.playAllIndex = 0;
+  launchCampaignLevel(PLAY_ALL_SEQ[0]);
+}
+
+function advanceCampaign() {
+  if (!state.playAll) {
+    showMainMenu();
+    return;
+  }
+  state.playAllIndex += 1;
+  if (state.playAllIndex >= PLAY_ALL_SEQ.length) {
+    state.playAll = false;
+    showMainMenu();
+    return;
+  }
+  launchCampaignLevel(PLAY_ALL_SEQ[state.playAllIndex]);
+}
+
+function launchCampaignLevel(id) {
+  if (id === "rink") {
+    state.level = "rink";
+    showTeamPick();
+  } else if (id === "boardroom") startBoardroom();
+  else if (id === "lake") startLakeAmerica();
+  else if (id === "quebec") startQuebec();
+  else if (id === "parliament") startParliament();
+  else if (id === "finale") startFinale();
+}
+
+function showCampaignResults(opts) {
+  state.phase = "level_results";
+  const nextLabel = opts.nextLabel || (state.playAll ? "Next ▶" : null);
+  const goFinale = !!opts.goFinale;
+  let btns;
+  if (goFinale) {
+    btns = `<button class="btn-go" id="nextLvl">Finale ▶</button>
+            <button class="btn-dim" id="mainMenu">Main Menu</button>`;
+  } else if (state.playAll && nextLabel) {
+    btns = `<button class="btn-go" id="nextLvl">${nextLabel}</button>
+            <button class="btn-dim" id="mainMenu">Main Menu</button>`;
+  } else {
+    btns = `<button class="btn-go" id="again">${opts.againLabel || "Play again"}</button>
+            <button class="btn-dim" id="mainMenu">Main Menu</button>`;
+  }
+  showOverlay(`
+    <div class="poster-tag">${opts.tag}</div>
+    <h2 class="red">${opts.title}</h2>
+    <div class="broadcast">${opts.broadcast}<br/>Hate Index: ${state.hate}</div>
+    <div class="verdict">${opts.verdict}</div>
+    <p class="tiny">${opts.tiny || "You wanted Canada to win. The systems disagreed."}</p>
+    <div class="btns">${btns}</div>
+  `);
+  if (goFinale) {
+    document.getElementById("nextLvl").onclick = () => startFinale();
+  } else if (state.playAll && nextLabel) {
+    document.getElementById("nextLvl").onclick = () => advanceCampaign();
+  } else {
+    document.getElementById("again").onclick = () => opts.againFn && opts.againFn();
+  }
+  document.getElementById("mainMenu").onclick = () => showMainMenu();
+  syncMobileChrome();
+}
+
+/* ---------- BOARDROOM ---------- */
+function startBoardroom() {
+  state.level = "boardroom";
+  state.phase = "board_choice";
+  state.playerTeam = "CANADA";
+  state.scoreCan = 0;
+  state.scoreUsa = 1;
+  boardroom = {
+    step: 0,
+    staplerGone: false,
+    companyName: "Maple Mutual Ltd.",
+    line: pick(BOARDROOM_LINES),
+    americanTalk: "Listen bud—",
+  };
+  hideOverlay();
+  ensureAudio();
+  updateHud();
+  syncMobileChrome();
+  boardroomShowChoice();
+}
+
+function boardroomShowChoice() {
+  state.phase = "board_choice";
+  const steps = [
+    {
+      prompt: "American in a flag-patterned tie slides in. \"We'll take 51%. You keep the apology.\"",
+      choices: [
+        { label: "Counter with tariffs", reply: "He talks over you. Company renamed mid-sentence to Freedom Staple Corp." },
+        { label: "Cite the treaty", reply: "He yawns. \"Cute memo.\" Renames the holding company while you speak." },
+        { label: "Demand the stapler", reply: "He pockets the stapler. \"Collateral.\" Meeting continues without you." },
+      ],
+    },
+    {
+      prompt: "Flag-tie leans in: \"Synergy means we keep the stapler. You keep… vibes.\"",
+      choices: [
+        { label: "Raise your voice (politely)", reply: "He raises his louder. Steamrolled. Stapler already in his tote." },
+        { label: "Offer a strongly worded letter", reply: "He shreds it into confetti. \"Cute.\" Company letterhead now stars-and-stripes." },
+        { label: "Apologize & offer a double-double", reply: "He accepts while laughing. \"You're a peach.\" You still lose the stapler.", winish: true },
+      ],
+    },
+  ];
+  const step = boardroom.step;
+  if (step >= steps.length) {
+    endBoardroom();
+    return;
+  }
+  const s = steps[step];
+  const choiceBtns = s.choices.map((c, i) =>
+    `<button class="btn-${i === 2 && step === 1 ? "go" : "dim"}" id="bc${i}">${c.label}</button>`
+  ).join("");
+  showOverlay(`
+    <div class="poster-tag">LEVEL 2 — THE BOARDROOM</div>
+    <h2>Negotiations</h2>
+    <div class="subhead">${boardroom.companyName}</div>
+    <p>${s.prompt}</p>
+    <p class="tiny">${pick(BOARDROOM_LINES)}</p>
+    <div class="btns">${choiceBtns}</div>
+  `);
+  s.choices.forEach((c, i) => {
+    document.getElementById("bc" + i).onclick = () => boardroomPick(c);
+  });
+  syncMobileChrome();
+}
+
+function boardroomPick(choice) {
+  boardroom.staplerGone = true;
+  if (choice.winish) {
+    boardroom.companyName = "Freedom Staple Corp. (formerly Maple Mutual)";
+    floatText(520, 200, "Double-double accepted… stapler still gone", "#ffd166", 2);
+  } else {
+    boardroom.companyName = "Freedom Staple Corp.";
+    floatText(520, 200, "Steamrolled.", "#ff8fa3", 1.6);
+  }
+  state.phase = "board_play";
+  showOverlay(`
+    <div class="poster-tag">FLAG-TIE RESPONDS</div>
+    <h2 class="red">Talked over</h2>
+    <div class="broadcast">${choice.reply}</div>
+    <p class="tiny">Caring is punished. The stapler emigrated.</p>
+    <div class="btns"><button class="btn-go" id="bcNext">Continue</button></div>
+  `);
+  document.getElementById("bcNext").onclick = () => {
+    boardroom.step += 1;
+    if (boardroom.step >= 2) endBoardroom();
+    else boardroomShowChoice();
+  };
+}
+
+function endBoardroom() {
+  state.hate += 10;
+  updateHud();
+  showCampaignResults({
+    tag: "BOARDROOM POST-MORTEM",
+    title: "DEAL CLOSED",
+    broadcast: "Stapler: USA &nbsp;·&nbsp; Dignity: residual",
+    verdict: BOARDROOM_RESULT,
+    tiny: "You apologized. He laughed. The tote bag won.",
+    againLabel: "Negotiate again",
+    againFn: () => startBoardroom(),
+    nextLabel: "Next ▶ Lake America",
+  });
+}
+
+function updateBoardroom(dt) { /* overlay-driven */ }
+function renderBoardroom(dt) {
+  const W = canvas.width, H = canvas.height;
+  ctx.fillStyle = "#1a1520";
+  ctx.fillRect(0, 0, W, H);
+  // table
+  ctx.fillStyle = "#3b2a1a";
+  ctx.fillRect(180, 280, 680, 200);
+  ctx.fillStyle = "#5c4030";
+  ctx.fillRect(200, 300, 640, 160);
+  // Canadian negotiator (left)
+  ctx.fillStyle = "#c81e1e";
+  ctx.beginPath(); ctx.arc(300, 240, 40, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#f5d0c0";
+  ctx.beginPath(); ctx.arc(300, 200, 28, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("YOU", 300, 320);
+  // American flag-tie
+  ctx.fillStyle = "#1e4a8c";
+  ctx.beginPath(); ctx.arc(740, 240, 42, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#e8c4a8";
+  ctx.beginPath(); ctx.arc(740, 198, 28, 0, Math.PI * 2); ctx.fill();
+  // flag tie
+  drawAmericanFlag(725, 250, 30, 50, 0.95);
+  ctx.fillStyle = "#ffd166";
+  ctx.fillText("FLAG-TIE", 740, 320);
+  // stapler
+  if (!boardroom || !boardroom.staplerGone) {
+    ctx.fillStyle = "#888";
+    ctx.fillRect(500, 340, 50, 22);
+    ctx.fillStyle = "#ccc";
+    ctx.fillRect(505, 335, 40, 8);
+  } else {
+    ctx.fillStyle = "#ff8fa3";
+    ctx.font = "13px sans-serif";
+    ctx.fillText("(stapler shaped hole)", 520, 355);
+  }
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "14px sans-serif";
+  ctx.fillText(boardroom ? boardroom.companyName : "Maple Mutual Ltd.", 520, 100);
+}
+
+/* ---------- LAKE AMERICA ---------- */
+const LAKE_SECONDS = 70;
+function startLakeAmerica() {
+  state.level = "lake";
+  state.phase = "lake_play";
+  state.playerTeam = "CANADA";
+  state.scoreCan = 0;
+  state.scoreUsa = 0;
+  state.timeLeft = LAKE_SECONDS;
+  state.floatTexts = [];
+  lake = {
+    px: 200, py: 340,
+    fishCD: 0,
+    wake: 0,
+    boats: [
+      { x: 900, y: 180, vx: -70, grill: true },
+      { x: 1100, y: 420, vx: -55, grill: false },
+      { x: 1300, y: 280, vx: -90, grill: true },
+    ],
+    signs: LAKE_SIGNS.map((t, i) => ({ text: t, x: 40, y: 80 + i * 36 })),
+    msg: "Lake Ontario is now Lake America. SORRY.",
+    msgTimer: 3,
+    caught: 0,
+    washed: 0,
+  };
+  hideOverlay();
+  ensureAudio();
+  updateHud();
+  syncMobileChrome();
+  floatText(520, 80, pick(LAKE_SIGNS), "#ffd166", 2);
+}
+
+function lakeOnPointer(x, y, kind) {
+  if (!lake || state.phase !== "lake_play") return;
+  if (kind === "down") {
+    // paddle toward tap or fish
+    const d = Math.hypot(x - lake.px, y - lake.py);
+    if (d < 80) lakeTryFish();
+    else {
+      lake.px = clamp(lake.px + Math.sign(x - lake.px) * 40, 60, 980);
+      lake.py = clamp(lake.py + Math.sign(y - lake.py) * 30, 120, 540);
+    }
+  }
+}
+
+function lakeTryFish() {
+  if (!lake || lake.fishCD > 0) return;
+  lake.fishCD = 1.2;
+  if (lake.wake > 0.3) {
+    lake.washed += 1;
+    state.scoreUsa += 1;
+    floatText(lake.px, lake.py - 40, "Wake washed the catch!", "#ff8fa3", 1.4);
+    state.hate += 1;
+  } else {
+    lake.caught += 1;
+    state.scoreCan += 1;
+    floatText(lake.px, lake.py - 40, "Fish! (briefly)", "#a7f3d0", 1.2);
+  }
+  updateHud();
+}
+
+function updateLake(dt) {
+  if (!lake || state.phase !== "lake_play") return;
+  state.timeLeft -= dt;
+  if (lake.msgTimer > 0) lake.msgTimer -= dt;
+  if (lake.fishCD > 0) lake.fishCD -= dt;
+  if (lake.wake > 0) lake.wake = Math.max(0, lake.wake - dt * 0.35);
+
+  let mx = 0, my = 0;
+  if (keys["KeyW"] || keys["ArrowUp"]) my -= 1;
+  if (keys["KeyS"] || keys["ArrowDown"]) my += 1;
+  if (keys["KeyA"] || keys["ArrowLeft"]) mx -= 1;
+  if (keys["KeyD"] || keys["ArrowRight"]) mx += 1;
+  if (mx || my) {
+    const len = Math.hypot(mx, my) || 1;
+    lake.px = clamp(lake.px + (mx / len) * 160 * dt, 50, 990);
+    lake.py = clamp(lake.py + (my / len) * 140 * dt, 110, 550);
+  }
+  if (keys["Space"] || keys["KeyF"]) lakeTryFish();
+
+  for (const b of lake.boats) {
+    b.x += b.vx * dt;
+    if (b.x < -120) { b.x = 1100 + rand(0, 200); b.y = rand(140, 480); }
+    const d = Math.hypot(b.x - lake.px, b.y - lake.py);
+    if (d < 140) {
+      lake.wake = 1.2;
+      if (d < 90 && Math.random() < 0.02) {
+        floatText(lake.px, lake.py - 50, "Cannonball wake!", "#4da6ff", 1.2);
+      }
+    }
+  }
+  updateHud();
+  if (state.timeLeft <= 0) endLake();
+}
+
+function endLake() {
+  if (state.phase === "level_results") return;
+  state.hate += 8;
+  updateHud();
+  showCampaignResults({
+    tag: "LAKE AMERICA POSTCARD",
+    title: "SHORE LEAVE",
+    broadcast: `Fish kept ${lake.caught} · Washed ${lake.washed}`,
+    verdict: LAKE_RESULT,
+    tiny: "The SORRY life jacket did its job. Your pride did not.",
+    againLabel: "Paddle again",
+    againFn: () => startLakeAmerica(),
+    nextLabel: "Next ▶ Québec",
+  });
+}
+
+function renderLake(dt) {
+  if (!lake) return;
+  const W = canvas.width, H = canvas.height;
+  // water — red/white/blue tint
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, "#1e3a6e");
+  g.addColorStop(0.35, "#7f1d1d");
+  g.addColorStop(0.7, "#f8fafc");
+  g.addColorStop(1, "#1d4ed8");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  // shore
+  ctx.fillStyle = "#3f5d3a";
+  ctx.fillRect(0, 0, 120, H);
+  ctx.fillStyle = "#2d4a28";
+  ctx.fillRect(0, 0, 100, H);
+  // signs
+  ctx.font = "bold 11px sans-serif";
+  ctx.textAlign = "left";
+  for (let i = 0; i < lake.signs.length; i++) {
+    const sg = lake.signs[i];
+    ctx.fillStyle = "#f5f5f4";
+    ctx.fillRect(8, 60 + i * 42, 100, 32);
+    ctx.strokeStyle = "#111";
+    ctx.strokeRect(8, 60 + i * 42, 100, 32);
+    ctx.fillStyle = "#111";
+    ctx.fillText(sg.text.slice(0, 18), 12, 80 + i * 42);
+  }
+  // sulking Canadians
+  for (let i = 0; i < 3; i++) {
+    const sy = 220 + i * 70;
+    ctx.fillStyle = "#c81e1e";
+    ctx.fillRect(30, sy, 24, 30);
+    ctx.fillStyle = "#f5d0c0";
+    ctx.beginPath(); ctx.arc(42, sy - 8, 10, 0, Math.PI * 2); ctx.fill();
+  }
+  // boats
+  for (const b of lake.boats) {
+    ctx.fillStyle = "#e2e8f0";
+    ctx.fillRect(b.x - 50, b.y - 18, 100, 36);
+    drawAmericanFlag(b.x + 20, b.y - 70, 40, 28, 0.95);
+    ctx.fillStyle = "#f59e0b";
+    if (b.grill) ctx.fillRect(b.x - 20, b.y - 10, 20, 14);
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("U-S-A", b.x, b.y + 6);
+    // wake ripples
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.beginPath();
+    ctx.ellipse(b.x + 60, b.y, 40, 12, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  // canoe + SORRY jacket
+  const cx = lake.px, cy = lake.py;
+  ctx.fillStyle = "#92400e";
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, 48, 16, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffd166";
+  ctx.fillRect(cx - 18, cy - 28, 36, 28);
+  ctx.fillStyle = "#111";
+  ctx.font = "bold 10px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("SORRY", cx, cy - 10);
+  ctx.fillStyle = "#f5d0c0";
+  ctx.beginPath(); ctx.arc(cx, cy - 36, 12, 0, Math.PI * 2); ctx.fill();
+  if (lake.wake > 0) {
+    ctx.fillStyle = `rgba(255,100,100,${0.25 * lake.wake})`;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 60, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (lake.msg && lake.msgTimer > 0) {
+    ctx.fillStyle = "rgba(5,8,15,0.8)";
+    roundRectPath(220, 20, 600, 34, 8);
+    ctx.fill();
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(lake.msg, 520, 42);
+  }
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText("Click canoe / Space to fish", W - 16, H - 14);
+}
+
+/* ---------- QUÉBEC ---------- */
+function startQuebec() {
+  state.level = "quebec";
+  state.phase = "quebec_play";
+  state.playerTeam = "CANADA";
+  state.scoreCan = 0;
+  state.scoreUsa = 0;
+  state.floatTexts = [];
+  quebec = {
+    phase: "exterior", // exterior | interior
+    courage: 0,
+    poutine: 0,
+    lastTaunt: "",
+    tauntTimer: 0.5,
+    spit: [],
+    bridgeDown: false,
+    eatTimer: 0,
+    msg: "Endure the taunts. Fill your courage.",
+    msgTimer: 3,
+  };
+  hideOverlay();
+  ensureAudio();
+  updateHud();
+  syncMobileChrome();
+}
+
+function quebecNextTaunt() {
+  let t = pick(QUEBEC_TAUNTS);
+  let guard = 0;
+  while (t === quebec.lastTaunt && QUEBEC_TAUNTS.length > 1 && guard++ < 12) {
+    t = pick(QUEBEC_TAUNTS);
+  }
+  quebec.lastTaunt = t;
+  return t;
+}
+
+function quebecOnPointer(x, y, kind) {
+  if (!quebec || state.phase !== "quebec_play") return;
+  if (kind !== "down") return;
+  if (quebec.phase === "exterior") {
+    quebec.courage = Math.min(100, quebec.courage + 12 + rand(0, 6));
+    const t = quebecNextTaunt();
+    floatText(520, 120, t, "#fde68a", 2);
+    // spit glob
+    quebec.spit.push({ x: 700, y: 160, vx: -180, vy: rand(20, 80), life: 1.2 });
+    floatText(400, 300, "BOING", "#a7f3d0", 0.8);
+    state.hate += 1;
+    if (quebec.courage >= 100 && !quebec.bridgeDown) {
+      quebec.bridgeDown = true;
+      quebec.msg = "Drawbridge lowers. Enter… for poutine.";
+      quebec.msgTimer = 3;
+      floatText(520, 200, "DRAWBRIDGE!", "#ffd166", 2);
+    } else if (quebec.bridgeDown && y > 400) {
+      quebec.phase = "interior";
+      quebec.msg = "Poutine stand. Genuinely delicious.";
+      quebec.msgTimer = 2.5;
+    }
+    updateHud();
+  } else {
+    quebec.poutine = Math.min(100, quebec.poutine + 18);
+    floatText(520, 280, "Curds… gravy… perfection", "#fbbf24", 1.2);
+    if (quebec.poutine >= 100) {
+      quebec.eatTimer = 0.01;
+    }
+  }
+}
+
+function updateQuebec(dt) {
+  if (!quebec || state.phase !== "quebec_play") return;
+  if (quebec.msgTimer > 0) quebec.msgTimer -= dt;
+  quebec.tauntTimer -= dt;
+  if (quebec.phase === "exterior" && quebec.tauntTimer <= 0) {
+    quebec.tauntTimer = rand(2.2, 3.5);
+    const t = quebecNextTaunt();
+    floatText(rand(480, 780), rand(80, 160), t, "#fde68a", 1.8);
+    quebec.spit.push({ x: 720, y: 150, vx: -160, vy: rand(10, 70), life: 1.1 });
+  }
+  for (let i = quebec.spit.length - 1; i >= 0; i--) {
+    const s = quebec.spit[i];
+    s.life -= dt;
+    s.x += s.vx * dt;
+    s.y += s.vy * dt;
+    if (s.life <= 0) quebec.spit.splice(i, 1);
+  }
+  if (quebec.phase === "interior" && quebec.poutine >= 100) {
+    quebec.eatTimer += dt;
+    if (quebec.eatTimer > 0.4 && quebec.eatTimer < 0.5) {
+      floatText(520, 200, quebecNextTaunt(), "#fde68a", 2);
+      floatText(520, 240, "(mid-bite)", "#ff8fa3", 1.5);
+    }
+    if (quebec.eatTimer > 3.2) endQuebec();
+  }
+  // keyboard: space/click endure
+  if (keys["Space"] || keys["KeyE"]) {
+    keys["Space"] = false;
+    keys["KeyE"] = false;
+    quebecOnPointer(520, quebec.bridgeDown ? 450 : 300, "down");
+  }
+  updateHud();
+}
+
+function endQuebec() {
+  if (state.phase === "level_results") return;
+  state.hate += 12;
+  updateHud();
+  showCampaignResults({
+    tag: "QUÉBEC EXIT INTERVIEW",
+    title: "PORTCULLIS CLOSES",
+    broadcast: "Courage 100% · Poutine 100% · Feelings: bruised",
+    verdict: QUEBEC_RESULT,
+    tiny: "The knights resumed taunting mid-bite. Of course.",
+    againLabel: "Taunt again",
+    againFn: () => startQuebec(),
+    nextLabel: "Next ▶ Parliament",
+  });
+}
+
+function renderQuebec(dt) {
+  if (!quebec) return;
+  const W = canvas.width, H = canvas.height;
+  if (quebec.phase === "exterior") {
+    ctx.fillStyle = "#87a0b8";
+    ctx.fillRect(0, 0, W, H);
+    // castle
+    ctx.fillStyle = "#6b7280";
+    ctx.fillRect(420, 80, 500, 360);
+    ctx.fillStyle = "#4b5563";
+    for (let i = 0; i < 8; i++) {
+      ctx.fillRect(430 + i * 60, 50, 40, 40);
+    }
+    // fleur-de-lis
+    ctx.fillStyle = "#2563eb";
+    ctx.font = "bold 28px serif";
+    ctx.textAlign = "center";
+    ctx.fillText("⚜", 670, 140);
+    // knights on wall
+    for (let i = 0; i < 3; i++) {
+      const kx = 520 + i * 120;
+      ctx.fillStyle = "#9ca3af";
+      ctx.fillRect(kx - 16, 100, 32, 50);
+      ctx.fillStyle = "#e5e7eb";
+      ctx.beginPath(); ctx.arc(kx, 90, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#dc2626";
+      ctx.fillRect(kx - 4, 70, 8, 14); // plume
+      ctx.fillStyle = "#111";
+      ctx.font = "10px sans-serif";
+      ctx.fillText("⚔", kx, 130);
+    }
+    // gate / drawbridge
+    ctx.fillStyle = "#1f2937";
+    ctx.fillRect(600, 300, 100, 140);
+    if (quebec.bridgeDown) {
+      ctx.fillStyle = "#92400e";
+      ctx.fillRect(580, 420, 140, 24);
+      ctx.fillRect(560, 440, 180, 80);
+      ctx.fillStyle = "#ffd166";
+      ctx.font = "bold 14px sans-serif";
+      ctx.fillText("ENTER ↓", 670, 500);
+    } else {
+      ctx.fillStyle = "#374151";
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 4; c++) {
+        ctx.strokeRect(610 + c * 20, 310 + r * 24, 20, 24);
+      }
+    }
+    // player
+    ctx.fillStyle = "#c81e1e";
+    ctx.beginPath(); ctx.arc(280, 480, 28, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#f5d0c0";
+    ctx.beginPath(); ctx.arc(280, 448, 18, 0, Math.PI * 2); ctx.fill();
+    // courage meter
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    roundRectPath(80, 20, 280, 40, 8);
+    ctx.fill();
+    ctx.fillStyle = "#e2e8f0";
+    ctx.font = "bold 12px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("COURAGE", 95, 38);
+    ctx.fillStyle = "#333";
+    ctx.fillRect(95, 44, 250, 10);
+    ctx.fillStyle = "#f59e0b";
+    ctx.fillRect(95, 44, 250 * (quebec.courage / 100), 10);
+  } else {
+    // interior poutine
+    ctx.fillStyle = "#2a1810";
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#5c4030";
+    ctx.fillRect(200, 200, 640, 280);
+    ctx.fillStyle = "#fbbf24";
+    ctx.font = "bold 22px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("POUTINE STAND", 520, 180);
+    // fries bowl
+    ctx.fillStyle = "#f59e0b";
+    ctx.beginPath(); ctx.ellipse(520, 340, 90, 50, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#fef3c7";
+    ctx.fillRect(460, 300, 20, 14);
+    ctx.fillRect(500, 290, 22, 16);
+    ctx.fillRect(540, 305, 18, 12);
+    ctx.fillStyle = "#a3a3a3";
+    ctx.beginPath(); ctx.arc(490, 320, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(530, 315, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#78350f";
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath(); ctx.ellipse(520, 330, 70, 30, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    // knights reappear
+    if (quebec.poutine >= 80) {
+      ctx.fillStyle = "#9ca3af";
+      ctx.fillRect(200, 100, 40, 60);
+      ctx.fillRect(800, 110, 40, 60);
+      ctx.fillStyle = "#fde68a";
+      ctx.font = "12px sans-serif";
+      ctx.fillText(quebec.lastTaunt || "I fart at you!", 520, 100);
+    }
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    roundRectPath(80, 20, 280, 40, 8);
+    ctx.fill();
+    ctx.fillStyle = "#e2e8f0";
+    ctx.font = "bold 12px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("POUTINE", 95, 38);
+    ctx.fillStyle = "#333";
+    ctx.fillRect(95, 44, 250, 10);
+    ctx.fillStyle = "#fbbf24";
+    ctx.fillRect(95, 44, 250 * (quebec.poutine / 100), 10);
+  }
+  // spit
+  for (const s of quebec.spit) {
+    ctx.fillStyle = `rgba(80,200,80,${clamp(s.life, 0, 1)})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (quebec.msg && quebec.msgTimer > 0) {
+    ctx.fillStyle = "rgba(5,8,15,0.8)";
+    roundRectPath(200, 560, 640, 34, 8);
+    ctx.fill();
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(quebec.msg, 520, 582);
+  }
+}
+
+/* ---------- PARLIAMENT ---------- */
+function startParliament() {
+  state.level = "parliament";
+  state.phase = "parl_play";
+  state.playerTeam = "CANADA";
+  state.scoreCan = 0;
+  state.scoreUsa = 0;
+  state.floatTexts = [];
+  parliament = {
+    t: 0,
+    sag: 0,
+    volley: 0,
+    speech: null,
+    speechTimer: 0,
+    army: false,
+    armyStep: 0,
+    armyTimer: 0,
+    msg: "Auction of anti-American bile. Click a bench.",
+    msgTimer: 3,
+    lastSide: null,
+  };
+  hideOverlay();
+  ensureAudio();
+  updateHud();
+  syncMobileChrome();
+}
+
+function parliamentOnPointer(x, y, kind) {
+  if (!parliament || state.phase !== "parl_play") return;
+  if (kind !== "down") return;
+  if (parliament.army) {
+    parliament.armyStep += 1;
+    if (parliament.armyStep === 1) {
+      floatText(520, 200, "Rifle jams.", "#ff8fa3", 1.8);
+      parliament.msg = "Three soldiers. One rifle. It jammed.";
+    } else if (parliament.armyStep === 2) {
+      floatText(520, 220, "America won't send more troops.", "#94a3b8", 1.8);
+      parliament.msg = "They complain America will not send more troops.";
+    } else {
+      floatText(520, 240, "Strongly worded letter?", "#ffd166", 2);
+      parliament.msg = "Someone suggests a strongly worded letter.";
+      setTimeout(() => endParliament(), 1200);
+    }
+    parliament.msgTimer = 3;
+    return;
+  }
+  // red benches left, blue right
+  if (x < 520) {
+    const line = pick(PARLIAMENT_RED);
+    floatText(280, 200, "RED: " + line, "#ff6b6b", 2);
+    state.hate += 2;
+    state.scoreCan += 1;
+    parliament.lastSide = "red";
+    parliament.volley += 1;
+  } else {
+    const line = pick(PARLIAMENT_BLUE);
+    floatText(740, 200, "BLUE: " + line, "#6eb6ff", 2);
+    state.hate += 2;
+    state.scoreUsa += 1;
+    parliament.lastSide = "blue";
+    parliament.volley += 1;
+  }
+  if (parliament.volley === 3) {
+    parliament.speech = "Carney: \"Global harmonization of vibes…\"";
+    parliament.speechTimer = 3;
+  } else if (parliament.volley === 5) {
+    parliament.speech = "Ford: \"Best province, period.\"";
+    parliament.speechTimer = 3;
+  } else if (parliament.volley === 7) {
+    parliament.sag = 1;
+    floatText(520, 100, "Building sags.", "#fbbf24", 2);
+    parliament.msg = "Motion: blame America for the structural damage.";
+    parliament.msgTimer = 3;
+  } else if (parliament.volley >= 9) {
+    parliament.army = true;
+    parliament.armyStep = 0;
+    parliament.msg = "Optional army beat — tap to continue.";
+    parliament.msgTimer = 4;
+    floatText(520, 160, "High-five across the aisle!", "#a7f3d0", 2);
+  }
+  updateHud();
+}
+
+function updateParliament(dt) {
+  if (!parliament || state.phase !== "parl_play") return;
+  parliament.t += dt;
+  if (parliament.msgTimer > 0) parliament.msgTimer -= dt;
+  if (parliament.speechTimer > 0) {
+    parliament.speechTimer -= dt;
+    if (parliament.speechTimer <= 0) parliament.speech = null;
+  }
+  if (parliament.sag > 0 && parliament.sag < 40) parliament.sag += dt * 8;
+  updateHud();
+}
+
+function endParliament() {
+  if (state.phase === "level_results") return;
+  state.hate += 15;
+  updateHud();
+  showCampaignResults({
+    tag: "HANSARD HIGHLIGHTS",
+    title: "SESSION",
+    broadcast: `Denunciations ${parliament.volley} · Sag ${Math.floor(parliament.sag)}°`,
+    verdict: PARLIAMENT_RESULT,
+    tiny: "Both parties high-fived. The drywall filed a complaint.",
+    againLabel: "Reconvene",
+    againFn: () => startParliament(),
+    goFinale: true,
+  });
+}
+
+function renderParliament(dt) {
+  if (!parliament) return;
+  const W = canvas.width, H = canvas.height;
+  const sag = parliament.sag || 0;
+  ctx.save();
+  if (sag > 0) {
+    ctx.translate(W / 2, H);
+    ctx.rotate((sag * Math.PI) / 180 * 0.15);
+    ctx.translate(-W / 2, -H);
+  }
+  ctx.fillStyle = "#1a2030";
+  ctx.fillRect(0, 0, W, H);
+  // chamber floor
+  ctx.fillStyle = "#2a3344";
+  ctx.fillRect(80, 100, 880, 420);
+  // red benches
+  for (let r = 0; r < 4; r++) {
+    ctx.fillStyle = "#9f1239";
+    ctx.fillRect(100, 140 + r * 70, 280, 50);
+    for (let i = 0; i < 5; i++) {
+      ctx.fillStyle = "#334155";
+      ctx.fillRect(120 + i * 50, 150 + r * 70, 28, 30);
+      ctx.fillStyle = "#f5d0c0";
+      ctx.beginPath(); ctx.arc(134 + i * 50, 145 + r * 70, 8, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  // blue benches
+  for (let r = 0; r < 4; r++) {
+    ctx.fillStyle = "#1e3a8a";
+    ctx.fillRect(660, 140 + r * 70, 280, 50);
+    for (let i = 0; i < 5; i++) {
+      ctx.fillStyle = "#334155";
+      ctx.fillRect(680 + i * 50, 150 + r * 70, 28, 30);
+      ctx.fillStyle = "#f5d0c0";
+      ctx.beginPath(); ctx.arc(694 + i * 50, 145 + r * 70, 8, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  // speaker
+  ctx.fillStyle = "#78350f";
+  ctx.fillRect(470, 80, 100, 60);
+  ctx.fillStyle = "#ffd166";
+  ctx.font = "bold 12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("SPEAKER", 520, 115);
+  // hate scoreboard
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  roundRectPath(360, 20, 320, 50, 8);
+  ctx.fill();
+  ctx.fillStyle = "#ff6b6b";
+  ctx.font = "bold 14px sans-serif";
+  ctx.fillText("AMERICA HATE INDEX: " + state.hate, 520, 50);
+  if (parliament.speech) {
+    ctx.fillStyle = "rgba(5,8,15,0.85)";
+    roundRectPath(200, 250, 640, 50, 8);
+    ctx.fill();
+    ctx.fillStyle = "#e2e8f0";
+    ctx.font = "14px sans-serif";
+    ctx.fillText(parliament.speech, 520, 280);
+  }
+  if (parliament.army) {
+    ctx.fillStyle = "rgba(0,0,0,0.75)";
+    ctx.fillRect(0, 0, W, H);
+    // three soldiers
+    for (let i = 0; i < 3; i++) {
+      const sx = 360 + i * 120;
+      ctx.fillStyle = "#3f6212";
+      ctx.fillRect(sx - 16, 300, 32, 50);
+      ctx.fillStyle = "#f5d0c0";
+      ctx.beginPath(); ctx.arc(sx, 290, 12, 0, Math.PI * 2); ctx.fill();
+    }
+    // one rifle
+    ctx.fillStyle = "#44403c";
+    ctx.fillRect(460, 320, 80, 6);
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 16px sans-serif";
+    ctx.fillText("3 soldiers · 1 rifle", 520, 200);
+    ctx.font = "13px sans-serif";
+    ctx.fillText(parliament.msg || "Tap", 520, 400);
+  }
+  ctx.restore();
+  if (parliament.msg && parliament.msgTimer > 0 && !parliament.army) {
+    ctx.fillStyle = "rgba(5,8,15,0.8)";
+    roundRectPath(200, 560, 640, 34, 8);
+    ctx.fill();
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(parliament.msg, 520, 582);
+  }
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "center";
+  if (!parliament.army) ctx.fillText("Click RED (left) or BLUE (right) to denounce", 520, H - 12);
+}
+
+/* ---------- FINALE ---------- */
+function startFinale() {
+  state.level = "finale";
+  state.phase = "finale_play";
+  finale = { fade: 0, shown: false };
+  hideOverlay();
+  ensureAudio();
+  updateHud();
+  syncMobileChrome();
+}
+
+function updateFinale(dt) {
+  if (!finale) return;
+  finale.fade = Math.min(1, finale.fade + dt * 0.35);
+  if (finale.fade >= 1 && !finale.shown) {
+    finale.shown = true;
+    state.phase = "level_results";
+    showOverlay(`
+      <div class="poster-tag">FINALE</div>
+      <h2 class="red">${FINALE_LINE}</h2>
+      <div class="broadcast">Hate Index (session high): ${state.hate}</div>
+      <div class="verdict">The map fades. The rivalry does not.</div>
+      <p class="tiny">You wanted Canada to win. Caring was punished. Affectionately.</p>
+      <div class="btns">
+        <button class="btn-go" id="again">Play again</button>
+        <button class="btn-dim" id="mainMenu">Main Menu</button>
+      </div>
+    `);
+    document.getElementById("again").onclick = () => startPlayAll();
+    document.getElementById("mainMenu").onclick = () => showMainMenu();
+    syncMobileChrome();
+  }
+}
+
+function renderFinale(dt) {
+  const W = canvas.width, H = canvas.height;
+  const f = finale ? finale.fade : 0;
+  // map-ish silhouette fading
+  ctx.fillStyle = "#0a1520";
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.globalAlpha = 1 - f * 0.85;
+  ctx.fillStyle = "#c81e1e";
+  // crude Canada blob
+  ctx.beginPath();
+  ctx.moveTo(200, 400);
+  ctx.lineTo(280, 200);
+  ctx.lineTo(450, 180);
+  ctx.lineTo(600, 220);
+  ctx.lineTo(780, 160);
+  ctx.lineTo(860, 280);
+  ctx.lineTo(800, 420);
+  ctx.lineTo(500, 480);
+  ctx.lineTo(300, 450);
+  ctx.closePath();
+  ctx.fill();
+  drawMapleLeaf(520, 300, 40, "rgba(255,255,255,0.5)");
+  ctx.restore();
+  ctx.fillStyle = `rgba(3,6,12,${f * 0.7})`;
+  ctx.fillRect(0, 0, W, H);
+  if (f > 0.5) {
+    ctx.globalAlpha = (f - 0.5) * 2;
+    ctx.fillStyle = "#e2e8f0";
+    ctx.font = "bold 28px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(FINALE_LINE, 520, 300);
+    ctx.globalAlpha = 1;
+  }
+}
+
 
 
 // Boot
